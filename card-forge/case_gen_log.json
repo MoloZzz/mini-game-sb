@@ -1,0 +1,524 @@
+{
+  "arcane-reliquary": {
+    "candidates": {
+      "602000": {
+        "cfgScale": 7.5,
+        "file": "_candidates/arcane-reliquary-92f90.png",
+        "generatedAt": "2026-07-26T19:35:56.582414+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate arcane reliquary shrine box, glowing purple runes, mystical energy, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 602000,
+        "steps": 34
+      },
+      "602001": {
+        "cfgScale": 7.5,
+        "file": "_candidates/arcane-reliquary-92f91.png",
+        "generatedAt": "2026-07-26T19:36:03.992430+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate arcane reliquary shrine box, glowing purple runes, mystical energy, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 602001,
+        "steps": 34
+      },
+      "602002": {
+        "cfgScale": 7.5,
+        "file": "_candidates/arcane-reliquary-92f92.png",
+        "generatedAt": "2026-07-26T19:36:11.390111+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate arcane reliquary shrine box, glowing purple runes, mystical energy, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 602002,
+        "steps": 34
+      },
+      "602003": {
+        "cfgScale": 7.5,
+        "file": "_candidates/arcane-reliquary-92f93.png",
+        "generatedAt": "2026-07-26T19:36:18.816808+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate arcane reliquary shrine box, glowing purple runes, mystical energy, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 602003,
+        "steps": 34
+      },
+      "602004": {
+        "cfgScale": 7.5,
+        "file": "_candidates/arcane-reliquary-92f94.png",
+        "generatedAt": "2026-07-26T19:36:26.233707+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate arcane reliquary shrine box, glowing purple runes, mystical energy, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 602004,
+        "steps": 34
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:35.815309+00:00",
+    "chosen_file": "arcane-reliquary.png",
+    "chosen_seed": 602004,
+    "name": "Arcane Reliquary"
+  },
+  "ashen-forge": {
+    "candidates": {
+      "610000": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ashen-forge-94ed0.png",
+        "generatedAt": "2026-07-26T19:36:32.841398+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate forge-iron treasure chest, ash-covered, riveted metal, wreathed in ember and flame, molten cracks, smoke, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 610000,
+        "steps": 30
+      },
+      "610001": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ashen-forge-94ed1.png",
+        "generatedAt": "2026-07-26T19:36:39.439759+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate forge-iron treasure chest, ash-covered, riveted metal, wreathed in ember and flame, molten cracks, smoke, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 610001,
+        "steps": 30
+      },
+      "610002": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ashen-forge-94ed2.png",
+        "generatedAt": "2026-07-26T19:36:46.049432+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate forge-iron treasure chest, ash-covered, riveted metal, wreathed in ember and flame, molten cracks, smoke, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 610002,
+        "steps": 30
+      },
+      "610003": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ashen-forge-94ed3.png",
+        "generatedAt": "2026-07-26T19:36:52.684611+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate forge-iron treasure chest, ash-covered, riveted metal, wreathed in ember and flame, molten cracks, smoke, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 610003,
+        "steps": 30
+      },
+      "610004": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ashen-forge-94ed4.png",
+        "generatedAt": "2026-07-26T19:36:59.282476+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, an ornate forge-iron treasure chest, ash-covered, riveted metal, wreathed in ember and flame, molten cracks, smoke, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 610004,
+        "steps": 30
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:36.037223+00:00",
+    "chosen_file": "ashen-forge.png",
+    "chosen_seed": 610000,
+    "name": "Ashen Forge"
+  },
+  "ember-vault": {
+    "candidates": {
+      "601000": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ember-vault-92ba8.png",
+        "generatedAt": "2026-07-26T19:35:23.124813+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a reinforced iron bank vault door, glowing ember cracks, riveted metal plating, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 601000,
+        "steps": 30
+      },
+      "601001": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ember-vault-92ba9.png",
+        "generatedAt": "2026-07-26T19:35:29.585751+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a reinforced iron bank vault door, glowing ember cracks, riveted metal plating, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 601001,
+        "steps": 30
+      },
+      "601002": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ember-vault-92baa.png",
+        "generatedAt": "2026-07-26T19:35:36.096407+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a reinforced iron bank vault door, glowing ember cracks, riveted metal plating, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 601002,
+        "steps": 30
+      },
+      "601003": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ember-vault-92bab.png",
+        "generatedAt": "2026-07-26T19:35:42.637396+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a reinforced iron bank vault door, glowing ember cracks, riveted metal plating, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 601003,
+        "steps": 30
+      },
+      "601004": {
+        "cfgScale": 7.0,
+        "file": "_candidates/ember-vault-92bac.png",
+        "generatedAt": "2026-07-26T19:35:49.198530+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a reinforced iron bank vault door, glowing ember cracks, riveted metal plating, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 601004,
+        "steps": 30
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:35.601020+00:00",
+    "chosen_file": "ember-vault.png",
+    "chosen_seed": 601004,
+    "name": "Ember Vault"
+  },
+  "radiant-ark": {
+    "candidates": {
+      "614000": {
+        "cfgScale": 7.5,
+        "file": "_candidates/radiant-ark-95e70.png",
+        "generatedAt": "2026-07-26T19:38:43.200147+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a golden holy ark chest, angelic engravings, radiant aura, radiant golden holy light, halo, divine glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 614000,
+        "steps": 34
+      },
+      "614001": {
+        "cfgScale": 7.5,
+        "file": "_candidates/radiant-ark-95e71.png",
+        "generatedAt": "2026-07-26T19:38:50.833515+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a golden holy ark chest, angelic engravings, radiant aura, radiant golden holy light, halo, divine glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 614001,
+        "steps": 34
+      },
+      "614002": {
+        "cfgScale": 7.5,
+        "file": "_candidates/radiant-ark-95e72.png",
+        "generatedAt": "2026-07-26T19:38:58.439565+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a golden holy ark chest, angelic engravings, radiant aura, radiant golden holy light, halo, divine glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 614002,
+        "steps": 34
+      },
+      "614003": {
+        "cfgScale": 7.5,
+        "file": "_candidates/radiant-ark-95e73.png",
+        "generatedAt": "2026-07-26T19:39:06.058125+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a golden holy ark chest, angelic engravings, radiant aura, radiant golden holy light, halo, divine glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 614003,
+        "steps": 34
+      },
+      "614004": {
+        "cfgScale": 7.5,
+        "file": "_candidates/radiant-ark-95e74.png",
+        "generatedAt": "2026-07-26T19:39:13.674895+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a golden holy ark chest, angelic engravings, radiant aura, radiant golden holy light, halo, divine glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 614004,
+        "steps": 34
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:36.925487+00:00",
+    "chosen_file": "radiant-ark.png",
+    "chosen_seed": 614001,
+    "name": "Radiant Ark"
+  },
+  "starter-chest": {
+    "candidates": {
+      "600000": {
+        "cfgScale": 6.5,
+        "file": "_candidates/starter-chest-927c0.png",
+        "generatedAt": "2026-07-26T19:34:54.949012+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a simple wooden treasure chest, humble iron bands, closed lid, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 600000,
+        "steps": 26
+      },
+      "600001": {
+        "cfgScale": 6.5,
+        "file": "_candidates/starter-chest-927c1.png",
+        "generatedAt": "2026-07-26T19:35:00.290510+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a simple wooden treasure chest, humble iron bands, closed lid, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 600001,
+        "steps": 26
+      },
+      "600002": {
+        "cfgScale": 6.5,
+        "file": "_candidates/starter-chest-927c2.png",
+        "generatedAt": "2026-07-26T19:35:05.684458+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a simple wooden treasure chest, humble iron bands, closed lid, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 600002,
+        "steps": 26
+      },
+      "600003": {
+        "cfgScale": 6.5,
+        "file": "_candidates/starter-chest-927c3.png",
+        "generatedAt": "2026-07-26T19:35:11.164751+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a simple wooden treasure chest, humble iron bands, closed lid, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 600003,
+        "steps": 26
+      },
+      "600004": {
+        "cfgScale": 6.5,
+        "file": "_candidates/starter-chest-927c4.png",
+        "generatedAt": "2026-07-26T19:35:16.697254+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a simple wooden treasure chest, humble iron bands, closed lid, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 600004,
+        "steps": 26
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:35.376230+00:00",
+    "chosen_file": "starter-chest.png",
+    "chosen_seed": 600000,
+    "name": "Starter Chest"
+  },
+  "stoneheart-coffer": {
+    "candidates": {
+      "612000": {
+        "cfgScale": 6.5,
+        "file": "_candidates/stoneheart-coffer-956a0.png",
+        "generatedAt": "2026-07-26T19:37:38.336237+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a rugged carved stone coffer, moss-covered lid, stone, moss and crystal growths, earthen tones, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 612000,
+        "steps": 26
+      },
+      "612001": {
+        "cfgScale": 6.5,
+        "file": "_candidates/stoneheart-coffer-956a1.png",
+        "generatedAt": "2026-07-26T19:37:44.184585+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a rugged carved stone coffer, moss-covered lid, stone, moss and crystal growths, earthen tones, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 612001,
+        "steps": 26
+      },
+      "612002": {
+        "cfgScale": 6.5,
+        "file": "_candidates/stoneheart-coffer-956a2.png",
+        "generatedAt": "2026-07-26T19:37:50.008158+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a rugged carved stone coffer, moss-covered lid, stone, moss and crystal growths, earthen tones, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 612002,
+        "steps": 26
+      },
+      "612003": {
+        "cfgScale": 6.5,
+        "file": "_candidates/stoneheart-coffer-956a3.png",
+        "generatedAt": "2026-07-26T19:37:55.853274+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a rugged carved stone coffer, moss-covered lid, stone, moss and crystal growths, earthen tones, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 612003,
+        "steps": 26
+      },
+      "612004": {
+        "cfgScale": 6.5,
+        "file": "_candidates/stoneheart-coffer-956a4.png",
+        "generatedAt": "2026-07-26T19:38:01.693764+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a rugged carved stone coffer, moss-covered lid, stone, moss and crystal growths, earthen tones, simple, plain, modest craftsmanship, humble, highly detailed, sharp focus, 8k",
+        "seed": 612004,
+        "steps": 26
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:36.477812+00:00",
+    "chosen_file": "stoneheart-coffer.png",
+    "chosen_seed": 612003,
+    "name": "Stoneheart Coffer"
+  },
+  "stormglass-case": {
+    "candidates": {
+      "613000": {
+        "cfgScale": 7.0,
+        "file": "_candidates/stormglass-case-95a88.png",
+        "generatedAt": "2026-07-26T19:57:00.780697+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a sleek glass-paneled storm case, swirling clouds etched in glass, engraved with cloud and feather motifs, silvery shimmer, blue-white sheen, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 613000,
+        "steps": 30
+      },
+      "613001": {
+        "cfgScale": 7.0,
+        "file": "_candidates/stormglass-case-95a89.png",
+        "generatedAt": "2026-07-26T19:57:06.897735+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a sleek glass-paneled storm case, swirling clouds etched in glass, engraved with cloud and feather motifs, silvery shimmer, blue-white sheen, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 613001,
+        "steps": 30
+      },
+      "613002": {
+        "cfgScale": 7.0,
+        "file": "_candidates/stormglass-case-95a8a.png",
+        "generatedAt": "2026-07-26T19:57:13.088453+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a sleek glass-paneled storm case, swirling clouds etched in glass, engraved with cloud and feather motifs, silvery shimmer, blue-white sheen, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 613002,
+        "steps": 30
+      },
+      "613003": {
+        "cfgScale": 7.0,
+        "file": "_candidates/stormglass-case-95a8b.png",
+        "generatedAt": "2026-07-26T19:57:19.345451+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a sleek glass-paneled storm case, swirling clouds etched in glass, engraved with cloud and feather motifs, silvery shimmer, blue-white sheen, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 613003,
+        "steps": 30
+      },
+      "613004": {
+        "cfgScale": 7.0,
+        "file": "_candidates/stormglass-case-95a8c.png",
+        "generatedAt": "2026-07-26T19:57:25.675143+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a sleek glass-paneled storm case, swirling clouds etched in glass, engraved with cloud and feather motifs, silvery shimmer, blue-white sheen, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 613004,
+        "steps": 30
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:36.711059+00:00",
+    "chosen_file": "stormglass-case.png",
+    "chosen_seed": 613001,
+    "name": "Stormglass Case"
+  },
+  "tidal-vault": {
+    "candidates": {
+      "611000": {
+        "cfgScale": 7.0,
+        "file": "_candidates/tidal-vault-952b8.png",
+        "generatedAt": "2026-07-26T20:21:08.081753+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a coral-encrusted sea vault chest, barnacles and sea glass, surface glistening with flowing water and ice, deep blue glow, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 611000,
+        "steps": 30
+      },
+      "611001": {
+        "cfgScale": 7.0,
+        "file": "_candidates/tidal-vault-952b9.png",
+        "generatedAt": "2026-07-26T20:21:14.212372+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a coral-encrusted sea vault chest, barnacles and sea glass, surface glistening with flowing water and ice, deep blue glow, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 611001,
+        "steps": 30
+      },
+      "611002": {
+        "cfgScale": 7.0,
+        "file": "_candidates/tidal-vault-952ba.png",
+        "generatedAt": "2026-07-26T20:21:20.407308+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a coral-encrusted sea vault chest, barnacles and sea glass, surface glistening with flowing water and ice, deep blue glow, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 611002,
+        "steps": 30
+      },
+      "611003": {
+        "cfgScale": 7.0,
+        "file": "_candidates/tidal-vault-952bb.png",
+        "generatedAt": "2026-07-26T20:21:26.719872+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a coral-encrusted sea vault chest, barnacles and sea glass, surface glistening with flowing water and ice, deep blue glow, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 611003,
+        "steps": 30
+      },
+      "611004": {
+        "cfgScale": 7.0,
+        "file": "_candidates/tidal-vault-952bc.png",
+        "generatedAt": "2026-07-26T20:21:33.127809+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a coral-encrusted sea vault chest, barnacles and sea glass, surface glistening with flowing water and ice, deep blue glow, ornate, richly decorated, gleaming metal fittings, highly detailed, sharp focus, 8k",
+        "seed": 611004,
+        "steps": 30
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:36.262270+00:00",
+    "chosen_file": "tidal-vault.png",
+    "chosen_seed": 611002,
+    "name": "Tidal Vault"
+  },
+  "void-casket": {
+    "candidates": {
+      "615000": {
+        "cfgScale": 7.5,
+        "file": "_candidates/void-casket-96258.png",
+        "generatedAt": "2026-07-26T19:39:21.260721+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a dark obsidian casket, sinister engravings, shrouded in dark purple void mist, sinister glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 615000,
+        "steps": 34
+      },
+      "615001": {
+        "cfgScale": 7.5,
+        "file": "_candidates/void-casket-96259.png",
+        "generatedAt": "2026-07-26T19:39:28.876413+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a dark obsidian casket, sinister engravings, shrouded in dark purple void mist, sinister glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 615001,
+        "steps": 34
+      },
+      "615002": {
+        "cfgScale": 7.5,
+        "file": "_candidates/void-casket-9625a.png",
+        "generatedAt": "2026-07-26T19:39:36.491163+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a dark obsidian casket, sinister engravings, shrouded in dark purple void mist, sinister glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 615002,
+        "steps": 34
+      },
+      "615003": {
+        "cfgScale": 7.5,
+        "file": "_candidates/void-casket-9625b.png",
+        "generatedAt": "2026-07-26T19:39:44.093632+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a dark obsidian casket, sinister engravings, shrouded in dark purple void mist, sinister glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 615003,
+        "steps": 34
+      },
+      "615004": {
+        "cfgScale": 7.5,
+        "file": "_candidates/void-casket-9625c.png",
+        "generatedAt": "2026-07-26T19:39:51.679741+00:00",
+        "model": "Lykon/dreamshaper-8",
+        "negativePrompt": "text, letters, words, watermark, signature, logo, frame, border, ui, blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy, person, character, hand, cropped, out of frame, duplicate, photo, 3d render",
+        "prompt": "fantasy still life illustration, single item centered, painterly digital illustration, dramatic rim lighting, dark background, a dark obsidian casket, sinister engravings, shrouded in dark purple void mist, sinister glow, masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring, highly detailed, sharp focus, 8k",
+        "seed": 615004,
+        "steps": 34
+      }
+    },
+    "chosen_at": "2026-07-26T20:23:37.135223+00:00",
+    "chosen_file": "void-casket.png",
+    "chosen_seed": 615004,
+    "name": "Void Casket"
+  }
+}

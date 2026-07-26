@@ -11,7 +11,9 @@ import type { AppConfig } from '../src/config/configuration';
 import { PlayerEntity } from '../src/entities';
 
 /**
- * Runs against the REAL database (docker Postgres on 5433, see game-api/.env).
+ * Runs against the isolated `cardgame_test` database (same docker Postgres
+ * instance on 5433, separate database — see test/env.setup.ts), never the
+ * dev database that holds real approved cards and player history.
  * Every test restores the player's balance/pity/daily-claim and wipes the
  * rows it created in `afterEach`, following the exact pattern of
  * `open-case.e2e-spec.ts` so `read-endpoints.e2e-spec.ts` keeps passing

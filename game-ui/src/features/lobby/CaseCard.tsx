@@ -1,5 +1,6 @@
 import { RARITY_META, type Balance, type CaseDto } from '@card-game/shared-types';
 
+import { caseThemeFor } from './caseTheme';
 import { ImgWithFallback } from './ImgWithFallback';
 import { canAffordCase, casePrice } from './pricing';
 
@@ -22,10 +23,25 @@ export function CaseCard({ case: caseDto, onOpen, disabled, balance }: CaseCardP
   const { amount, currency } = casePrice(caseDto);
   const canAfford = canAffordCase(caseDto, balance);
   const isDisabled = Boolean(disabled) || !canAfford;
+  const theme = caseThemeFor(caseDto.slug);
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 transition-transform duration-150 will-change-transform hover:-translate-y-1">
-      <ImgWithFallback src={caseDto.imageUrl} alt="" className="aspect-square w-full object-cover" />
+    <div
+      data-testid="case-card"
+      data-case-slug={caseDto.slug}
+      className="flex flex-col overflow-hidden rounded-lg border bg-neutral-900 transition-transform duration-150 will-change-transform hover:-translate-y-1"
+      style={{ borderColor: `${theme.color}66`, boxShadow: `0 0 0 1px transparent, 0 4px 16px -6px ${theme.color}4d` }}
+    >
+      <div className="relative">
+        <ImgWithFallback src={caseDto.imageUrl} alt="" className="aspect-square w-full object-cover" />
+        <span
+          className="absolute left-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-950"
+          style={{ backgroundColor: theme.color }}
+        >
+          <span aria-hidden="true">{theme.glyph}</span>
+          {theme.label}
+        </span>
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">
         <h3 className="font-semibold text-neutral-100">{caseDto.name}</h3>

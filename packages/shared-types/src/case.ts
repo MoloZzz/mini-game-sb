@@ -1,4 +1,4 @@
-import type { CardDto } from './card.js';
+import type { CardDto, Element } from './card.js';
 import type { Rarity } from './rarity.js';
 
 /** Percentage weights per rarity. Every row must sum to exactly 100. */
@@ -47,6 +47,70 @@ export const CASE_WEIGHTS: Readonly<Record<string, RarityWeights>> = {
     legendary: 12.0,
     mythic: 3.0,
   },
+
+  // --- Element cases ---
+  //
+  // These are themed, NOT filtered: an Ashen Forge can drop a water card. The
+  // element drives art, name and colour only. Making them filter the pool would
+  // mean element+rarity combinations that do not exist (there is no mythic air
+  // card) and a 409 on the roll, which is why it is not done here.
+  //
+  // Each profile is deliberately distinct — six cases with the same curve and a
+  // different picture would be six copies of one case.
+  'ashen-forge': {
+    // Aggressive middle: fewer commons, fat rare band.
+    common: 35.0,
+    uncommon: 33.0,
+    rare: 20.0,
+    epic: 8.5,
+    legendary: 3.0,
+    mythic: 0.5,
+  },
+  'tidal-vault': {
+    // Steady all-rounder, a gentler starter-chest.
+    common: 40.0,
+    uncommon: 32.0,
+    rare: 19.0,
+    epic: 7.0,
+    legendary: 1.8,
+    mythic: 0.2,
+  },
+  'stoneheart-coffer': {
+    // Cheap and safe: high volume, very low ceiling.
+    common: 48.0,
+    uncommon: 30.0,
+    rare: 16.0,
+    epic: 5.0,
+    legendary: 0.9,
+    mythic: 0.1,
+  },
+  'stormglass-case': {
+    // Swingy: thin commons, the best legendary rate outside the key cases.
+    common: 30.0,
+    uncommon: 30.0,
+    rare: 24.0,
+    epic: 11.0,
+    legendary: 4.2,
+    mythic: 0.8,
+  },
+  'radiant-ark': {
+    // Premium, no commons at all.
+    common: 0.0,
+    uncommon: 38.0,
+    rare: 34.0,
+    epic: 20.0,
+    legendary: 6.8,
+    mythic: 1.2,
+  },
+  'void-casket': {
+    // The gamble: top-heavy, priciest coin case in the game.
+    common: 0.0,
+    uncommon: 27.0,
+    rare: 35.0,
+    epic: 25.0,
+    legendary: 10.0,
+    mythic: 3.0,
+  },
 };
 
 export interface CaseSeed {
@@ -56,6 +120,14 @@ export interface CaseSeed {
   priceKeys: number | null;
   imagePath: string;
   weights: RarityWeights;
+  /**
+   * Cosmetic only — drives the tile's accent colour and the art brief, never
+   * which cards can drop. Deliberately kept off `CaseDto` and out of the
+   * `cases` table: no column, no migration, and the UI resolves it from
+   * CASE_SEEDS by slug, the same way it already reads CASE_WEIGHTS for the
+   * odds table before any network call.
+   */
+  element: Element | null;
 }
 
 export const CASE_SEEDS: readonly CaseSeed[] = [
@@ -66,14 +138,19 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     priceKeys: null,
     imagePath: 'cases/starter-chest.png',
     weights: CASE_WEIGHTS['starter-chest']!,
+    element: null,
   },
   {
+    // Fire-flavoured by name, but deliberately not part of the element set —
+    // `element` marks the six themed cases, and two fire tiles side by side
+    // would just look like a duplicate of Ashen Forge.
     slug: 'ember-vault',
     name: 'Ember Vault',
     priceCoins: 350,
     priceKeys: null,
     imagePath: 'cases/ember-vault.png',
     weights: CASE_WEIGHTS['ember-vault']!,
+    element: null,
   },
   {
     slug: 'arcane-reliquary',
@@ -82,6 +159,61 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     priceKeys: 1,
     imagePath: 'cases/arcane-reliquary.png',
     weights: CASE_WEIGHTS['arcane-reliquary']!,
+    element: null,
+  },
+  {
+    slug: 'ashen-forge',
+    name: 'Ashen Forge',
+    priceCoins: 250,
+    priceKeys: null,
+    imagePath: 'cases/ashen-forge.png',
+    weights: CASE_WEIGHTS['ashen-forge']!,
+    element: 'fire',
+  },
+  {
+    slug: 'tidal-vault',
+    name: 'Tidal Vault',
+    priceCoins: 220,
+    priceKeys: null,
+    imagePath: 'cases/tidal-vault.png',
+    weights: CASE_WEIGHTS['tidal-vault']!,
+    element: 'water',
+  },
+  {
+    slug: 'stoneheart-coffer',
+    name: 'Stoneheart Coffer',
+    priceCoins: 180,
+    priceKeys: null,
+    imagePath: 'cases/stoneheart-coffer.png',
+    weights: CASE_WEIGHTS['stoneheart-coffer']!,
+    element: 'earth',
+  },
+  {
+    slug: 'stormglass-case',
+    name: 'Stormglass Case',
+    priceCoins: 300,
+    priceKeys: null,
+    imagePath: 'cases/stormglass-case.png',
+    weights: CASE_WEIGHTS['stormglass-case']!,
+    element: 'air',
+  },
+  {
+    slug: 'radiant-ark',
+    name: 'Radiant Ark',
+    priceCoins: 500,
+    priceKeys: null,
+    imagePath: 'cases/radiant-ark.png',
+    weights: CASE_WEIGHTS['radiant-ark']!,
+    element: 'light',
+  },
+  {
+    slug: 'void-casket',
+    name: 'Void Casket',
+    priceCoins: 650,
+    priceKeys: null,
+    imagePath: 'cases/void-casket.png',
+    weights: CASE_WEIGHTS['void-casket']!,
+    element: 'shadow',
   },
 ];
 

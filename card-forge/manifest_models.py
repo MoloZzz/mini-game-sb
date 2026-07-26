@@ -14,7 +14,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 Rarity = Literal["common", "uncommon", "rare", "epic", "legendary", "mythic"]
-Archetype = Literal["beast", "humanoid", "undead", "construct", "spirit"]
+Archetype = Literal[
+    "beast", "humanoid", "undead", "construct", "spirit",
+    "dragon", "slime", "sword", "potion", "crystal",
+]
 Element = Literal["fire", "water", "earth", "air", "shadow", "light"]
 
 

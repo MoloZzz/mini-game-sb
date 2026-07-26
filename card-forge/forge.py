@@ -125,6 +125,30 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Plan only, no model load",
     )
 
+    cases_parser = subparsers.add_parser("cases", help="Generate/promote case (loot box) container art")
+    cases_sub = cases_parser.add_subparsers(dest="cases_action")
+
+    cases_gen = cases_sub.add_parser("generate", help="Generate candidate case art")
+    cases_gen.add_argument(
+        "--config",
+        type=Path,
+        default=CARD_FORGE_DIR / "case_recipes.yaml",
+        help="Path to case_recipes.yaml (default: case_recipes.yaml next to forge.py)",
+    )
+    cases_gen.add_argument("--storage-dir", type=Path, default=_default_storage_dir())
+    cases_gen.add_argument("--log", type=Path, default=CARD_FORGE_DIR / "case_gen_log.json")
+    cases_gen.add_argument("--model-id", type=str, default=_default_model_id())
+    cases_gen.add_argument("--case", type=str, default=None, help="Generate only this case slug")
+    cases_gen.add_argument("--attention-slicing", action="store_true")
+    cases_gen.add_argument("--cpu-offload", action="store_true")
+    cases_gen.add_argument("--dry-run", action="store_true")
+
+    cases_promote = cases_sub.add_parser("promote", help="Copy a reviewed candidate to storage/cases/<slug>.png")
+    cases_promote.add_argument("--case", type=str, required=True, help="Case slug")
+    cases_promote.add_argument("--seed", type=int, required=True, help="Seed of the chosen candidate")
+    cases_promote.add_argument("--storage-dir", type=Path, default=_default_storage_dir())
+    cases_promote.add_argument("--log", type=Path, default=CARD_FORGE_DIR / "case_gen_log.json")
+
     ingest_parser = subparsers.add_parser("ingest", help="Push a manifest of generated images into the game API")
     ingest_parser.add_argument(
         "--manifest",
@@ -176,6 +200,32 @@ def _run_batch(args: argparse.Namespace) -> int:
     )
 
 
+def _run_cases(args: argparse.Namespace) -> int:
+    import cases  # lazy import, see note in _run_batch
+
+    if args.cases_action == "generate":
+        return cases.run_cases_generate(
+            recipes_path=args.config,
+            storage_dir=args.storage_dir,
+            log_path=args.log,
+            model_id=args.model_id,
+            case_filter=args.case,
+            attention_slicing=args.attention_slicing,
+            cpu_offload=args.cpu_offload,
+            dry_run=args.dry_run,
+        )
+    elif args.cases_action == "promote":
+        return cases.run_case_promote(
+            slug=args.case,
+            seed=args.seed,
+            storage_dir=args.storage_dir,
+            log_path=args.log,
+        )
+    else:
+        print("ERROR: specify 'generate' or 'promote' (forge.py cases generate|promote)")
+        return 2
+
+
 def _run_ingest(args: argparse.Namespace) -> int:
     import ingest  # lazy import, see note in _run_batch
 
@@ -200,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "doctor": _run_doctor,
         "batch": _run_batch,
+        "cases": _run_cases,
         "ingest": _run_ingest,
     }
 

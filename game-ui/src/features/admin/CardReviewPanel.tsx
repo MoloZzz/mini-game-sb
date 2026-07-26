@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  ARCHETYPE_RARITIES,
   ARCHETYPES,
   ELEMENTS,
   RARITIES,
@@ -12,7 +13,7 @@ import {
 } from '@card-game/shared-types';
 
 import { ImgWithFallback } from './ImgWithFallback';
-import { autofillStatForRarity, checkStatRange } from './statValidation';
+import { autofillStatForRarity, checkStatRange, isArchetypeRarityAllowed } from './statValidation';
 
 /** Sentinel <option> value standing in for `element: null` — `null` itself
  * can't be a <select> option value. */
@@ -92,6 +93,7 @@ export function CardReviewPanel({
   const flavorText = edits.flavorText !== undefined ? edits.flavorText : card.flavorText;
 
   const stats = checkStatRange(rarity, attack, defense);
+  const archetypeRarityAllowed = isArchetypeRarityAllowed(archetype, rarity);
   const { genMeta } = card;
 
   return (
@@ -123,7 +125,9 @@ export function CardReviewPanel({
             <select
               value={rarity}
               onChange={(e) => onEditField('rarity', e.target.value as Rarity)}
-              className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-100"
+              className={`rounded border bg-neutral-950 px-2 py-1 text-sm text-neutral-100 ${
+                archetypeRarityAllowed ? 'border-neutral-700' : 'border-red-500'
+              }`}
             >
               {RARITIES.map((r) => (
                 <option key={r} value={r}>
@@ -159,7 +163,9 @@ export function CardReviewPanel({
             <select
               value={archetype}
               onChange={(e) => onEditField('archetype', e.target.value as Archetype)}
-              className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-100"
+              className={`rounded border bg-neutral-950 px-2 py-1 text-sm text-neutral-100 ${
+                archetypeRarityAllowed ? 'border-neutral-700' : 'border-red-500'
+              }`}
             >
               {ARCHETYPES.map((a) => (
                 <option key={a} value={a}>
@@ -167,6 +173,11 @@ export function CardReviewPanel({
                 </option>
               ))}
             </select>
+            {!archetypeRarityAllowed && (
+              <span className="text-xs text-red-400">
+                {archetype} cards are only ever {ARCHETYPE_RARITIES[archetype].join('/')}.
+              </span>
+            )}
           </label>
         </div>
 

@@ -69,17 +69,38 @@ function apiError(code: ApiErrorCode, message: string): { code: ApiErrorCode; me
 
 // --- GET /cases ---------------------------------------------------------------
 
+/**
+ * Rarest-first, but round-robin across every eligible rarity rather than
+ * draining the rarest pool alone. Every mythic pool happens to hold exactly 6
+ * cards (NAMES_BY_RARITY), so filling straight from the top would give all
+ * nine cases — from starter-chest to void-casket — the identical 6-mythic
+ * preview strip regardless of how different their actual odds curves are.
+ * Cycling instead means a case's preview at least hints at its real shape
+ * (e.g. a mostly-common case still shows some commons, not just its rarest
+ * possible pull).
+ */
 function previewCardsFor(weights: RarityWeights): CardDto[] {
   const rarestFirst = [...RARITIES].reverse();
   const eligibleRarities = rarestFirst.filter((rarity) => weights[rarity] > 0);
+  if (eligibleRarities.length === 0) return [];
 
   const cards: CardDto[] = [];
-  for (const rarity of eligibleRarities) {
-    for (const card of cardsByRarity[rarity]) {
-      if (cards.length >= 6) break;
-      cards.push(card);
+  const takenPerRarity = new Map<Rarity, number>();
+  let round = 0;
+  // Bounded by eligibleRarities.length full passes over each pool (6 cards
+  // each) — guarantees termination even if every eligible pool is smaller
+  // than 6 and together they can't fill all 6 slots.
+  const maxRounds = eligibleRarities.length * 6;
+
+  while (cards.length < 6 && round < maxRounds) {
+    const rarity = eligibleRarities[round % eligibleRarities.length];
+    const pool = cardsByRarity[rarity];
+    const taken = takenPerRarity.get(rarity) ?? 0;
+    if (taken < pool.length) {
+      cards.push(pool[taken]);
+      takenPerRarity.set(rarity, taken + 1);
     }
-    if (cards.length >= 6) break;
+    round++;
   }
   return cards;
 }

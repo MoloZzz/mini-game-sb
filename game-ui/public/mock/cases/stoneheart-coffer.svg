@@ -1,0 +1,5 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#0a0a0a"/>
+  <rect x="20" y="20" width="360" height="260" fill="none" stroke="#a16207" stroke-width="2" rx="8"/>
+  <text x="200" y="150" font-family="sans-serif" font-size="26" font-weight="bold" text-anchor="middle" dominant-baseline="central" fill="#a16207">STONEHEART COFFER</text>
+</svg>

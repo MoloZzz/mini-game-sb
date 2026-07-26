@@ -2,9 +2,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
+import { ARCHETYPE_RARITIES } from '@card-game/shared-types';
 
+import { db, resetDb } from '@/mocks/db';
 import { server } from '@/mocks/server';
-import { resetDb } from '@/mocks/db';
 
 import { AdminReview } from '../AdminReview';
 
@@ -61,7 +62,16 @@ describe('AdminReview', () => {
     await screen.findByTestId('admin-tile-draft-1');
 
     // Exactly one card is focused at a time; the first loaded card starts focused.
-    expect(screen.getByTestId('admin-tile-draft-1')).toHaveAttribute('data-focused', 'true');
+    //
+    // This has to be a waitFor, not a bare assertion. `findByTestId` above
+    // resolves on the render where the tile first exists, but focus is assigned
+    // by an effect that runs after the cards land — so there is a real window in
+    // which the tile is present with data-focused="false". In isolation the
+    // window is too small to observe; under the full suite it widens enough to
+    // fail intermittently.
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-tile-draft-1')).toHaveAttribute('data-focused', 'true');
+    });
 
     await userEvent.keyboard('a');
 
@@ -124,5 +134,38 @@ describe('AdminReview', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
+  });
+
+  // The seeded 24-card draft pool cycles rarity and archetype independently
+  // (db.ts), so it's guaranteed to contain both an allowed and a disallowed
+  // combination — found from the live seed data rather than hardcoded card
+  // names, so this keeps working if the seed generator ever changes.
+  it('flags a card whose archetype/rarity combo the collection is not meant to hold, and not one that is fine', async () => {
+    const mismatched = db.adminCards.find(
+      (c) => !(ARCHETYPE_RARITIES[c.archetype] as readonly string[]).includes(c.rarity),
+    );
+    const matched = db.adminCards.find((c) =>
+      (ARCHETYPE_RARITIES[c.archetype] as readonly string[]).includes(c.rarity),
+    );
+    expect(mismatched).toBeDefined();
+    expect(matched).toBeDefined();
+
+    render(<AdminReview />);
+    await screen.findByTestId(`admin-tile-${mismatched!.id}`);
+
+    await userEvent.click(screen.getByTestId(`admin-tile-${mismatched!.id}`));
+    await waitFor(() => {
+      expect(
+        screen.getByText(`${mismatched!.archetype} cards are only ever ${ARCHETYPE_RARITIES[mismatched!.archetype].join('/')}.`),
+      ).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByTestId(`admin-tile-${matched!.id}`));
+    await waitFor(() => {
+      expect(screen.getByTestId(`admin-tile-${matched!.id}`)).toHaveAttribute('data-focused', 'true');
+    });
+    expect(
+      screen.queryByText(`${matched!.archetype} cards are only ever ${ARCHETYPE_RARITIES[matched!.archetype].join('/')}.`),
+    ).not.toBeInTheDocument();
   });
 });

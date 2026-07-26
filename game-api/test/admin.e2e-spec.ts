@@ -12,7 +12,11 @@ import type { AppConfig } from '../src/config/configuration';
 import { PlayerEntity } from '../src/entities';
 
 /**
- * Runs against the REAL database (docker Postgres on 5433, see game-api/.env).
+ * Runs against the isolated `cardgame_test` database (same docker Postgres
+ * instance on 5433, separate database — see test/env.setup.ts). It is NOT
+ * the dev database: that one now holds 283 real, non-reproducible
+ * GPU-generated approved cards plus a rejected-placeholder pool and must
+ * never be touched by a test run.
  * Every card this suite inserts uses a `test-ingest-` slug prefix, which is
  * how `afterAll` finds and deletes them to restore the exact baseline: 60
  * approved placeholder cards, 0 drafts, player at 1000 coins / 5 keys / pity

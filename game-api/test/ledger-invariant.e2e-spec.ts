@@ -14,8 +14,9 @@ import { PlayerEntity } from '../src/entities';
  * THE point of stage A7: after a randomized sequence of ~200 economy
  * operations (case opens, sells, daily-bonus claims), `SUM(delta_coins) ==
  * players.balance_coins` and the same for keys must hold for every player.
- * Runs against the real database, `--runInBand` (see jest.e2e.config.ts), so
- * there is no other writer racing this suite.
+ * Runs against the isolated `cardgame_test` database (see test/env.setup.ts),
+ * `--runInBand` (see jest.e2e.config.ts), so there is no other writer racing
+ * this suite.
  */
 describe('Ledger invariant under randomized load (e2e)', () => {
   let app: NestExpressApplication;

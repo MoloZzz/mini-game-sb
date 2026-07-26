@@ -1,0 +1,138 @@
+# Art recipes for case (loot box) container art. Separate from recipes.yaml on
+# purpose: cases are a different subject family (containers: chest, vault,
+# coffer, case, ark, casket - not creatures, not the sword/potion/crystal
+# objects either), or a single hero image per case rather than a reviewed pool,
+# and their output does NOT go into manifest.json (that file is the card ingest
+# manifest and its rows must stay valid IngestCardInput - a case has no
+# suggestedRarity/archetype/element to give it).
+#
+# Slugs and names mirror packages/shared-types/src/case.ts CASE_SEEDS exactly
+# (read-only reference, not edited here). `element: null` on starter-chest,
+# ember-vault and arcane-reliquary matches that file: those three are NOT part
+# of the six element-themed cases, so no `elements.*` fragment is appended for
+# them, even though ember-vault's own fragment is fire-flavored by name.
+
+style: &style >-
+  fantasy still life illustration, single item centered,
+  painterly digital illustration, dramatic rim lighting, dark background
+
+quality: &quality "highly detailed, sharp focus, 8k"
+
+negative: &negative >-
+  text, letters, words, watermark, signature, logo, frame, border, ui,
+  blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy,
+  person, character, hand, cropped, out of frame, duplicate, photo, 3d render
+
+# Visual richness scales with price/rarity of currency, same idea as the card
+# rarity fragments in recipes.yaml (thumbnail-readable value).
+tiers:
+  humble:
+    fragment: "simple, plain, modest craftsmanship, humble"
+    cfg_scale: 6.5
+    steps: 26
+  ornate:
+    fragment: "ornate, richly decorated, gleaming metal fittings"
+    cfg_scale: 7.0
+    steps: 30
+  legendary:
+    fragment: "masterwork, radiant magical aura, precious metals and gemstones, awe-inspiring"
+    cfg_scale: 7.5
+    steps: 34
+
+# Same element fragments as recipes.yaml's `object_elements` (duplicated
+# intentionally - this file has no dependency on recipes.py/recipes.yaml).
+# NOT recipes.yaml's creature `elements` - a case is a container/object, same
+# subject family as sword/potion/crystal, and it hit the exact same bug they
+# did: the first draft of this file used the creature wording verbatim
+# ("swirling wind and storm clouds, crackling lightning" for air), and all
+# 5/5 stormglass-case candidates came back as pure storm-landscape photography
+# with NO case/chest/container visible in frame at all - not even a damaged
+# one, just weather. Same root cause as the sword-air incident: an
+# environmental fragment gives SD a horizon to compose a scene around instead
+# of an object to render. Fixed by switching to the same surface/engraving
+# wording recipes.py's object_elements uses, verified there on 8/9 seeds with
+# no scene drift.
+elements:
+  fire: "surface wreathed in ember-glow, molten cracks, faint trailing smoke"
+  water: "surface glistening with flowing water and ice, deep blue glow"
+  earth: "surface of stone, moss and crystal growths, earthen tones"
+  air: "engraved with cloud and feather motifs, silvery shimmer, blue-white sheen"
+  shadow: "dark purple void mist clinging to the surface, sinister glow"
+  light: "engraved with radiant sunburst patterns, golden holy glow, divine shimmer"
+
+# base_seed: first of `candidates` seeds tried for this case; the chosen one
+# (recorded in storage/cases/case_gen_log.json after review) is copied to
+# storage/cases/<slug>.png. Seeds live in their own 600000+ block, disjoint
+# from every card recipe range in recipes.yaml.
+cases:
+  - slug: starter-chest
+    name: "Starter Chest"
+    fragment: "a simple wooden treasure chest, humble iron bands, closed lid"
+    element: null
+    tier: humble
+    base_seed: 600000
+    candidates: 5
+
+  - slug: ember-vault
+    name: "Ember Vault"
+    fragment: "a reinforced iron bank vault door, glowing ember cracks, riveted metal plating"
+    element: null
+    tier: ornate
+    base_seed: 601000
+    candidates: 5
+
+  - slug: arcane-reliquary
+    name: "Arcane Reliquary"
+    fragment: "an ornate arcane reliquary shrine box, glowing purple runes, mystical energy"
+    element: null
+    tier: legendary
+    base_seed: 602000
+    candidates: 5
+
+  - slug: ashen-forge
+    name: "Ashen Forge"
+    fragment: "an ornate forge-iron treasure chest, ash-covered, riveted metal"
+    element: fire
+    tier: ornate
+    base_seed: 610000
+    candidates: 5
+
+  - slug: tidal-vault
+    name: "Tidal Vault"
+    fragment: "a coral-encrusted sea vault chest, barnacles and sea glass"
+    element: water
+    tier: ornate
+    base_seed: 611000
+    candidates: 5
+
+  - slug: stoneheart-coffer
+    name: "Stoneheart Coffer"
+    fragment: "a rugged carved stone coffer, moss-covered lid"
+    element: earth
+    tier: humble
+    base_seed: 612000
+    candidates: 5
+
+  - slug: stormglass-case
+    name: "Stormglass Case"
+    fragment: "a sleek glass-paneled storm case, swirling clouds etched in glass"
+    element: air
+    tier: ornate
+    base_seed: 613000
+    candidates: 5
+
+  - slug: radiant-ark
+    name: "Radiant Ark"
+    fragment: "a golden holy ark chest, angelic engravings, radiant aura"
+    element: light
+    tier: legendary
+    base_seed: 614000
+    candidates: 5
+
+  - slug: void-casket
+    name: "Void Casket"
+    fragment: "a dark obsidian casket, sinister engravings"
+    element: shadow
+    tier: legendary
+    base_seed: 615000
+    candidates: 5

@@ -89,4 +89,31 @@ describe('Lobby', () => {
       expect(button).toBeDisabled();
     }
   });
+
+  it('renders all 9 seed cases at once', async () => {
+    render(<Lobby onOpenCase={() => {}} />);
+
+    await waitFor(() => expect(screen.getAllByTestId('case-card')).toHaveLength(9));
+    expect(CASE_SEEDS.length).toBe(9);
+  });
+
+  it('themes every element case with its element label, and the two element:null cases as Classic', async () => {
+    render(<Lobby onOpenCase={() => {}} />);
+
+    let tiles: HTMLElement[] = [];
+    await waitFor(() => {
+      tiles = screen.getAllByTestId('case-card');
+      expect(tiles).toHaveLength(CASE_SEEDS.length);
+    });
+
+    for (const seed of CASE_SEEDS) {
+      const tile = tiles.find((t) => t.getAttribute('data-case-slug') === seed.slug);
+      expect(tile).toBeDefined();
+      if (seed.element === null) {
+        expect(tile).toHaveTextContent(/classic/i);
+      } else {
+        expect(tile).toHaveTextContent(new RegExp(seed.element, 'i'));
+      }
+    }
+  });
 });

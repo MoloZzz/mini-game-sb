@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfig } from '../config/configuration';
 import { ALL_ENTITIES } from '../entities';
 import { InitialSchema1785017587632 } from '../migrations/1785017587632-InitialSchema';
+import { WidenCardArchetypeEnum1785071982473 } from '../migrations/1785071982473-WidenCardArchetypeEnum';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { InitialSchema1785017587632 } from '../migrations/1785017587632-InitialS
         synchronize: false,
         logging: false,
         entities: ALL_ENTITIES,
-        migrations: [InitialSchema1785017587632],
+        migrations: [InitialSchema1785017587632, WidenCardArchetypeEnum1785071982473],
       }),
     }),
   ],

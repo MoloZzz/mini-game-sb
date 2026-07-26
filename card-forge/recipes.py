@@ -15,9 +15,43 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
-ARCHETYPES = ("beast", "humanoid", "undead", "construct", "spirit")
+ARCHETYPES = (
+    "beast", "humanoid", "undead", "construct", "spirit",
+    "dragon", "slime", "sword", "potion", "crystal",
+)
 ELEMENTS = ("fire", "water", "earth", "air", "shadow", "light")
 RARITIES = ("common", "uncommon", "rare", "epic", "legendary", "mythic")
+
+# `sword`, `potion`, `crystal` are OBJECTS, not creatures - they get a second
+# STYLE fragment (recipes.yaml's `object_style`) instead of the creature one,
+# because "creature concept art" + "centered character portrait" reliably pushes
+# object archetypes toward anthropomorphic junk (sword-people, potion-faces).
+# Measured: with the creature STYLE, 0/9 sword/potion/crystal test draws across
+# 3 style-candidate rounds were clean objects (they all held/wore the item as a
+# character). Swapping to `object_style` ("fantasy still life illustration,
+# single item centered, ...") got 9/9 clean object shots, no figures. Mirrors
+# packages/shared-types/src/card.ts's own comment that these three "are objects,
+# not creatures".
+OBJECT_ARCHETYPES = ("sword", "potion", "crystal")
+
+# Mirrors ARCHETYPE_RARITIES in packages/shared-types/src/card.ts (that file is
+# the authority; this is read-only duplication for early validation, the same
+# pattern manifest_models.py already uses for the Archetype/Element Literals).
+# Catches a mis-tagged recipe (e.g. a dragon recipe accidentally marked
+# "common") at load time instead of after generating a full batch.
+_ALL_RARITIES = RARITIES
+ARCHETYPE_RARITIES: dict[str, tuple[str, ...]] = {
+    "beast": _ALL_RARITIES,
+    "humanoid": _ALL_RARITIES,
+    "undead": _ALL_RARITIES,
+    "construct": _ALL_RARITIES,
+    "spirit": _ALL_RARITIES,
+    "dragon": ("legendary", "mythic"),
+    "slime": ("common",),
+    "sword": ("common", "uncommon"),
+    "potion": ("common",),
+    "crystal": ("uncommon", "rare"),
+}
 
 # CLIP's hard limit. Anything past this is dropped from the END of the prompt,
 # silently, with no error - so it must be caught here rather than in the output.
@@ -52,6 +86,7 @@ class RecipeSet:
     quality: str
     negative: str
     recipes: list[Recipe]
+    object_style: str | None = None
 
     def total_count(self) -> int:
         return sum(r.count for r in self.recipes)
@@ -178,8 +213,22 @@ def load_recipes(path: str | Path) -> RecipeSet:
     quality = _clean(quality)
     negative = _clean(negative)
 
+    # Optional: only required if a recipe actually uses an OBJECT_ARCHETYPES
+    # archetype (checked per-recipe below, not here, so the 34 original
+    # creature recipes keep working on a recipes.yaml with no object_style at all).
+    object_style_raw = data.get("object_style")
+    object_style = _clean(object_style_raw) if isinstance(object_style_raw, str) and object_style_raw.strip() else None
+
     archetypes = _require_mapping(data.get("archetypes", {}), "archetypes")
     elements = _require_mapping(data.get("elements", {}), "elements")
+    # Optional: only required if a recipe actually uses an OBJECT_ARCHETYPES
+    # archetype with a non-null element (checked per-recipe below). Kept
+    # separate from `elements` on purpose - see recipes.yaml's comment: an
+    # environmental fragment ("storm clouds") that is harmless on a creature
+    # composes a scene (and a figure to stand in it) on an object.
+    object_elements = data.get("object_elements", {})
+    if object_elements and not isinstance(object_elements, dict):
+        raise ValueError("recipes.yaml: 'object_elements' must be a mapping")
     rarities = _require_mapping(data.get("rarities", {}), "rarities")
 
     raw_recipes = data.get("recipes")
@@ -223,6 +272,15 @@ def load_recipes(path: str | Path) -> RecipeSet:
                 f"'{rarity}' (must be one of {', '.join(RARITIES)})"
             )
 
+        allowed_rarities = ARCHETYPE_RARITIES.get(archetype, RARITIES)
+        if rarity not in allowed_rarities:
+            raise ValueError(
+                f"recipes.yaml: recipe '{rid}' pairs archetype '{archetype}' with rarity "
+                f"'{rarity}', but that archetype is only allowed at "
+                f"{', '.join(allowed_rarities)} (see ARCHETYPE_RARITIES in "
+                f"packages/shared-types/src/card.ts)"
+            )
+
         count = raw.get("count")
         if not isinstance(count, int) or isinstance(count, bool) or count < 1:
             raise ValueError(f"recipes.yaml: recipe '{rid}' has invalid count '{count}' (must be >= 1)")
@@ -256,9 +314,19 @@ def load_recipes(path: str | Path) -> RecipeSet:
 
             element_frag = None
             if element is not None:
-                element_frag = elements.get(element)
-                if not isinstance(element_frag, str) or not element_frag.strip():
-                    raise ValueError(f"recipes.yaml: elements missing entry for '{element}' (used by '{rid}')")
+                if archetype in OBJECT_ARCHETYPES:
+                    # Object archetypes get the surface/effect wording, not the
+                    # creature scene wording - see recipes.yaml's object_elements
+                    # comment (the sword-air incident).
+                    element_frag = object_elements.get(element)
+                    if not isinstance(element_frag, str) or not element_frag.strip():
+                        raise ValueError(
+                            f"recipes.yaml: object_elements missing entry for '{element}' (used by '{rid}')"
+                        )
+                else:
+                    element_frag = elements.get(element)
+                    if not isinstance(element_frag, str) or not element_frag.strip():
+                        raise ValueError(f"recipes.yaml: elements missing entry for '{element}' (used by '{rid}')")
 
             rarity_frag = rarity_entry.get("fragment")
             if not isinstance(rarity_frag, str) or not rarity_frag.strip():
@@ -268,7 +336,17 @@ def load_recipes(path: str | Path) -> RecipeSet:
             if extra is not None and not isinstance(extra, str):
                 raise ValueError(f"recipes.yaml: recipe '{rid}' has non-string 'extra'")
 
-            prompt = assemble_prompt(style, archetype_frag, element_frag, rarity_frag, quality, extra)
+            if archetype in OBJECT_ARCHETYPES:
+                if object_style is None:
+                    raise ValueError(
+                        f"recipes.yaml: recipe '{rid}' uses object archetype '{archetype}' "
+                        f"but no top-level 'object_style' is defined"
+                    )
+                effective_style = object_style
+            else:
+                effective_style = style
+
+            prompt = assemble_prompt(effective_style, archetype_frag, element_frag, rarity_frag, quality, extra)
 
         recipe = Recipe(
             id=rid,
@@ -308,4 +386,4 @@ def load_recipes(path: str | Path) -> RecipeSet:
                 f"[{prev_start}, {prev_end}] and '{cur_id}' [{cur_start}, {cur_end}]"
             )
 
-    return RecipeSet(style=style, quality=quality, negative=negative, recipes=recipes)
+    return RecipeSet(style=style, quality=quality, negative=negative, recipes=recipes, object_style=object_style)

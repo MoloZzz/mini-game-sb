@@ -21,9 +21,10 @@ import { createSolidColorPng } from './placeholder-image';
 
 /**
  * Standalone seeding CLI — `npm run seed -- [--reset] [--placeholder-cards N]`.
- * Not an HTTP endpoint. Safe to re-run without `--reset`: the player, the
- * three cases, and any previously-seeded placeholder cards are matched by
- * a stable key (display name / slug) and never duplicated.
+ * Not an HTTP endpoint. Safe to re-run without `--reset`: the player, all
+ * cases in `CASE_SEEDS` (nine, as of the archetype/case-roster widening),
+ * and any previously-seeded placeholder cards are matched by a stable key
+ * (display name / slug) and never duplicated.
  */
 
 interface SeedArgs {

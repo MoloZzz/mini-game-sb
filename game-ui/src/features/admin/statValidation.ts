@@ -1,4 +1,4 @@
-import { RARITY_META, type Rarity } from '@card-game/shared-types';
+import { ARCHETYPE_RARITIES, RARITY_META, type Archetype, type Rarity } from '@card-game/shared-types';
 
 /**
  * ATK/DEF bounds are rarity-specific (card-game-data 10, Q4): a common with
@@ -33,4 +33,18 @@ export function checkStatRange(rarity: Rarity, attack: number, defense: number):
 export function autofillStatForRarity(rarity: Rarity): number {
   const [min, max] = RARITY_META[rarity].statRange;
   return Math.round((min + max) / 2);
+}
+
+/**
+ * ARCHETYPE_RARITIES (card.d.ts) is data, not convention: dragon is
+ * legendary/mythic only, slime and potion are common only, sword is
+ * common/uncommon, crystal is uncommon/rare. A rarity edit that puts a card
+ * outside its archetype's allowed band is exactly the mistake this screen
+ * exists to catch (same reasoning as checkStatRange above) — so this is
+ * checked the same way: a small pure function shared by the panel UI and the
+ * test suite, driven by shared-types data rather than a hardcoded list that
+ * would silently miss `dragon`/`slime`/`sword`/`potion`/`crystal`.
+ */
+export function isArchetypeRarityAllowed(archetype: Archetype, rarity: Rarity): boolean {
+  return (ARCHETYPE_RARITIES[archetype] as readonly Rarity[]).includes(rarity);
 }

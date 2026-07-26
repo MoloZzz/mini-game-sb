@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { CaseDto } from '@card-game/shared-types';
+import { CASE_SEEDS, type CaseDto } from '@card-game/shared-types';
 
 import { BalanceDisplay } from '@/components/BalanceDisplay';
 
@@ -89,16 +89,23 @@ export function Lobby({ onOpenCase }: LobbyProps) {
 
       <main className="flex-1">
         {selectedCase ? (
-          <CaseDetail
-            case={selectedCase}
-            balance={balance}
-            onOpen={onOpenCase}
-            onBack={() => setSelectedSlug(null)}
-          />
+          <div className="mx-auto max-w-3xl">
+            <CaseDetail
+              case={selectedCase}
+              balance={balance}
+              onOpen={onOpenCase}
+              onBack={() => setSelectedSlug(null)}
+            />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          // 9 cases, not the original 3 — capped at 3 columns (a clean 3x3
+          // grid with no orphaned last row) and centred with a max-width
+          // rather than growing to a 4th/5th column on wide screens, which
+          // would leave a lone tile stranded on its own row for any case
+          // count that isn't a multiple of 4.
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loading
-              ? Array.from({ length: 3 }).map((_, i) => <CaseCardSkeleton key={i} />)
+              ? Array.from({ length: CASE_SEEDS.length }).map((_, i) => <CaseCardSkeleton key={i} />)
               : cases.map((c) => (
                   // Clicking anywhere on the tile selects it (shows odds +
                   // detail); the card's own Open button stops that bubble so

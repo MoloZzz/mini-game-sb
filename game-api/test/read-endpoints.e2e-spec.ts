@@ -87,11 +87,11 @@ describe('Read endpoints (e2e)', () => {
     expect(res.body.code).toBe('CARD_NOT_FOUND');
   });
 
-  it('GET /api/cases -> 200, 3 cases, odds sum to 100, 6 preview cards each', async () => {
+  it('GET /api/cases -> 200, 9 cases, odds sum to 100, 6 preview cards each', async () => {
     const res = await request(app.getHttpServer()).get('/api/cases');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(3);
+    expect(res.body.length).toBe(9);
     for (const caseDto of res.body) {
       expect(weightsSumTo100(caseDto.odds)).toBe(true);
       expect(caseDto.previewCards.length).toBe(6);

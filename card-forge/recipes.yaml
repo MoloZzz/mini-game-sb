@@ -19,6 +19,29 @@ style: &style >-
 # rarity readable from a thumbnail, so it is the last thing that should lose tokens.
 quality: &quality "highly detailed, sharp focus, 8k"
 
+# OBJECT_STYLE - for the three OBJECT archetypes (sword, potion, crystal), not
+# creatures. Swapping "creature concept art"/"centered character portrait" for
+# object-appropriate wording is required: A/B tested 8 style candidates x 3
+# seeds each on the sword archetype (fixed seeds 900001-900003, same negative/
+# quality/rarity tail throughout). Every candidate that kept "concept art" in
+# any form - "fantasy item concept art", "fantasy game asset concept art",
+# "fantasy artifact showcase", "fantasy object concept art", "fantasy relic
+# concept art" - produced a character HOLDING the sword in 2 or 3 of 3 draws,
+# regardless of which object noun followed ("item"/"asset"/"artifact"/
+# "object"/"relic" all failed equally). "concept art" alone is apparently
+# enough to cue SD toward a hero-illustration composition.
+# Only "still life" (an actual painting-genre term with no people in it by
+# definition) fixed this: "isolated object on pedestal" got 2/3 clean but drifted
+# into monument/pillar framing; "still life fantasy object study" got 3/3 clean
+# people-wise but drifted onto a vase/bottle shape on 1/3 seeds. The wording
+# below - "single item centered" instead of "object study" or "on pedestal" -
+# got 3/3 clean AND on-subject for sword, then re-verified 3/3 clean for both
+# potion and crystal too (9/9 total, seeds 900001-900003, rare-tier tail).
+# Re-verify visually before ever touching this constant.
+object_style: &object_style >-
+  fantasy still life illustration, single item centered,
+  painterly digital illustration, dramatic rim lighting, dark background
+
 negative: &negative >-
   text, letters, words, watermark, signature, logo, frame, border, ui,
   blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy,
@@ -41,6 +64,38 @@ archetypes:
   construct: "a massive stone golem, carved rock body, glowing runic core"
   spirit: "an ethereal spirit entity, translucent flowing form, wisps"
 
+  # --- New archetypes (ARCHETYPE_RARITIES in packages/shared-types/src/card.ts) ---
+
+  # "quadrupedal" is load-bearing, same lesson as "golem" above: without it,
+  # STYLE's "centered character portrait" pulled 2 of 3 test seeds toward a
+  # bipedal dragon-man (humanoid torso, wings, no hind legs) instead of a full
+  # dragon. Re-run with "quadrupedal" added: 3/3 proper four-legged dragons on
+  # the first try, and 3/3 again after trimming the fragment for token budget
+  # (see legendary/mythic below). Kept short on purpose: this archetype only
+  # ever pairs with legendary/mythic rarity fragments, the two longest in the
+  # set, and "scaled reptilian body, four powerful legs, long tail" pushed
+  # dragon_shadow_mythic to 91 tokens - the trimmed version below tops out at 76.
+  dragon: "a colossal quadrupedal dragon, spread wings, sharp fangs"
+  # Without an explicit anti-humanoid anchor, STYLE's "character portrait" bias
+  # turned "a gelatinous slime creature" into a girl/cat wearing a translucent
+  # slime hood in 3 of 3 test seeds - same character-portrait gravity that hit
+  # sword/potion/crystal, just landing on a chimera instead of a bare human.
+  # "no humanoid features" plus "simple dot eyes" (the classic slime-mob look,
+  # not a face) fixed it: 3/3 clean round blobs, re-confirmed after trimming
+  # "bouncing"/"cute" for token budget.
+  slime: "a round slime monster blob, glossy translucent jelly body, simple dot eyes, no humanoid features"
+  # OBJECT archetype - pairs with object_style, not style. See object_style's
+  # comment above for the A/B test that settled the framing; this fragment
+  # itself needed no rework, it already read as an object once "concept art"
+  # was gone from the style. `extra` (per-recipe) varies the blade form
+  # (scimitar/rapier/broadsword/katana) across recipes so the sword pool isn't
+  # ten near-identical longswords - "прикольні мечі" was the ask.
+  sword: "a masterfully forged fantasy sword, gleaming blade, ornate hilt"
+  # OBJECT archetype - pairs with object_style.
+  potion: "a magical potion bottle, glowing liquid, ornate cork and glass"
+  # OBJECT archetype - pairs with object_style.
+  crystal: "a large glowing magic crystal, faceted gem formation, crackling energy"
+
 elements:
   fire: "wreathed in ember and flame, molten cracks, smoke"
   water: "flowing water and ice, deep blue glow, mist"
@@ -48,6 +103,41 @@ elements:
   air: "swirling wind and storm clouds, crackling lightning"
   shadow: "shrouded in dark purple void mist, sinister glow"
   light: "radiant golden holy light, halo, divine glow"
+
+# Element fragments for the OBJECT archetypes (sword/potion/crystal) ONLY.
+# `elements` above stays untouched for the creature archetypes - those 283
+# cards are already generated and approved against that wording, unchanged.
+#
+# Found by contact-sheet review of all 38 generated swords (not spot seeds):
+# sword_earth_uncommon was 0/9 bad, but sword_air_uncommon was 8/9 bad - a
+# figure standing in a storm, in two cases with no sword visible in frame at
+# all. fire (1/10 bad) and water (2/10 bad) had smaller but non-zero failure
+# too. The pattern: `elements.earth` ("stone, moss and crystal growths,
+# earthen tones") describes a SURFACE - it reads onto an object with no bias.
+# `elements.air` ("swirling wind and storm clouds, crackling lightning")
+# describes a SCENE - for a creature that's harmless background, but for an
+# object it gives SD somewhere to put a horizon, and a horizon under a storm
+# pulls in a heroic figure to stand in it. Every fragment below describes the
+# ITEM's surface/engraving/immediate glow, never sky, weather, or horizon;
+# "engraved sunburst" instead of "halo" (also a figure-shaped cue - a halo
+# implies a head to sit above it).
+#
+# air went through TWO rewrites, both re-verified on the real recipe's 9
+# seeds (not fresh ones) before shipping:
+#   v1 "etched with wind sigils, arcing static charge, faint lightning glow
+#       along the edge" -> still 5/9 bad. "lightning" alone is enough to pull
+#       in a storm scene and a figure, same as before - trading "storm clouds"
+#       for "lightning glow" didn't remove the trigger word.
+#   v2 (shipped) drops wind/storm/lightning/static entirely and goes fully
+#       static/textural instead ("cloud and feather motifs" as an engraved
+#       pattern, not weather) -> 8/9 clean on the same 9 seeds.
+object_elements:
+  fire: "surface wreathed in ember-glow, molten cracks, faint trailing smoke"
+  water: "surface glistening with flowing water and ice, deep blue glow"
+  earth: "surface of stone, moss and crystal growths, earthen tones"
+  air: "engraved with cloud and feather motifs, silvery shimmer, blue-white sheen"
+  shadow: "dark purple void mist clinging to the surface, sinister glow"
+  light: "engraved with radiant sunburst patterns, golden holy glow, divine shimmer"
 
 rarities:
   common:
@@ -329,3 +419,147 @@ recipes:
     rarity: mythic
     count: 5
     base_seed: 801000
+
+  # ============================================================
+  # New archetypes: dragon, slime, sword, potion, crystal.
+  # Rarity per recipe is constrained by ARCHETYPE_RARITIES in
+  # packages/shared-types/src/card.ts (also enforced at load time by
+  # recipes.py) - dragon is legendary/mythic only, slime and potion are
+  # common only, sword is common/uncommon, crystal is uncommon/rare.
+  # `count` follows the same rarity-based convention as the original 34
+  # recipes above (common 10, uncommon 9, rare 8, legendary 6, mythic 5 -
+  # ~2.5x the intended review-approved pool per recipe). Seeds use the
+  # 500000-543999 block, disjoint from every range already in use above
+  # (100000s/200000s/300000s/400000s/700000s/800000s).
+  # 17 recipes, 149 images total: dragon 17, slime 30, sword 38, potion 30,
+  # crystal 34.
+  # ============================================================
+
+  # --- dragon (legendary, mythic only) ---
+  - id: dragon_fire_legendary
+    archetype: dragon
+    element: fire
+    rarity: legendary
+    count: 6
+    base_seed: 500000
+
+  - id: dragon_shadow_legendary
+    archetype: dragon
+    element: shadow
+    rarity: legendary
+    count: 6
+    base_seed: 501000
+
+  - id: dragon_shadow_mythic
+    archetype: dragon
+    element: shadow
+    rarity: mythic
+    count: 5
+    base_seed: 502000
+
+  # --- slime (common only - classic lowest-tier mob, elemental color variety) ---
+  - id: slime_fire_common
+    archetype: slime
+    element: fire
+    rarity: common
+    count: 10
+    base_seed: 510000
+
+  - id: slime_water_common
+    archetype: slime
+    element: water
+    rarity: common
+    count: 10
+    base_seed: 511000
+
+  - id: slime_shadow_common
+    archetype: slime
+    element: shadow
+    rarity: common
+    count: 10
+    base_seed: 512000
+
+  # --- sword (common, uncommon) - `extra` varies blade form so the pool
+  # isn't ten near-identical longswords ---
+  - id: sword_fire_common
+    archetype: sword
+    element: fire
+    rarity: common
+    count: 10
+    base_seed: 520000
+    extra: "curved scimitar blade"
+
+  - id: sword_water_common
+    archetype: sword
+    element: water
+    rarity: common
+    count: 10
+    base_seed: 521000
+    extra: "slender rapier blade"
+
+  - id: sword_earth_uncommon
+    archetype: sword
+    element: earth
+    rarity: uncommon
+    count: 9
+    base_seed: 522000
+    extra: "heavy broadsword blade"
+
+  - id: sword_air_uncommon
+    archetype: sword
+    element: air
+    rarity: uncommon
+    count: 9
+    base_seed: 523000
+    extra: "curved katana blade"
+
+  # --- potion (common only) ---
+  - id: potion_fire_common
+    archetype: potion
+    element: fire
+    rarity: common
+    count: 10
+    base_seed: 530000
+
+  - id: potion_water_common
+    archetype: potion
+    element: water
+    rarity: common
+    count: 10
+    base_seed: 531000
+
+  - id: potion_shadow_common
+    archetype: potion
+    element: shadow
+    rarity: common
+    count: 10
+    base_seed: 532000
+
+  # --- crystal (uncommon, rare) ---
+  - id: crystal_earth_uncommon
+    archetype: crystal
+    element: earth
+    rarity: uncommon
+    count: 9
+    base_seed: 540000
+
+  - id: crystal_light_uncommon
+    archetype: crystal
+    element: light
+    rarity: uncommon
+    count: 9
+    base_seed: 541000
+
+  - id: crystal_water_rare
+    archetype: crystal
+    element: water
+    rarity: rare
+    count: 8
+    base_seed: 542000
+
+  - id: crystal_shadow_rare
+    archetype: crystal
+    element: shadow
+    rarity: rare
+    count: 8
+    base_seed: 543000

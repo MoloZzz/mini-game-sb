@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { RARITIES, RARITY_META } from '@card-game/shared-types';
+import { ARCHETYPE_RARITIES, ARCHETYPES, RARITIES, RARITY_META } from '@card-game/shared-types';
 
-import { autofillStatForRarity, checkStatRange } from '../statValidation';
+import { autofillStatForRarity, checkStatRange, isArchetypeRarityAllowed } from '../statValidation';
 
 // Iterates every rarity from shared-types rather than hardcoding numbers, so
 // a future change to `RARITY_META[r].statRange` fails this suite instead of
@@ -35,5 +35,24 @@ describe('checkStatRange', () => {
       expect(value).toBeGreaterThanOrEqual(min);
       expect(value).toBeLessThanOrEqual(max);
     });
+  }
+});
+
+// Iterates every archetype from shared-types (including the newer
+// dragon/slime/sword/potion/crystal ones) crossed with every rarity, rather
+// than hand-picking a couple of examples — a hardcoded pair of cases would
+// happily keep passing even if a new archetype's ARCHETYPE_RARITIES entry
+// were wrong or missing.
+describe('isArchetypeRarityAllowed', () => {
+  for (const archetype of ARCHETYPES) {
+    const allowed = ARCHETYPE_RARITIES[archetype];
+
+    for (const rarity of RARITIES) {
+      const shouldAllow = (allowed as readonly string[]).includes(rarity);
+
+      it(`${shouldAllow ? 'allows' : 'flags'} ${archetype} at ${rarity}`, () => {
+        expect(isArchetypeRarityAllowed(archetype, rarity)).toBe(shouldAllow);
+      });
+    }
   }
 });

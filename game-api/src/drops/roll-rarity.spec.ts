@@ -27,8 +27,18 @@ describe('rollRarity', () => {
       }
     });
 
-    it('every CASE_WEIGHTS row sums to 100 via a direct sum, for all three slugs', () => {
-      const slugs = ['starter-chest', 'ember-vault', 'arcane-reliquary'];
+    it('every CASE_WEIGHTS row sums to 100 via a direct sum, for all nine slugs', () => {
+      const slugs = [
+        'starter-chest',
+        'ember-vault',
+        'arcane-reliquary',
+        'ashen-forge',
+        'tidal-vault',
+        'stoneheart-coffer',
+        'stormglass-case',
+        'radiant-ark',
+        'void-casket',
+      ];
       expect(Object.keys(CASE_WEIGHTS).sort()).toEqual(slugs.sort());
       for (const slug of slugs) {
         const weights = CASE_WEIGHTS[slug]!;
