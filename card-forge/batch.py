@@ -32,18 +32,41 @@ def _fmt_duration(seconds: float) -> str:
     return f"{m:02d}:{s:02d}"
 
 
+def recipe_slug(recipe_id: str, seed: int) -> str:
+    """Build the card slug for a recipe/seed pair.
+
+    Recipe ids are snake_case (they are YAML keys and the `--recipe` filter
+    argument), but game-api validates ingest slugs against /^[a-z0-9][a-z0-9-]*$/
+    - lowercase-kebab, no underscores - and the seeded placeholder cards follow
+    the same convention. Underscores here mean every ingest request fails with
+    400, so the conversion happens at the boundary rather than in the recipe ids.
+    """
+    return f"{recipe_id.replace('_', '-')}-{seed:x}"[:48]
+
+
 def _build_work_items(recipes_list: list[Recipe]) -> list[tuple[Recipe, int, str]]:
     items: list[tuple[Recipe, int, str]] = []
     for r in recipes_list:
         for i in range(r.count):
             seed = r.base_seed + i
-            slug = f"{r.id}-{seed:x}"[:48]
-            items.append((r, seed, slug))
+            items.append((r, seed, recipe_slug(r.id, seed)))
     return items
 
 
-def _already_on_disk(cards_dir: Path, thumbs_dir: Path, slug: str) -> bool:
-    return (cards_dir / f"{slug}.png").exists() and (thumbs_dir / f"{slug}.webp").exists()
+def _already_done(cards_dir: Path, thumbs_dir: Path, slug: str, manifest_slugs: set[str]) -> bool:
+    """An image counts as done only if it is BOTH on disk and in the manifest.
+
+    Manifest rows are flushed every 5 images, so a hard kill (SIGKILL rather
+    than Ctrl-C) leaves up to 4 images on disk with no manifest row. Keying
+    resume on disk alone would skip those forever and they would never be
+    ingested. Requiring both makes an interrupted run self-healing: the
+    orphans are simply regenerated, deterministically, from the same seed.
+    """
+    return (
+        slug in manifest_slugs
+        and (cards_dir / f"{slug}.png").exists()
+        and (thumbs_dir / f"{slug}.webp").exists()
+    )
 
 
 def _print_dry_run(
@@ -129,8 +152,29 @@ def run_batch(
 
     all_items = _build_work_items(recipes_list)
 
-    pending_items = [item for item in all_items if not _already_on_disk(cards_dir, thumbs_dir, item[2])]
+    # Loaded before the resume check: _already_done needs the manifest slugs.
+    try:
+        manifest_cards = load_manifest(manifest_path)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    manifest_slugs = {c.slug for c in manifest_cards}
+
+    pending_items = [
+        item for item in all_items if not _already_done(cards_dir, thumbs_dir, item[2], manifest_slugs)
+    ]
     skip_count = len(all_items) - len(pending_items)
+
+    orphans = [
+        item[2]
+        for item in pending_items
+        if (cards_dir / f"{item[2]}.png").exists() and item[2] not in manifest_slugs
+    ]
+    if orphans:
+        print(
+            f"note: {len(orphans)} image(s) on disk have no manifest row "
+            "(previous run was killed before its manifest flush); regenerating them."
+        )
 
     planned_items = pending_items[:limit] if limit is not None else pending_items
 
@@ -142,12 +186,6 @@ def run_batch(
         print("Nothing to do: all requested images already exist on disk.")
         print(f"skipped (already on disk): {skip_count}")
         return 0
-
-    try:
-        manifest_cards = load_manifest(manifest_path)
-    except ValueError as exc:
-        print(f"ERROR: {exc}")
-        return 1
 
     # Lazy imports: dry-run and error paths above must work with no torch installed.
     import torch

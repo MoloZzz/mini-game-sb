@@ -1,5 +1,12 @@
+# "creature concept art", NOT "trading card game art". Measured on 6 identical
+# seeds: the TCG phrasing cues SD to paint a COMPLETE card - ornate border plus a
+# name plate of garbled pseudo-text - in 2 of 6 draws, which no amount of
+# `frame, border, text` in NEGATIVE overrides, because it is the positive prompt
+# asking for it. A baked-in frame violates ADR-005 (SD draws the art window only;
+# frame and name are DOM/CSS) and would double up against the CSS frame.
+# Re-running the same 4 seeds with the wording below: 0 frames, 0 name plates.
 style: &style >-
-  fantasy trading card game art, centered character portrait,
+  fantasy creature concept art, centered character portrait,
   painterly digital illustration, dramatic rim lighting, dark background
 
 # The vault's QUALITY tail is "highly detailed, sharp focus, artstation trending, 8k".
@@ -22,7 +29,16 @@ archetypes:
   beast: "a fearsome fantasy beast creature, scales and fur, wild eyes"
   humanoid: "a fantasy warrior character, ornate armor, determined expression"
   undead: "an undead revenant, hollow glowing eyes, tattered shroud, bone"
-  construct: "an animated stone and metal construct, glowing runic core"
+  # "golem", not "construct": measured on 3 seeds, the wording "an animated stone
+  # and metal construct" produced two elves and a beast and not one construct -
+  # "construct" is a weak token, and STYLE's "character portrait" pulls toward
+  # faces. "golem" plus the material nouns anchors it; the same 3 seeds then gave
+  # 3 constructs. Archetype fidelity matters because `archetype` is a filterable
+  # field in inventory and admin, not just flavour.
+  # Kept deliberately short: the mythic rarity fragment is the longest in the set,
+  # and "riveted iron plates" pushed construct_light_mythic to 81 tokens, past
+  # CLIP's 77 - the tail drops silently. "golem" carries the meaning on its own.
+  construct: "a massive stone golem, carved rock body, glowing runic core"
   spirit: "an ethereal spirit entity, translucent flowing form, wisps"
 
 elements:

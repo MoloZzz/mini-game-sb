@@ -61,7 +61,17 @@ def load_pipeline(
         pipe = StableDiffusionPipeline.from_pretrained(model_id, **load_kwargs)
 
     # Same quality as PNDM at 50 steps in 20-28 steps -> much faster batches.
-    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+    #
+    # algorithm_type/solver_type are overridden explicitly rather than inherited:
+    # dreamshaper-8 ships a DEISMultistepScheduler config, whose "deis"/"logrho"
+    # values are not valid for DPMSolverMultistep and make from_config() raise.
+    # Everything that actually matters (beta schedule, prediction_type,
+    # timestep_spacing, steps_offset) is still carried over from the checkpoint.
+    pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+        pipe.scheduler.config,
+        algorithm_type="dpmsolver++",
+        solver_type="midpoint",
+    )
 
     pipe = pipe.to(device)
     pipe.enable_vae_slicing()

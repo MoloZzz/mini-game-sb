@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import type {
   CollectionProgressDto,
   InventoryItemDto,
   ListInventoryQuery,
-} from '@card-game/shared-types';
+} from "@card-game/shared-types";
 
-import { getInventory, sellInstance } from '@/lib/api';
-import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
-import { computeCollectionProgress } from '@/lib/collection';
+import { getInventory, sellInstance } from "@/lib/api";
+import { ApiClientError, isApiErrorCode, USER_MESSAGES } from "@/lib/apiError";
+import { computeCollectionProgress } from "@/lib/collection";
 
 /** Grid page size. Small on purpose so pagination controls are actually exercised. */
 const PAGE_SIZE = 24;
@@ -18,14 +18,18 @@ const PAGE_SIZE = 24;
  * dedicated progress endpoint (see lib/collection.ts), and the bar must stay
  * correct regardless of whatever rarity/element filter the grid is showing.
  */
-const FULL_COLLECTION_LIMIT = 500;
+const FULL_COLLECTION_LIMIT = 100;
 
 /** The subset of ListInventoryQuery that InventoryFilters is allowed to touch. */
-export type InventoryFilterState = Pick<ListInventoryQuery, 'rarity' | 'element' | 'sort'>;
+export type InventoryFilterState = Pick<
+  ListInventoryQuery,
+  "rarity" | "element" | "sort"
+>;
 
 function errorMessage(err: unknown): string {
-  if (err instanceof ApiClientError && isApiErrorCode(err.code)) return USER_MESSAGES[err.code];
-  return 'Something went wrong.';
+  if (err instanceof ApiClientError && isApiErrorCode(err.code))
+    return USER_MESSAGES[err.code];
+  return "Something went wrong.";
 }
 
 export interface UseInventoryResult {
@@ -69,9 +73,16 @@ export function useInventory(): UseInventoryResult {
     setLoading(true);
     setError(null);
 
-    const pageQuery: ListInventoryQuery = { ...filters, page, limit: PAGE_SIZE };
+    const pageQuery: ListInventoryQuery = {
+      ...filters,
+      page,
+      limit: PAGE_SIZE,
+    };
 
-    Promise.all([getInventory(pageQuery), getInventory({ limit: FULL_COLLECTION_LIMIT })])
+    Promise.all([
+      getInventory(pageQuery),
+      getInventory({ limit: FULL_COLLECTION_LIMIT }),
+    ])
       .then(([pageResult, fullResult]) => {
         if (cancelled) return;
         setItems(pageResult.items);

@@ -112,7 +112,7 @@ def _build_parser() -> argparse.ArgumentParser:
     batch_parser.add_argument(
         "--attention-slicing",
         action="store_true",
-        help="only enable in response to a real OOM; costs 20-30% speed",
+        help="only enable in response to a real OOM; costs 20-30%% speed",
     )
     batch_parser.add_argument(
         "--cpu-offload",
