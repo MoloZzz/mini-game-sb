@@ -1,0 +1,8 @@
+node_modules
+dist
+.env.local
+*.local
+
+# public/mockServiceWorker.js is deliberately NOT ignored: `npm run dev` must
+# give a working demo on a fresh clone with no backend running, and MSW cannot
+# start without it.

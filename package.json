@@ -1,0 +1,22 @@
+{
+  "name": "mini-game-sb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local fantasy card game with cases and a horizontal roulette. Art generated locally with Stable Diffusion 1.5.",
+  "workspaces": [
+    "packages/*",
+    "game-api",
+    "game-ui"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "build:types": "npm run build --workspace @card-game/shared-types",
+    "dev:api": "npm run start:dev --workspace game-api",
+    "dev:ui": "npm run dev --workspace game-ui",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

@@ -1,0 +1,315 @@
+style: &style >-
+  fantasy trading card game art, centered character portrait,
+  painterly digital illustration, dramatic rim lighting, dark background
+
+# The vault's QUALITY tail is "highly detailed, sharp focus, artstation trending, 8k".
+# Measured against the real CLIP tokenizer that tail costs 12 tokens, which pushed the
+# five longest recipes to 78-80 tokens - over CLIP's hard limit of 77. CLIP truncates
+# silently from the END, so the block being dropped was QUALITY itself, and only on the
+# legendary/epic/mythic recipes (their rarity fragments are the longest: 12/16/18 tokens).
+# Dropping "artstation trending" costs 4 tokens and brings the worst case to 76. STYLE and
+# every rarity fragment stay exactly as specified - the rarity modifier is what makes
+# rarity readable from a thumbnail, so it is the last thing that should lose tokens.
+quality: &quality "highly detailed, sharp focus, 8k"
+
+negative: &negative >-
+  text, letters, words, watermark, signature, logo, frame, border, ui,
+  blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy,
+  extra limbs, extra fingers, mutated hands, cropped, out of frame,
+  multiple heads, duplicate, photo, 3d render
+
+archetypes:
+  beast: "a fearsome fantasy beast creature, scales and fur, wild eyes"
+  humanoid: "a fantasy warrior character, ornate armor, determined expression"
+  undead: "an undead revenant, hollow glowing eyes, tattered shroud, bone"
+  construct: "an animated stone and metal construct, glowing runic core"
+  spirit: "an ethereal spirit entity, translucent flowing form, wisps"
+
+elements:
+  fire: "wreathed in ember and flame, molten cracks, smoke"
+  water: "flowing water and ice, deep blue glow, mist"
+  earth: "stone, moss and crystal growths, earthen tones"
+  air: "swirling wind and storm clouds, crackling lightning"
+  shadow: "shrouded in dark purple void mist, sinister glow"
+  light: "radiant golden holy light, halo, divine glow"
+
+rarities:
+  common:
+    fragment: "simple, plain, muted colors, humble"
+    cfg_scale: 6.0
+    steps: 22
+  uncommon:
+    fragment: "modest detail, slight magical aura"
+    cfg_scale: 6.5
+    steps: 25
+  rare:
+    fragment: "intricate detail, glowing magical energy"
+    cfg_scale: 7.0
+    steps: 28
+  epic:
+    fragment: "highly ornate, powerful magical aura, energy swirling, majestic"
+    cfg_scale: 7.5
+    steps: 30
+  legendary:
+    fragment: "legendary artifact, radiant golden aura, epic scale, awe-inspiring, god rays"
+    cfg_scale: 8.0
+    steps: 35
+  mythic:
+    fragment: "cosmic mythic entity, reality-bending aura, celestial energy, overwhelming divine presence, galaxy"
+    cfg_scale: 8.5
+    steps: 40
+
+recipes:
+  # 34 recipes, 283 images total
+  # common: 10 recipes x 10 count = 100
+  # uncommon: 8 recipes x 9 count = 72
+  # rare: 6 recipes x 8 count = 48
+  # epic: 5 recipes x 7 count = 35
+  # legendary: 3 recipes x 6 count = 18
+  # mythic: 2 recipes x 5 count = 10
+  # Count is ~2.5x the rarity's target pool size (targets: common 40, uncommon 30, rare 20, epic 12,
+  # legendary 6, mythic 2 = 110 total) because manual review approves well under half.
+
+  # --- Common ---
+  - id: beast_earth_common
+    archetype: beast
+    element: earth
+    rarity: common
+    count: 10
+    base_seed: 100000
+
+  - id: humanoid_fire_common
+    archetype: humanoid
+    element: fire
+    rarity: common
+    count: 10
+    base_seed: 101000
+
+  - id: undead_shadow_common
+    archetype: undead
+    element: shadow
+    rarity: common
+    count: 10
+    base_seed: 102000
+
+  - id: construct_earth_common
+    archetype: construct
+    element: earth
+    rarity: common
+    count: 10
+    base_seed: 103000
+
+  - id: spirit_air_common
+    archetype: spirit
+    element: air
+    rarity: common
+    count: 10
+    base_seed: 104000
+
+  - id: beast_water_common
+    archetype: beast
+    element: water
+    rarity: common
+    count: 10
+    base_seed: 105000
+
+  - id: humanoid_light_common
+    archetype: humanoid
+    element: light
+    rarity: common
+    count: 10
+    base_seed: 106000
+
+  - id: undead_water_common
+    archetype: undead
+    element: water
+    rarity: common
+    count: 10
+    base_seed: 107000
+
+  - id: construct_fire_common
+    archetype: construct
+    element: fire
+    rarity: common
+    count: 10
+    base_seed: 108000
+
+  - id: spirit_shadow_common
+    archetype: spirit
+    element: shadow
+    rarity: common
+    count: 10
+    base_seed: 109000
+
+  # --- Uncommon ---
+  - id: beast_fire_uncommon
+    archetype: beast
+    element: fire
+    rarity: uncommon
+    count: 9
+    base_seed: 200000
+
+  - id: humanoid_water_uncommon
+    archetype: humanoid
+    element: water
+    rarity: uncommon
+    count: 9
+    base_seed: 201000
+
+  - id: undead_earth_uncommon
+    archetype: undead
+    element: earth
+    rarity: uncommon
+    count: 9
+    base_seed: 202000
+
+  - id: construct_air_uncommon
+    archetype: construct
+    element: air
+    rarity: uncommon
+    count: 9
+    base_seed: 203000
+
+  - id: spirit_light_uncommon
+    archetype: spirit
+    element: light
+    rarity: uncommon
+    count: 9
+    base_seed: 204000
+
+  - id: beast_air_uncommon
+    archetype: beast
+    element: air
+    rarity: uncommon
+    count: 9
+    base_seed: 205000
+
+  - id: humanoid_shadow_uncommon
+    archetype: humanoid
+    element: shadow
+    rarity: uncommon
+    count: 9
+    base_seed: 206000
+
+  - id: construct_water_uncommon
+    archetype: construct
+    element: water
+    rarity: uncommon
+    count: 9
+    base_seed: 207000
+
+  # --- Rare ---
+  - id: beast_shadow_rare
+    archetype: beast
+    element: shadow
+    rarity: rare
+    count: 8
+    base_seed: 300000
+
+  - id: humanoid_earth_rare
+    archetype: humanoid
+    element: earth
+    rarity: rare
+    count: 8
+    base_seed: 301000
+
+  - id: undead_fire_rare
+    archetype: undead
+    element: fire
+    rarity: rare
+    count: 8
+    base_seed: 302000
+
+  - id: construct_light_rare
+    archetype: construct
+    element: light
+    rarity: rare
+    count: 8
+    base_seed: 303000
+
+  - id: spirit_water_rare
+    archetype: spirit
+    element: water
+    rarity: rare
+    count: 8
+    base_seed: 304000
+
+  - id: beast_light_rare
+    archetype: beast
+    element: light
+    rarity: rare
+    count: 8
+    base_seed: 305000
+
+  # --- Epic ---
+  - id: beast_fire_epic
+    archetype: beast
+    element: fire
+    rarity: epic
+    count: 7
+    base_seed: 400000
+
+  - id: humanoid_light_epic
+    archetype: humanoid
+    element: light
+    rarity: epic
+    count: 7
+    base_seed: 401000
+
+  - id: undead_shadow_epic
+    archetype: undead
+    element: shadow
+    rarity: epic
+    count: 7
+    base_seed: 402000
+
+  - id: construct_earth_epic
+    archetype: construct
+    element: earth
+    rarity: epic
+    count: 7
+    base_seed: 403000
+
+  - id: spirit_air_epic
+    archetype: spirit
+    element: air
+    rarity: epic
+    count: 7
+    base_seed: 404000
+
+  # --- Legendary ---
+  - id: beast_fire_legendary
+    archetype: beast
+    element: fire
+    rarity: legendary
+    count: 6
+    base_seed: 700000
+
+  - id: humanoid_light_legendary
+    archetype: humanoid
+    element: light
+    rarity: legendary
+    count: 6
+    base_seed: 701000
+
+  - id: spirit_shadow_legendary
+    archetype: spirit
+    element: shadow
+    rarity: legendary
+    count: 6
+    base_seed: 702000
+
+  # --- Mythic ---
+  - id: construct_light_mythic
+    archetype: construct
+    element: light
+    rarity: mythic
+    count: 5
+    base_seed: 800000
+
+  - id: spirit_shadow_mythic
+    archetype: spirit
+    element: shadow
+    rarity: mythic
+    count: 5
+    base_seed: 801000

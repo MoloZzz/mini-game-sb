@@ -67,9 +67,101 @@ SD 1.5 → 512×512 → (опційно) Real-ESRGAN ×2 → 1024×1024 → WebP
 Квадрат, а не портрет — бо квадрат найближчий до тренувального розподілу,
 а вікно арту в картці все одно квадратне.
 
-## Апаратне забезпечення
+## Апаратне забезпечення — RTX 3050 Laptop, 4 GB VRAM
 
-Скрипт має сам обирати пристрій:
+**Цільове залізо (визначене):**
+Ryzen 7 4800H · 32 GB RAM · **RTX 3050 Laptop, 4 GB VRAM** · Radeon iGPU · Windows
+
+Це працює, але 4 GB — нижня межа. Кілька прапорців із «опційних» стають
+обов'язковими.
+
+### Бюджет VRAM при 512×512, fp16, batch=1
+
+| Складова | ~Розмір |
+|---|---|
+| UNet fp16 | 1.7 GB |
+| Text encoder (CLIP) | 0.25 GB |
+| VAE | 0.16 GB |
+| **Ваги разом** | **~2.1 GB** |
+| Активації під час дифузії | 0.8–1.4 GB |
+| Резерв драйвера / WDDM | 0.2–0.4 GB |
+| **Пік** | **~3.1–3.9 GB** |
+
+Вкладається в 4 GB, але без запасу. Тому:
+
+### Обов'язково
+
+```python
+pipe = StableDiffusionPipeline.from_pretrained(
+    MODEL_ID,
+    torch_dtype=torch.float16,   # НЕ float32 — fp32 не влізе в принципі
+    variant="fp16",              # качає ~2 GB замість ~4 GB
+    safety_checker=None,         # звільняє ~1.2 GB — найбільша окрема економія
+    requires_safety_checker=False,
+).to("cuda")
+pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+pipe.enable_vae_slicing()        # дешева страховка на кроці декоду
+```
+
+`safety_checker=None` тут не «економія», а необхідність — цей чекер тягне
+власну CLIP-модель на ~1.2 GB, і на 4 GB це різниця між роботою та OOM.
+Для драконів він і так безглуздий.
+
+**`enable_attention_slicing()` — НЕ додавай одразу.** З torch 2.x вбудований
+SDPA вже memory-efficient і швидший за ручний slicing. Вмикай slicing тільки
+якщо реально впіймав OOM — воно коштує ~20–30% швидкості.
+
+**`enable_model_cpu_offload()` — тільки як останній засіб.** Уповільнює
+в 3–5 разів. З 32 GB RAM це реальний фолбек, але при 512×512 він не знадобиться.
+
+### Реальні таймінги на RTX 3050 Laptop
+
+| Профіль | Steps | ~сек/картинка |
+|---|---|---|
+| Common | 22 | ~4 с |
+| Rare | 28 | ~5 с |
+| Legendary | 35 | ~6.5 с |
+| Mythic | 40 | ~7.5 с |
+
+**Повний batch на 283 картки ≈ 30 хв чистого рахунку.**
+З урахуванням тротлінгу ноутбука на тривалому навантаженні — **40–50 хвилин.**
+Це один прийом за кавою, а не ніч. Ціль пулу 110 карток лишається без змін,
+і можна дозволити ×3 запас на брак замість ×2.5.
+
+### Пастки саме цієї конфігурації
+
+**1. Гібридна графіка.** У ноутбука два GPU. Перевір у Windows
+Settings → Display → Graphics, що дисплей і браузер працюють на **Radeon iGPU**,
+а Python — на 3050. Якщо дисплей висить на 3050, вона віддає 0.5–1 GB під
+робочий стіл, і бюджет вище перестає сходитись.
+
+**2. Chrome/Electron їдять VRAM.** Закрий браузер і Discord перед батчем.
+На 4 GB це не забобон — це 300–800 MB.
+
+**3. Torch треба ставити з CUDA-індексу.** Дефолтний `pip install torch`
+на Windows може поставити CPU-збірку і потім мовчки рахувати на процесорі.
+Візьми актуальну команду з pytorch.org (вигляду
+`pip install torch --index-url https://download.pytorch.org/whl/cuXXX`)
+і одразу перевір:
+```python
+import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))
+# очікується: True NVIDIA GeForce RTX 3050 Laptop GPU
+```
+
+**4. Не залишай pipeline у пам'яті між етапами.** Апскейл робити окремим
+проходом після `del pipe; torch.cuda.empty_cache()` — Real-ESRGAN і SD
+разом у 4 GB не живуть. Деталі в [[11 - Planning - Open Questions]], Q5.
+
+**5. xformers не потрібен.** На Windows його встановлення — окремий квест
+із версіями, а виграш проти вбудованого SDPA у torch 2.x близький до нуля.
+
+**6. Чого точно НЕ вийде на 4 GB:** SDXL, ControlNet поверх SD 1.5 при 512,
+генерація 768×768+, тренування LoRA. Жодне з цього в плані не потрібне —
+але варто знати межу до того, як захочеться спробувати.
+
+### Портативність скрипта
+
+Автовибір пристрою лишається — щоб код працював, якщо запустиш на іншій машині:
 
 ```python
 if torch.cuda.is_available():
@@ -80,18 +172,8 @@ else:
     device, dtype = "cpu", torch.float32
 ```
 
-| Пристрій | ~сек/картинка (28 steps) | 110 карток (×2.5 на брак) |
-|---|---|---|
-| RTX 3060+ | 2–4 с | ~20 хв |
-| Apple M-series | 10–20 с | ~1.5 год |
-| CPU | 40–90 с | ~7 год, на ніч |
-
-Оптимізації, якщо тісно з пам'яттю:
-`pipe.enable_attention_slicing()`, `pipe.enable_vae_slicing()`,
-`safety_checker=None` (економить VRAM і не потрібен для драконів).
-
-**Модель качається один раз** (~4 GB) у `~/.cache/huggingface`.
-Тримай `HF_HOME` в env, щоб не загубити кеш.
+**Модель качається один раз** (~2 GB із `variant="fp16"`) у `~/.cache/huggingface`.
+Тримай `HF_HOME` в env, щоб не загубити кеш при переустановці.
 
 ## Batch-скрипт
 
@@ -103,10 +185,11 @@ from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 import torch, json, hashlib, pathlib
 
 pipe = StableDiffusionPipeline.from_pretrained(
-    MODEL_ID, torch_dtype=dtype, safety_checker=None
+    MODEL_ID, torch_dtype=dtype, variant="fp16",
+    safety_checker=None, requires_safety_checker=False,
 ).to(device)
 pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-pipe.enable_attention_slicing()
+pipe.enable_vae_slicing()   # attention_slicing додавати ТІЛЬКИ при OOM
 
 manifest = []
 for recipe in load_recipes("recipes.yaml"):

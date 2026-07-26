@@ -1,0 +1,46 @@
+# deps
+node_modules/
+.pnp/
+.pnp.js
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+
+# generated art + models (never commit)
+storage/
+!storage/.gitkeep
+*.safetensors
+*.ckpt
+*.pt
+*.bin
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+card-forge/manifest.json
+card-forge/out/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# editors / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# test output
+coverage/

@@ -1,0 +1,23 @@
+# Only Postgres runs in Docker — see ADR-009.
+# game-api, game-ui and card-forge run natively (hot-reload, GPU passthrough).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: card-game-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cardgame}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cardgame}
+      POSTGRES_DB: ${POSTGRES_DB:-cardgame}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cardgame} -d ${POSTGRES_DB:-cardgame}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

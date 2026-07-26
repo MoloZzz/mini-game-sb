@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutral-950 text-neutral-100 antialiased;
+  }
+
+  :root {
+    color-scheme: dark;
+  }
+}
