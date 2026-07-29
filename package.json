@@ -12,11 +12,14 @@
     "node": ">=20"
   },
   "scripts": {
+    "brain:impact": "node scripts/check-agent-context.mjs --impact",
+    "check:brain": "node scripts/check-agent-context.mjs",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "build:types": "npm run build --workspace @card-game/shared-types",
     "dev:api": "npm run start:dev --workspace game-api",
     "dev:ui": "npm run dev --workspace game-ui",
-    "test": "npm run test --workspaces --if-present"
+    "sync:brain": "node scripts/check-agent-context.mjs --write-generated",
+    "test": "npm run check:brain && npm run test --workspaces --if-present"
   }
 }

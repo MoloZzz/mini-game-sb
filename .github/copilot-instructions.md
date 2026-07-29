@@ -1,0 +1,7 @@
+# Required project context
+
+Before investigating, planning, editing, or reviewing this repository, read [`AGENTS.md`](../AGENTS.md), then [`docs/agent/00-brief.md`](../docs/agent/00-brief.md), and only the task-specific pack selected by `AGENTS.md`.
+
+This is mandatory. Do not begin implementation before completing the context gate. Update the affected pack whenever a stable contract, architecture boundary, invariant, command, runbook, or known seam changes.
+
+For an implementation change, run `npm run brain:impact` before editing. Run `npm run sync:brain` after adding or removing an API route, entity, migration, shared-type export, or UI feature.
