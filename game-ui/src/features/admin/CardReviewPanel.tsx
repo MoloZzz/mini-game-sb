@@ -4,7 +4,6 @@ import {
   ARCHETYPES,
   ELEMENTS,
   RARITIES,
-  RARITY_META,
   type AdminCardDto,
   type Archetype,
   type Element,
@@ -12,7 +11,11 @@ import {
   type ReviewCardRequest,
 } from '@card-game/shared-types';
 
-import { ImgWithFallback } from './ImgWithFallback';
+import { Button } from '@/components/Button';
+import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
+import { Panel } from '@/components/ui/Panel';
+import { rarityColor, rarityTint } from '@/lib/rarityStyle';
+
 import { autofillStatForRarity, checkStatRange, isArchetypeRarityAllowed } from './statValidation';
 
 /** Sentinel <option> value standing in for `element: null` — `null` itself
@@ -78,9 +81,9 @@ export function CardReviewPanel({
 }: CardReviewPanelProps) {
   if (!card) {
     return (
-      <div className="flex h-full items-center justify-center rounded-lg border border-neutral-800 bg-neutral-900 p-8 text-sm text-neutral-500">
+      <Panel className="flex h-full items-center justify-center p-8 text-sm text-neutral-500">
         No card selected.
-      </div>
+      </Panel>
     );
   }
 
@@ -97,14 +100,14 @@ export function CardReviewPanel({
   const { genMeta } = card;
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+    <Panel className="flex h-full flex-col gap-4 overflow-y-auto">
       <ImgWithFallback
         key={card.id}
         src={card.imageUrl}
         alt={name}
-        fallbackColor={`${RARITY_META[rarity].color}33`}
+        fallbackColor={rarityTint(rarity, 'fallback')}
         className="mx-auto h-64 w-64 rounded-md border-2 object-cover"
-        style={{ borderColor: RARITY_META[rarity].color }}
+        style={{ borderColor: rarityColor(rarity) }}
       />
 
       <div className="flex flex-col gap-3">
@@ -294,23 +297,18 @@ export function CardReviewPanel({
       </div>
 
       <div className="mt-auto flex gap-2">
-        <button
-          type="button"
+        <Button
+          size="sm"
           disabled={pending}
           onClick={onApprove}
-          className="flex-1 rounded-md bg-emerald-500 py-2 text-sm font-semibold text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 bg-emerald-500 font-semibold text-neutral-950 hover:bg-emerald-400"
         >
           Approve (A)
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={onReject}
-          className="flex-1 rounded-md bg-red-500 py-2 text-sm font-semibold text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button size="sm" variant="danger" disabled={pending} onClick={onReject} className="flex-1">
           Reject (R)
-        </button>
+        </Button>
       </div>
-    </div>
+    </Panel>
   );
 }

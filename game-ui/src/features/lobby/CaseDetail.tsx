@@ -1,9 +1,11 @@
-import { RARITY_META, type Balance, type CaseDto } from '@card-game/shared-types';
+import type { Balance, CaseDto } from '@card-game/shared-types';
 
+import { Button } from '@/components/Button';
 import { OddsTable } from '@/components/OddsTable';
+import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
+import { rarityTint } from '@/lib/rarityStyle';
 
 import { caseThemeFor } from './caseTheme';
-import { ImgWithFallback } from './ImgWithFallback';
 import { canAffordCase, casePrice } from './pricing';
 
 interface CaseDetailProps {
@@ -32,13 +34,9 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
       className="flex flex-col gap-4 rounded-lg border bg-neutral-900 p-6"
       style={{ borderColor: `${theme.color}66` }}
     >
-      <button
-        type="button"
-        onClick={onBack}
-        className="self-start text-sm text-neutral-400 transition-colors hover:text-neutral-200"
-      >
+      <Button variant="ghost" size="sm" onClick={onBack} className="self-start px-0">
         ← Back
-      </button>
+      </Button>
 
       <div className="flex flex-col gap-6 sm:flex-row">
         <ImgWithFallback
@@ -69,7 +67,7 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
                 src={card.thumbUrl}
                 alt={card.name}
                 title={card.name}
-                fallbackColor={`${RARITY_META[card.rarity].color}33`}
+                fallbackColor={rarityTint(card.rarity, 'fallback')}
                 className="h-14 w-14 rounded border border-neutral-700 object-cover"
               />
             ))}
@@ -85,14 +83,9 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
               {amount.toLocaleString()}
             </span>
 
-            <button
-              type="button"
-              disabled={!canAfford}
-              onClick={() => onOpen(caseDto.slug)}
-              className="rounded-lg bg-amber-400 px-8 py-3 text-base font-bold text-neutral-950 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-            >
+            <Button disabled={!canAfford} onClick={() => onOpen(caseDto.slug)}>
               Open case
-            </button>
+            </Button>
           </div>
           {!canAfford && <p className="text-right text-xs text-red-400">Not enough {currency}</p>}
         </div>

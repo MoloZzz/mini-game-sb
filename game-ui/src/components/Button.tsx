@@ -1,6 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -12,6 +12,8 @@ const VARIANT_CLASSES: Readonly<Record<ButtonVariant, string>> = {
   primary: 'bg-amber-400 text-neutral-950 font-bold hover:bg-amber-300',
   secondary: 'border border-neutral-700 text-neutral-300 hover:border-neutral-500 hover:text-neutral-100',
   ghost: 'text-neutral-400 hover:text-neutral-200',
+  // Reserved for the second click of a destructive confirm — never the first.
+  danger: 'bg-red-500 text-neutral-950 font-bold hover:bg-red-400',
 };
 
 const SIZE_CLASSES: Readonly<Record<ButtonSize, string>> = {

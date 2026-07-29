@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/Button';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 import { useAuth } from '@/lib/authContext';
 
@@ -44,14 +45,7 @@ export function Register() {
       >
         <h1 className="text-xl font-bold">Create an account</h1>
 
-        {error && (
-          <div
-            role="alert"
-            className="rounded-md border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-300"
-          >
-            {error}
-          </div>
-        )}
+        {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-neutral-400">Display name</span>

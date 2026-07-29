@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { RARITY_META, type OpenCaseResponse } from '@card-game/shared-types';
 
 import { Button } from '@/components/Button';
-import { CardFrame } from '@/components/CardFrame';
+import { CardPreview } from '@/components/card/CardPreview';
 import { RarityBadge } from '@/components/RarityBadge';
 import { RARITY_FX } from '@/lib/rarityFx';
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion';
@@ -93,7 +93,7 @@ export function Reveal({
             y: { duration: fx.shakeDurationMs / 1000, delay: 0.15 },
           }}
         >
-          <CardFrame card={wonCard} size="lg" />
+          <CardPreview card={wonCard} size="lg" showMeta />
 
           <div className="absolute -right-2 -top-2">
             {isDuplicate ? (

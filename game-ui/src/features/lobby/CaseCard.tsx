@@ -1,7 +1,11 @@
-import { RARITY_META, type Balance, type CaseDto } from '@card-game/shared-types';
+import type { Balance, CaseDto } from '@card-game/shared-types';
+
+import { rarityTint } from '@/lib/rarityStyle';
+
+import { Button } from '@/components/Button';
+import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
 
 import { caseThemeFor } from './caseTheme';
-import { ImgWithFallback } from './ImgWithFallback';
 import { canAffordCase, casePrice } from './pricing';
 
 interface CaseCardProps {
@@ -53,7 +57,7 @@ export function CaseCard({ case: caseDto, onOpen, disabled, balance }: CaseCardP
               src={card.thumbUrl}
               alt={card.name}
               title={card.name}
-              fallbackColor={`${RARITY_META[card.rarity].color}33`}
+              fallbackColor={rarityTint(card.rarity, 'fallback')}
               className="h-8 w-8 rounded border border-neutral-700 object-cover"
             />
           ))}
@@ -72,8 +76,8 @@ export function CaseCard({ case: caseDto, onOpen, disabled, balance }: CaseCardP
             {!canAfford && <span className="text-xs text-red-400">Not enough {currency}</span>}
           </div>
 
-          <button
-            type="button"
+          <Button
+            size="sm"
             disabled={isDisabled}
             onClick={(event) => {
               // Selecting the case (to view its detail) is handled by a
@@ -82,10 +86,9 @@ export function CaseCard({ case: caseDto, onOpen, disabled, balance }: CaseCardP
               event.stopPropagation();
               if (!isDisabled) onOpen(caseDto.slug);
             }}
-            className="rounded-md bg-amber-400 px-3 py-1.5 text-sm font-semibold text-neutral-950 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
           >
             Open
-          </button>
+          </Button>
         </div>
       </div>
     </div>

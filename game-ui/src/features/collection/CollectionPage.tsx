@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import type { CollectionCardDto } from '@card-game/shared-types';
 
-import { CollectionProgress } from '../inventory/CollectionProgress';
-import { CollectionCardDetail } from './CollectionCardDetail';
-import { CollectionGoal } from './CollectionGoal';
-import { CollectionFilters } from './CollectionFilters';
-import { CollectionGallery } from './CollectionGallery';
-import { useCollectionCards } from './useCollectionCards';
+import { CardDetailModal } from '@/components/card/CardDetailModal';
+import { CardGrid } from '@/components/card/CardGrid';
+import { CardTile, LockedCardTile } from '@/components/card/CardTile';
+import { CardFilters } from '@/components/filters/CardFilters';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { Pagination } from '@/components/ui/Pagination';
+import { TileSkeleton } from '@/components/ui/TileSkeleton';
 
-/** Matches the grid's own responsive column count closely enough that the
- * skeleton doesn't visibly reflow once real tiles replace it. */
-const SKELETON_TILE_COUNT = 10;
+import { CollectionProgress } from '../inventory/CollectionProgress';
+import { CollectionGoal } from './CollectionGoal';
+import { useCollectionCards } from './useCollectionCards';
 
 export function CollectionPage() {
   const { items, total, page, limit, filters, setFilters, setPage, loading, error, progress, goal } =
@@ -20,7 +22,7 @@ export function CollectionPage() {
 
   // A page or filter change can drop the selected slot out of view entirely
   // (or its `owned` state can flip) — clearing the selection avoids a detail
-  // panel that no longer matches what the grid is showing.
+  // view that no longer matches what the grid is showing.
   useEffect(() => {
     setSelected((prev) => {
       if (!prev) return prev;
@@ -32,10 +34,6 @@ export function CollectionPage() {
   function handleFiltersChange(next: typeof filters) {
     setFilters(next);
     setSelected(null);
-  }
-
-  function handleSelect(entry: CollectionCardDto) {
-    if (entry.owned) setSelected(entry);
   }
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -54,59 +52,45 @@ export function CollectionPage() {
 
       {goal && <CollectionGoal goal={goal} />}
 
-      <CollectionFilters value={filters} onChange={handleFiltersChange} />
+      <CardFilters value={filters} onChange={handleFiltersChange} />
 
-      {error && (
-        <div className="rounded-md border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       <div className="flex flex-col gap-4">
-          {loading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {Array.from({ length: SKELETON_TILE_COUNT }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-square animate-pulse rounded-lg border-2 border-neutral-800 bg-neutral-900"
+        {loading ? (
+          <CardGrid>
+            <TileSkeleton />
+          </CardGrid>
+        ) : items.length === 0 ? (
+          <EmptyState>No cards match these filters.</EmptyState>
+        ) : (
+          // Every approved card gets a slot, in the order the server sends
+          // them. `entry.card` is only non-null when `entry.owned` is true —
+          // the masking happens server-side, so this screen never has real art
+          // to accidentally render for a locked slot.
+          <CardGrid>
+            {items.map((entry) =>
+              entry.owned && entry.card ? (
+                <CardTile
+                  key={entry.id}
+                  card={entry.card}
+                  selected={entry.id === selected?.id}
+                  onSelect={() => setSelected(entry)}
                 />
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-neutral-700 py-16 text-center">
-              <p className="text-neutral-300">No cards match these filters.</p>
-            </div>
-          ) : (
-            <CollectionGallery items={items} selectedId={selected?.id ?? null} onSelect={handleSelect} />
-          )}
+              ) : (
+                <LockedCardTile key={entry.id} rarity={entry.rarity} />
+              ),
+            )}
+          </CardGrid>
+        )}
 
-          {!loading && total > limit && (
-            <div className="flex items-center justify-center gap-3 text-sm text-neutral-400">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-                className="rounded-md border border-neutral-700 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Prev
-              </button>
-              <span>
-                Page {page} / {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-                className="rounded-md border border-neutral-700 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
+        {!loading && total > limit && (
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        )}
       </div>
 
       {selected?.card && (
-        <CollectionCardDetail key={selected.id} card={selected.card} onClose={() => setSelected(null)} />
+        <CardDetailModal key={selected.id} card={selected.card} onClose={() => setSelected(null)} />
       )}
     </div>
   );

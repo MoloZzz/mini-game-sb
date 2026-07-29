@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import type { InventoryItemDto } from '@card-game/shared-types';
 
+import { CardGrid } from '@/components/card/CardGrid';
+import { CardTile } from '@/components/card/CardTile';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { Pagination } from '@/components/ui/Pagination';
+import { TileSkeleton } from '@/components/ui/TileSkeleton';
+
+import { CardFilters } from '@/components/filters/CardFilters';
+
 import { CardDetail } from './CardDetail';
 import { CollectionProgress } from './CollectionProgress';
-import { InventoryFilters } from './InventoryFilters';
-import { InventoryGrid } from './InventoryGrid';
 import { useInventory, type InventoryFilterState } from './useInventory';
-
-/** Matches the grid's own responsive column count closely enough that the
- * skeleton doesn't visibly reflow once real tiles replace it. */
-const SKELETON_TILE_COUNT = 10;
 
 export function Inventory() {
   const {
@@ -32,7 +35,7 @@ export function Inventory() {
   const [selected, setSelected] = useState<InventoryItemDto | null>(null);
 
   // After a sell, `items` refetches and the sold card's `instanceId` moves to
-  // its next-oldest instance — keep the detail panel pointed at the same
+  // its next-oldest instance — keep the detail view pointed at the same
   // *card* rather than showing stale copies/instanceId or silently closing.
   useEffect(() => {
     setSelected((prev) => {
@@ -49,7 +52,7 @@ export function Inventory() {
   function handleFiltersChange(next: InventoryFilterState) {
     setFilters(next);
     // A filter change can drop the selected card out of view entirely —
-    // clearing the selection avoids a detail panel that no longer matches
+    // clearing the selection avoids a detail view that no longer matches
     // what the grid is showing.
     setSelected(null);
   }
@@ -75,78 +78,55 @@ export function Inventory() {
         <div className="h-[124px] animate-pulse rounded-lg border border-neutral-800 bg-neutral-900" />
       )}
 
-      <InventoryFilters value={filters} onChange={handleFiltersChange} />
+      <CardFilters value={filters} onChange={handleFiltersChange} sortIdPrefix="inventory" />
 
-      {error && (
-        <div className="rounded-md border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_280px]">
-        <div className="flex flex-col gap-4">
-          {loading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {Array.from({ length: SKELETON_TILE_COUNT }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-square animate-pulse rounded-lg border-2 border-neutral-800 bg-neutral-900"
-                />
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-neutral-700 py-16 text-center">
-              <p className="text-neutral-300">No cards yet — open a case to start your collection.</p>
-            </div>
-          ) : (
-            <InventoryGrid
-              items={items}
-              selectedInstanceId={selected?.instanceId ?? null}
-              onSelect={handleSelect}
-            />
-          )}
+      <div className="flex flex-col gap-4">
+        {loading ? (
+          <CardGrid>
+            <TileSkeleton />
+          </CardGrid>
+        ) : items.length === 0 ? (
+          <EmptyState>No cards yet — open a case to start your collection.</EmptyState>
+        ) : (
+          <CardGrid>
+            {items.map((item) => (
+              <CardTile
+                key={item.instanceId}
+                card={item.card}
+                selected={item.instanceId === selected?.instanceId}
+                onSelect={() => handleSelect(item)}
+                // One tile per distinct card, not per instance (ADR-012): the API
+                // already groups by card and hands back `copies`, so 3 identical
+                // drops read as one tile with a badge instead of 3 tiles.
+                badge={
+                  item.copies > 1 ? (
+                    <span className="absolute right-1 top-1 rounded-full bg-neutral-950/80 px-2 py-0.5 text-xs font-bold text-neutral-100">
+                      ×{item.copies}
+                    </span>
+                  ) : undefined
+                }
+              />
+            ))}
+          </CardGrid>
+        )}
 
-          {!loading && total > limit && (
-            <div className="flex items-center justify-center gap-3 text-sm text-neutral-400">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-                className="rounded-md border border-neutral-700 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Prev
-              </button>
-              <span>
-                Page {page} / {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-                className="rounded-md border border-neutral-700 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div>
-          {selected ? (
-            <CardDetail
-              key={selected.card.id}
-              item={selected}
-              onSell={handleSell}
-              selling={selling}
-              sellError={sellError}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-neutral-800 px-4 py-16 text-center text-sm text-neutral-500">
-              Select a card to see details.
-            </div>
-          )}
-        </div>
+        {!loading && total > limit && (
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        )}
       </div>
+
+      {selected && (
+        <CardDetail
+          key={selected.card.id}
+          item={selected}
+          onClose={() => setSelected(null)}
+          onSell={handleSell}
+          selling={selling}
+          sellError={sellError}
+        />
+      )}
     </div>
   );
 }

@@ -1,36 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { InventoryFilters } from '../InventoryFilters';
-import type { InventoryFilterState } from '../useInventory';
+import { CardFilters, type CardFilterValue } from '@/components/filters/CardFilters';
 
-function stubMatchMedia() {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    configurable: true,
-    value: vi.fn().mockImplementation((query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-}
-
-beforeEach(() => {
-  stubMatchMedia();
-});
-
-describe('InventoryFilters', () => {
+describe('CardFilters', () => {
   it('choosing a rarity chip emits it in the query', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<InventoryFilters value={{}} onChange={onChange} />);
+    render(<CardFilters value={{}} onChange={onChange} sortIdPrefix="inventory" />);
 
     await user.click(screen.getByRole('button', { name: /^epic$/i }));
 
@@ -40,7 +18,7 @@ describe('InventoryFilters', () => {
   it('clicking an active rarity chip again clears it', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<InventoryFilters value={{ rarity: 'epic' }} onChange={onChange} />);
+    render(<CardFilters value={{ rarity: 'epic' }} onChange={onChange} sortIdPrefix="inventory" />);
 
     await user.click(screen.getByRole('button', { name: /^epic$/i }));
 
@@ -50,25 +28,30 @@ describe('InventoryFilters', () => {
   it('choosing a sort option emits it in the query', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<InventoryFilters value={{}} onChange={onChange} />);
+    render(<CardFilters value={{}} onChange={onChange} sortIdPrefix="inventory" />);
 
     await user.selectOptions(screen.getByLabelText(/sort/i), 'name_asc');
 
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ sort: 'name_asc' }));
   });
 
+  it('hides the sort control when no prefix is given — the dex orders server-side', () => {
+    render(<CardFilters value={{}} onChange={() => {}} />);
+    expect(screen.queryByLabelText(/sort/i)).not.toBeInTheDocument();
+  });
+
   it('shows "clear filters" only once something is filtered, and resets on click', async () => {
     const user = userEvent.setup();
-    let value: InventoryFilterState = {};
-    const onChange = vi.fn((next: InventoryFilterState) => {
+    let value: CardFilterValue = {};
+    const onChange = vi.fn((next: CardFilterValue) => {
       value = next;
     });
 
-    const { rerender } = render(<InventoryFilters value={value} onChange={onChange} />);
+    const { rerender } = render(<CardFilters value={value} onChange={onChange} />);
     expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^rare$/i }));
-    rerender(<InventoryFilters value={value} onChange={onChange} />);
+    rerender(<CardFilters value={value} onChange={onChange} />);
     expect(screen.getByRole('button', { name: /clear filters/i })).toBeInTheDocument();
     expect(value.rarity).toBe('rare');
 

@@ -1,6 +1,7 @@
-import { RARITY_META, type DropHistoryItemDto } from '@card-game/shared-types';
+import type { DropHistoryItemDto } from '@card-game/shared-types';
 
-import { ImgWithFallback } from './ImgWithFallback';
+import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
+import { rarityColor, rarityTint } from '@/lib/rarityStyle';
 
 interface RecentDropsStripProps {
   drops: DropHistoryItemDto[];
@@ -42,14 +43,14 @@ export function RecentDropsStrip({ drops }: RecentDropsStripProps) {
           key={drop.dropId}
           className="flex shrink-0 items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 py-2 pl-2 pr-3"
           style={{
-            borderLeftColor: RARITY_META[drop.card.rarity].color,
+            borderLeftColor: rarityColor(drop.card.rarity),
             borderLeftWidth: 3,
           }}
         >
           <ImgWithFallback
             src={drop.card.thumbUrl}
             alt=""
-            fallbackColor={`${RARITY_META[drop.card.rarity].color}33`}
+            fallbackColor={rarityTint(drop.card.rarity, 'fallback')}
             className="h-8 w-8 rounded object-cover"
           />
           <div className="flex flex-col">

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { CASE_SEEDS, type CaseDto } from '@card-game/shared-types';
 
+import { Button } from '@/components/Button';
+
 import type { SessionExpedition, SessionExpeditionKind } from './sessionExpedition';
 import { ASHEN_WASTES_EXPEDITION } from './sessionExpedition';
 
@@ -57,7 +59,7 @@ export function ExpeditionPanel({ cases, completed, onStart }: ExpeditionPanelPr
       {selected === 'ashen-wastes' && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-700 bg-neutral-900/80 p-3">
           <span className="text-sm text-neutral-300">Your next case: Cinderbound Cache</span>
-          <button type="button" onClick={() => onStart(ASHEN_WASTES_EXPEDITION)} className="rounded-md bg-amber-400 px-3 py-1.5 text-sm font-semibold text-neutral-950">Open Cinderbound Cache</button>
+          <Button size="sm" onClick={() => onStart(ASHEN_WASTES_EXPEDITION)}>Open Cinderbound Cache</Button>
         </div>
       )}
 
@@ -66,7 +68,7 @@ export function ExpeditionPanel({ cases, completed, onStart }: ExpeditionPanelPr
           <p className="text-sm text-neutral-300">Choose a case for your global collection:</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {globalCases.map((caseDto) => (
-              <button key={caseDto.slug} type="button" onClick={() => onStart({ kind: 'widen-archive', caseSlug: caseDto.slug })} className="rounded-md border border-neutral-600 px-3 py-1.5 text-sm text-neutral-200 transition-colors hover:border-amber-300 hover:text-amber-200">{caseDto.name}</button>
+              <Button key={caseDto.slug} variant="secondary" size="sm" onClick={() => onStart({ kind: 'widen-archive', caseSlug: caseDto.slug })} className="hover:border-amber-300 hover:text-amber-200">{caseDto.name}</Button>
             ))}
           </div>
         </div>

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CARD_STATUSES,
   RARITIES,
-  RARITY_META,
   type AdminCardDto,
   type CardStatus,
   type ReviewCardRequest,
@@ -12,7 +11,11 @@ import { getAdminCards, reviewCard } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 
 import { CardReviewPanel } from './CardReviewPanel';
-import { ImgWithFallback } from './ImgWithFallback';
+import { Button } from '@/components/Button';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
+import { Modal } from '@/components/ui/Modal';
+import { rarityColor, rarityTint } from '@/lib/rarityStyle';
 import { useReviewKeyboard, type ReviewKeyboardHandlers } from './useReviewKeyboard';
 
 // The API contract example uses limit=40; large enough that the ~24-card mock
@@ -389,22 +392,8 @@ export function AdminReview() {
         </div>
       </header>
 
-      {actionError && (
-        <div
-          role="alert"
-          className="border-b border-red-500/50 bg-red-500/10 px-6 py-2 text-sm text-red-300"
-        >
-          {actionError}
-        </div>
-      )}
-      {listError && (
-        <div
-          role="alert"
-          className="border-b border-red-500/50 bg-red-500/10 px-6 py-2 text-sm text-red-300"
-        >
-          {listError}
-        </div>
-      )}
+      {actionError && <ErrorBanner className="mx-6">{actionError}</ErrorBanner>}
+      {listError && <ErrorBanner className="mx-6">{listError}</ErrorBanner>}
 
       <div className="flex flex-1 gap-4 overflow-hidden p-4">
         <div className="grid flex-1 auto-rows-max grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3 overflow-y-auto pr-2">
@@ -425,12 +414,12 @@ export function AdminReview() {
                 className={`flex cursor-pointer flex-col gap-1 rounded-md border-2 bg-neutral-900 p-1.5 transition-opacity ${
                   isFocused ? 'ring-2 ring-amber-400' : ''
                 } ${isPending ? 'opacity-50' : ''}`}
-                style={{ borderColor: RARITY_META[card.rarity].color }}
+                style={{ borderColor: rarityColor(card.rarity) }}
               >
                 <ImgWithFallback
                   src={card.thumbUrl}
                   alt={card.name}
-                  fallbackColor={`${RARITY_META[card.rarity].color}33`}
+                  fallbackColor={rarityTint(card.rarity, 'fallback')}
                   className="aspect-square w-full rounded object-cover"
                 />
                 <p className="truncate text-xs font-medium text-neutral-100">{card.name}</p>
@@ -484,8 +473,14 @@ export function AdminReview() {
       </div>
 
       {cheatSheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
-          <div className="w-full max-w-md rounded-lg border border-neutral-700 bg-neutral-900 p-6">
+        <Modal
+          label="Keyboard shortcuts"
+          hideCloseButton
+          onClose={() => {
+            setCheatSheetOpen(false);
+            markCheatSheetSeen();
+          }}
+        >
             <h2 className="text-lg font-bold text-neutral-100">Keyboard shortcuts</h2>
             <ul className="mt-4 flex flex-col gap-2">
               {shortcuts.map((s) => (
@@ -504,18 +499,17 @@ export function AdminReview() {
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
+            <Button
+              size="sm"
               onClick={() => {
                 setCheatSheetOpen(false);
                 markCheatSheetSeen();
               }}
-              className="mt-6 w-full rounded-md bg-amber-400 py-2 text-sm font-semibold text-neutral-950"
+              className="mt-6 w-full"
             >
               Got it
-            </button>
-          </div>
-        </div>
+            </Button>
+        </Modal>
       )}
     </div>
   );

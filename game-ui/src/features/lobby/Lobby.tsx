@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { CASE_SEEDS, type CaseDto } from '@card-game/shared-types';
 
 import { BalanceDisplay } from '@/components/BalanceDisplay';
+import { Button } from '@/components/Button';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { ExpeditionPanel } from '@/features/expeditions/ExpeditionPanel';
 import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
 
@@ -69,31 +71,21 @@ export function Lobby({
         <div className="flex items-center gap-4">
           <BalanceDisplay balance={balance} />
           {player && isDailyBonusAvailable(player.dailyBonusAvailableAt) && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => void claimBonus()}
-              className="rounded-md border border-amber-400/60 bg-amber-400/10 px-3 py-1.5 text-sm font-medium text-amber-300 transition-colors hover:bg-amber-400/20"
+              className="border-amber-400/60 bg-amber-400/10 text-amber-300 hover:border-amber-400 hover:bg-amber-400/20 hover:text-amber-200"
             >
               Claim daily bonus
-            </button>
+            </Button>
           )}
         </div>
       </header>
 
-      {bonusError && (
-        <div className="rounded-md border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
-          {bonusError}
-        </div>
-      )}
+      {bonusError && <ErrorBanner>{bonusError}</ErrorBanner>}
 
-      {error && (
-        <div className="flex items-center justify-between gap-4 rounded-md border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
-          <span>{error}</span>
-          <button type="button" onClick={refresh} className="font-semibold underline">
-            Retry
-          </button>
-        </div>
-      )}
+      {error && <ErrorBanner action={{ label: 'Retry', onClick: refresh }}>{error}</ErrorBanner>}
 
       <main className="flex-1">
         {selectedCase ? (

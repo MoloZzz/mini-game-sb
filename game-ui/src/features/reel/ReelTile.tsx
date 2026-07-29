@@ -1,5 +1,8 @@
-import { memo, useState } from 'react';
-import { RARITY_META, TILE_W, type ReelTileDto } from '@card-game/shared-types';
+import { memo } from 'react';
+import { TILE_W, type ReelTileDto } from '@card-game/shared-types';
+
+import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
+import { initials, rarityColor, rarityTint } from '@/lib/rarityStyle';
 
 interface ReelTileProps {
   tile: ReelTileDto;
@@ -10,20 +13,8 @@ interface ReelTileProps {
 const TILE_HEIGHT = 176;
 const NAME_STRIP_HEIGHT = 36;
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
 function ReelTileImpl({ tile, index }: ReelTileProps) {
-  // A broken thumb must never block the animation — swap to a rarity-tinted
-  // placeholder instead of leaving a missing-image icon in the strip.
-  const [broken, setBroken] = useState(false);
-  const color = RARITY_META[tile.rarity].color;
+  const color = rarityColor(tile.rarity);
 
   return (
     <div
@@ -42,27 +33,19 @@ function ReelTileImpl({ tile, index }: ReelTileProps) {
     >
       <div
         className="flex items-center justify-center"
-        style={{ width: TILE_W, height: TILE_W, backgroundColor: `${color}1a` }}
+        style={{ width: TILE_W, height: TILE_W, backgroundColor: rarityTint(tile.rarity, 'surface') }}
       >
-        {broken ? (
-          <div
-            className="flex h-full w-full items-center justify-center text-2xl font-bold"
-            style={{ backgroundColor: `${color}33`, color }}
-          >
-            {initials(tile.name)}
-          </div>
-        ) : (
-          <img
-            src={tile.thumbUrl}
-            draggable={false}
-            loading="eager"
-            alt=""
-            width={TILE_W}
-            height={TILE_W}
-            className="h-full w-full object-cover"
-            onError={() => setBroken(true)}
-          />
-        )}
+        {/* A broken thumb must never block the animation — `ImgWithFallback`
+            swaps to a rarity-tinted initials block instead of a missing-image icon. */}
+        <ImgWithFallback
+          src={tile.thumbUrl}
+          alt=""
+          loading="eager"
+          className="flex h-full w-full items-center justify-center object-cover text-2xl font-bold"
+          style={{ color }}
+          fallbackColor={rarityTint(tile.rarity, 'fallback')}
+          fallbackContent={initials(tile.name)}
+        />
       </div>
       <div
         className="flex items-center justify-center px-1"
