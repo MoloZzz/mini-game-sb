@@ -3,6 +3,7 @@ import { RARITY_META, type CardDto } from '@card-game/shared-types';
 
 export interface CollectionCardDetailProps {
   card: CardDto;
+  onClose: () => void;
 }
 
 function initials(name: string): string {
@@ -19,23 +20,42 @@ function initials(name: string): string {
  * Inventory's `CardDetail`, minus copies/acquiredAt/sell (the collection
  * dex has no notion of instances, only "owned this card or not").
  */
-export function CollectionCardDetail({ card }: CollectionCardDetailProps) {
+export function CollectionCardDetail({ card, onClose }: CollectionCardDetailProps) {
   const [broken, setBroken] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const color = RARITY_META[card.rarity].color;
   const metaLine = [card.element, card.archetype].filter(Boolean).join(' · ');
 
   useEffect(() => {
-    if (!zoomed) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setZoomed(false);
+      if (event.key !== 'Escape') return;
+      if (zoomed) setZoomed(false);
+      else onClose();
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [zoomed]);
+  }, [onClose, zoomed]);
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-800 bg-neutral-900 p-5">
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${card.name} preview`}
+      onClick={onClose}
+    >
+      <div
+        className="relative flex max-h-full flex-col gap-4 overflow-y-auto rounded-lg border border-neutral-800 bg-neutral-900 p-5"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close preview"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-950/80 text-lg font-bold text-neutral-100 hover:bg-neutral-800"
+        >
+          ×
+        </button>
       <div
         className="mx-auto overflow-hidden rounded-lg border-[3px]"
         style={{ width: 220, borderColor: color, boxShadow: `0 0 24px 6px ${color}33` }}
@@ -153,6 +173,7 @@ export function CollectionCardDetail({ card }: CollectionCardDetailProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

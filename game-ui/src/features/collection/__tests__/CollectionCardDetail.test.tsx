@@ -43,30 +43,43 @@ const CARD: CardDto = {
 
 describe('CollectionCardDetail', () => {
   it('renders exactly one <img> element until zoomed', () => {
-    const { container } = render(<CollectionCardDetail card={CARD} />);
+    const { container } = render(<CollectionCardDetail card={CARD} onClose={() => {}} />);
     expect(container.querySelectorAll('img')).toHaveLength(1);
   });
 
   it('opens a zoom overlay when the art is clicked, and closes it on the close button, backdrop click, or Escape', async () => {
     const user = userEvent.setup();
-    render(<CollectionCardDetail card={CARD} />);
+    render(<CollectionCardDetail card={CARD} onClose={() => {}} />);
 
-    expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /storm falcon preview/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /close preview/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /view full size/i }));
-    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^close$/i })).toBeInTheDocument();
     expect(screen.getAllByAltText('Storm Falcon')).toHaveLength(2);
 
-    await user.click(screen.getByRole('button', { name: /close/i }));
-    expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^close$/i }));
+    expect(screen.queryByRole('button', { name: /^close$/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /view full size/i }));
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^close$/i })).not.toBeInTheDocument();
+  });
+
+  it('closes the preview when its close button is clicked or Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<CollectionCardDetail card={CARD} onClose={onClose} />);
+
+    await user.click(screen.getByRole('button', { name: /close preview/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it('never mentions sell or copies (the dex has no notion of instances)', () => {
-    render(<CollectionCardDetail card={CARD} />);
+    render(<CollectionCardDetail card={CARD} onClose={() => {}} />);
     expect(screen.queryByText(/sell/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/copies/i)).not.toBeInTheDocument();
   });

@@ -59,8 +59,7 @@ export function CollectionPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_280px]">
-        <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
           {loading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {Array.from({ length: SKELETON_TILE_COUNT }).map((_, i) => (
@@ -101,18 +100,11 @@ export function CollectionPage() {
               </button>
             </div>
           )}
-        </div>
-
-        <div>
-          {selected?.card ? (
-            <CollectionCardDetail key={selected.id} card={selected.card} />
-          ) : (
-            <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-neutral-800 px-4 py-16 text-center text-sm text-neutral-500">
-              Select a card to see details.
-            </div>
-          )}
-        </div>
       </div>
+
+      {selected?.card && (
+        <CollectionCardDetail key={selected.id} card={selected.card} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }
