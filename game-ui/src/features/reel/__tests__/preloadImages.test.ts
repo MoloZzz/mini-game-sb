@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { preloadImages } from '../preloadImages';
+import { preloadImages, splitReelThumbs } from '../preloadImages';
 
 type Mode = 'load' | 'error' | 'never';
 
@@ -113,5 +113,37 @@ describe('preloadImages', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     expect(resolved).toBe(true);
+  });
+});
+
+describe('splitReelThumbs', () => {
+  const urls = Array.from({ length: 60 }, (_, i) => `t${i}.png`);
+
+  it('gates only on the tiles visible at x = 0 plus a small buffer', () => {
+    // 1000px / PITCH(152) = 6.6 -> 7 visible, +2 buffer.
+    const { critical, rest } = splitReelThumbs(urls, 1000);
+    expect(critical).toHaveLength(9);
+    expect(rest).toHaveLength(51);
+    expect(critical[0]).toBe('t0.png');
+    expect(rest[0]).toBe('t9.png');
+  });
+
+  it('never drops a tile — the two halves reassemble the strip', () => {
+    const { critical, rest } = splitReelThumbs(urls, 1280);
+    expect([...critical, ...rest]).toEqual(urls);
+  });
+
+  it('falls back to the whole strip when the container has not been measured', () => {
+    // A zero width means layout is unknown; guessing "nothing is visible"
+    // would start the spin over an empty viewport.
+    const { critical, rest } = splitReelThumbs(urls, 0);
+    expect(critical).toEqual(urls);
+    expect(rest).toEqual([]);
+  });
+
+  it('handles a container wider than the whole strip', () => {
+    const { critical, rest } = splitReelThumbs(urls, 100000);
+    expect(critical).toEqual(urls);
+    expect(rest).toEqual([]);
   });
 });

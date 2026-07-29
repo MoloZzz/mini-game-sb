@@ -102,7 +102,12 @@ function Marker() {
 
 function Spinner() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/70">
+    // Fades in only if the wait is long enough to notice. A cached strip is
+    // ready in well under 200ms, and a loader that flashes for two frames
+    // reads as a stutter rather than as progress.
+    <div
+      className="absolute inset-0 flex animate-[fadeIn_150ms_ease-out_200ms_both] items-center justify-center bg-neutral-950/70"
+    >
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-600 border-t-amber-400" />
     </div>
   );

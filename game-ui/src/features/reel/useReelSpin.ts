@@ -3,7 +3,7 @@ import { POST_STOP_PAUSE_MS, SPIN_DURATION_MS, SPIN_EASING, type ReelTileDto } f
 
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion';
 
-import { preloadImages } from './preloadImages';
+import { CRITICAL_PRELOAD_TIMEOUT_MS, preloadImages, splitReelThumbs } from './preloadImages';
 import { randomJitter, targetOffset } from './reelMath';
 
 export type ReelPhase = 'idle' | 'preloading' | 'spinning' | 'landing' | 'done';
@@ -116,7 +116,16 @@ export function useReelSpin({
       }
     }
 
-    preloadImages(reel.map((tile) => tile.thumbUrl)).then(() => {
+    // Only the first screenful gates the start. The rest of the strip is at
+    // least a second of scrolling away, so it loads alongside the animation
+    // instead of holding a spinner over a reel that is ready to move.
+    const { critical, rest } = splitReelThumbs(
+      reel.map((tile) => tile.thumbUrl),
+      containerW,
+    );
+    if (rest.length > 0) void preloadImages(rest);
+
+    preloadImages(critical, CRITICAL_PRELOAD_TIMEOUT_MS).then(() => {
       if (!isCurrent()) return;
 
       setTargetX(target);

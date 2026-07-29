@@ -14,6 +14,12 @@ export default {
           mythic: '#EC4899',
         },
       },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+      },
       fontFamily: {
         display: [
           '-apple-system',

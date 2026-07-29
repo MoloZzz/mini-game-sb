@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -97,5 +97,25 @@ describe('CardDetail', () => {
     );
 
     expect(container.querySelectorAll('img')).toHaveLength(1);
+  });
+
+  it('opens a zoom overlay when the art is clicked, and closes it on the close button, backdrop click, or Escape', async () => {
+    const user = userEvent.setup();
+    render(<CardDetail item={buildItem('common', 1)} onSell={() => {}} selling={false} sellError={null} />);
+
+    expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /view full size/i }));
+    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    // The zoom overlay shows a second, larger copy of the same art.
+    expect(screen.getAllByAltText('Test common')).toHaveLength(2);
+
+    await user.click(screen.getByRole('button', { name: /close/i }));
+    expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /view full size/i }));
+    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
   });
 });

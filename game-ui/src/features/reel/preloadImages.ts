@@ -1,3 +1,33 @@
+import { PITCH } from '@card-game/shared-types';
+
+/**
+ * How long the spin may be held back waiting for the first screenful of
+ * thumbs. Beyond this the stall reads as a broken button, which is worse
+ * than a tile or two fading in — so we start regardless.
+ */
+export const CRITICAL_PRELOAD_TIMEOUT_MS = 400;
+
+/** A couple of tiles past the right edge, so the first frames of scroll are covered. */
+const CRITICAL_BUFFER_TILES = 2;
+
+/**
+ * Splits the strip into what must be on screen *now* and what the spin has
+ * seconds to fetch.
+ *
+ * Waiting on all 60 thumbs before starting is what made the reel sit under a
+ * spinner for half a second on every open. Only the tiles visible at x = 0 are
+ * actually urgent; everything past the right edge is at least a second of
+ * scrolling away and loads comfortably in the background.
+ */
+export function splitReelThumbs(
+  urls: readonly string[],
+  containerW: number,
+): { critical: string[]; rest: string[] } {
+  const visible = containerW > 0 ? Math.ceil(containerW / PITCH) : urls.length;
+  const cut = Math.min(urls.length, visible + CRITICAL_BUFFER_TILES);
+  return { critical: urls.slice(0, cut), rest: urls.slice(cut) };
+}
+
 /**
  * Preloads a batch of image URLs, resolving once every one has settled
  * (loaded or failed) or the timeout elapses — whichever comes first.
