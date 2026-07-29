@@ -130,6 +130,32 @@ if (writeGenerated) {
   errors.push(`${generatedPath}: stale; run npm run sync:brain`);
 }
 
+const productIndexPath = 'card-game-data/agent-product-index.json';
+if (!existsSync(resolve(root, productIndexPath))) {
+  errors.push(`${productIndexPath}: missing`);
+} else {
+  try {
+    const productIndex = JSON.parse(readFileSync(resolve(root, productIndexPath), 'utf8'));
+    const productPaths = [
+      ...(productIndex.foundation?.primary ?? []),
+      ...(productIndex.bundles ?? []).flatMap((bundle) => [
+        ...(bundle.primary ?? []),
+        ...(bundle.references ?? []),
+      ]),
+    ];
+    if (!Array.isArray(productIndex.bundles) || productIndex.bundles.length === 0) {
+      errors.push(`${productIndexPath}: must define at least one retrieval bundle`);
+    }
+    for (const path of productPaths) {
+      if (typeof path !== 'string' || !existsSync(resolve(root, path))) {
+        errors.push(`${productIndexPath}: referenced vault path does not exist: ${String(path)}`);
+      }
+    }
+  } catch (error) {
+    errors.push(`${productIndexPath}: invalid JSON (${error instanceof Error ? error.message : String(error)})`);
+  }
+}
+
 for (const [relativePath, maximumWords] of packs) {
   const absolutePath = resolve(root, relativePath);
   if (!existsSync(absolutePath)) {
@@ -160,6 +186,9 @@ if (!agents.includes('docs/agent/00-brief.md')) {
 if (!agents.includes('Brain trace')) {
   errors.push('AGENTS.md: must require the Brain trace audit receipt');
 }
+if (!agents.includes('brain:retrieve')) {
+  errors.push('AGENTS.md: must require product retrieval for product and design tasks');
+}
 
 for (const relativePath of instructionShims) {
   const absolutePath = resolve(root, relativePath);
@@ -172,6 +201,9 @@ for (const relativePath of instructionShims) {
   }
   if (!readFileSync(absolutePath, 'utf8').includes('Brain trace')) {
     errors.push(`${relativePath}: must require the Brain trace audit receipt`);
+  }
+  if (!readFileSync(absolutePath, 'utf8').includes('brain:retrieve')) {
+    errors.push(`${relativePath}: must require product retrieval for product and design tasks`);
   }
 }
 

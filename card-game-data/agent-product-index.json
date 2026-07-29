@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "description": "Intent registry for compact product retrieval. Paths are canonical notes inside this Obsidian vault.",
+  "foundation": {
+    "primary": [
+      "card-game-data/13 - Product - Context & Guardrails.md",
+      "card-game-data/14 - Product - System Landscape.md",
+      "card-game-data/17 - Product - Solution Brief Template.md"
+    ]
+  },
+  "bundles": [
+    {
+      "id": "economy",
+      "keywords": ["economy", "economic", "balance", "coins", "coin", "keys", "key", "price", "pricing", "value", "reward", "rewards", "currency", "sink", "source", "ev", "sale", "sell", "bonus", "milestone", "економіка", "баланс", "монети", "ключі", "ціна", "нагорода", "валюта", "продаж", "бонус", "мілстоун"],
+      "primary": [
+        "card-game-data/15 - Product - Economy Context.md"
+      ],
+      "references": [
+        "card-game-data/12 - Game Design - Economy Rebalance.md",
+        "card-game-data/04 - Game Design - Core Loop.md",
+        "card-game-data/05 - Game Design - Rarity & Drop Rates.md"
+      ],
+      "guidance": "Model new sources and sinks for new, mid-collection, and near-complete players. Do not tune one price or sell value in isolation."
+    },
+    {
+      "id": "marketplace",
+      "keywords": ["auction", "auctions", "market", "marketplace", "trade", "trading", "shop", "store", "vendor", "npc", "аукціон", "ринок", "торгівля", "магазин", "крамниця", "продавець"],
+      "primary": [
+        "card-game-data/15 - Product - Economy Context.md",
+        "card-game-data/11 - Planning - Open Questions.md"
+      ],
+      "references": [
+        "card-game-data/12 - Game Design - Economy Rebalance.md"
+      ],
+      "guidance": "Separate an NPC-controlled offer system from P2P trade. P2P trade is outside current scope and needs an explicit product decision."
+    },
+    {
+      "id": "lore",
+      "keywords": ["lore", "story", "narrative", "world", "worldbuilding", "character", "characters", "faction", "factions", "quest", "quests", "flavor", "plot", "сюжет", "лор", "світ", "персонаж", "фракція", "квест", "флейвор", "історія"],
+      "primary": [
+        "card-game-data/16 - Product - Narrative Bible.md"
+      ],
+      "references": [
+        "card-game-data/07 - Generation - Prompt Recipes.md",
+        "card-game-data/11 - Planning - Open Questions.md"
+      ],
+      "guidance": "The setting has no complete approved canon. Label new material as options and request a choice before treating it as established lore."
+    },
+    {
+      "id": "progression",
+      "keywords": ["progression", "progress", "retention", "onboarding", "daily", "collection", "collecting", "duplicate", "duplicates", "craft", "crafting", "set", "sets", "progression", "прогресія", "прогрес", "повернення", "щоденний", "колекція", "дублікати", "крафт", "сет", "сети"],
+      "primary": [
+        "card-game-data/15 - Product - Economy Context.md",
+        "card-game-data/11 - Planning - Open Questions.md"
+      ],
+      "references": [
+        "card-game-data/12 - Game Design - Economy Rebalance.md",
+        "card-game-data/04 - Game Design - Core Loop.md"
+      ],
+      "guidance": "Preserve last-copy protection and monotonic collection milestones. Crafting and thematic sets are planned directions, not implemented systems."
+    },
+    {
+      "id": "combat",
+      "keywords": ["combat", "battle", "battles", "pvp", "duel", "duels", "attack", "defense", "fight", "бій", "бойова", "бої", "pvp", "дуель", "атака", "захист"],
+      "primary": [
+        "card-game-data/11 - Planning - Open Questions.md"
+      ],
+      "references": [
+        "card-game-data/13 - Product - Context & Guardrails.md"
+      ],
+      "guidance": "Combat and PvP are outside current product scope. Treat a proposal as a deliberate expansion, not a small feature on top of the current card stats."
+    }
+  ]
+}

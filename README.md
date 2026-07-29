@@ -8,6 +8,7 @@ This is a project to try stable difusion. Just a simple card game (fantasy).
 
 ```
 npm run brain:impact # show packs affected by the current working-tree change
+npm run brain:retrieve -- "NPC auction for duplicate cards" # retrieve product context from the vault
 npm run sync:brain   # regenerate the code-derived surface after structural changes
 npm run check:brain
 ```

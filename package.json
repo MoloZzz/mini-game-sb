@@ -13,7 +13,8 @@
   },
   "scripts": {
     "brain:impact": "node scripts/check-agent-context.mjs --impact",
-    "check:brain": "node scripts/check-agent-context.mjs",
+    "brain:retrieve": "node scripts/brain-retrieve.mjs",
+    "check:brain": "node scripts/check-agent-context.mjs && node --test scripts/brain-retrieve.test.mjs",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "build:types": "npm run build --workspace @card-game/shared-types",

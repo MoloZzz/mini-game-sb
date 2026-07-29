@@ -9,6 +9,7 @@
 | Economy or drop rule | brief + economy pack + backend pack | shared constants, service, unit/e2e tests |
 | Schema | brief + backend pack | entity, migration, module registration, tests |
 | Art generation/ingest | brief + forge pack + backend pack | manifest schema, forge, admin ingest/tests |
+| Product system, economy, store, auction, lore, story | `brain:retrieve` bundle + vault template | product brief, decisions/open questions, then implementation if approved |
 
 ## Required follow-through
 
@@ -26,7 +27,8 @@
    - `npm run test --workspace game-api`
    - `npm run build --workspace game-api`
 
-6. Update this knowledge system only if a stable fact changes: architecture ownership, API route/DTO, invariant, command, runbook, or known seam. Keep it under the stated word limits; link to source instead of reproducing implementation detail. If an observation is unresolved, put it in `card-game-data/11 - Planning - Open Questions.md`; if it records an enduring trade-off, add an ADR to `card-game-data/10 - Planning - Decisions.md`.
+6. Update knowledge only for a stable fact: ownership, API route/DTO, invariant, command, runbook, or seam. Link to source instead of repeating code. Put unresolved observations in `card-game-data/11 - Planning - Open Questions.md` and enduring trade-offs in `card-game-data/10 - Planning - Decisions.md`.
+   For a product decision, update the product system landscape or narrative bible too, rather than leaving the decision only in a chat.
 7. Finish with the one-line `Brain trace` receipt from `AGENTS.md`. This lets the user audit context use without asking the agent to expose private reasoning.
 
 ## Maintenance model
