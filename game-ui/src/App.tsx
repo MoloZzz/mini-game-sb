@@ -13,6 +13,7 @@ import { CASE_SEEDS, type PlayerRole } from '@card-game/shared-types';
 import { AppShell } from '@/components/AppShell';
 import { ToastProvider } from '@/components/Toast';
 import { AdminReview } from '@/features/admin/AdminReview';
+import { GenerationOrders } from '@/features/admin/GenerationOrders';
 import { Login } from '@/features/auth/Login';
 import { Register } from '@/features/auth/Register';
 import { CollectionPage } from '@/features/collection/CollectionPage';
@@ -195,6 +196,7 @@ export function AppRoutes() {
           </RequireAuth>
         }
       />
+      <Route path="/admin/orders" element={<RequireAuth role="admin"><GenerationOrders /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

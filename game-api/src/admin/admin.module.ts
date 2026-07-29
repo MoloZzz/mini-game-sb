@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { CardsModule } from '../cards/cards.module';
 import { CollectionModule } from '../collection/collection.module';
-import { CardEntity } from '../entities';
+import { CardEntity, GenerationOrderCandidateEntity, GenerationOrderEntity } from '../entities';
 import { AdminController } from './admin.controller';
+import { GenerationOrdersController } from './generation-orders.controller';
 import { AdminService } from './admin.service';
+import { GenerationOrdersService } from './generation-orders.service';
 
 /**
  * Imports `CardsModule` rather than constructing its own mapper — `CardMapper`
@@ -17,8 +19,8 @@ import { AdminService } from './admin.service';
  * — the exact same singleton `AuthModule` already wired up.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([CardEntity]), CardsModule, CollectionModule, AuthModule],
-  controllers: [AdminController],
-  providers: [AdminService],
+  imports: [TypeOrmModule.forFeature([CardEntity, GenerationOrderEntity, GenerationOrderCandidateEntity]), CardsModule, CollectionModule, AuthModule],
+  controllers: [AdminController, GenerationOrdersController],
+  providers: [AdminService, GenerationOrdersService],
 })
 export class AdminModule {}

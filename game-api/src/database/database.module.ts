@@ -11,6 +11,7 @@ import { UpdateStoneheartCofferPrice1785200000001 } from '../migrations/17852000
 import { AddLedgerInvariantTrigger1785200000002 } from '../migrations/1785200000002-AddLedgerInvariantTrigger';
 import { AddCaseSetScope1785300000000 } from '../migrations/1785300000000-AddCaseSetScope';
 import { AddArchiveDossiers1785400000000 } from '../migrations/1785400000000-AddArchiveDossiers';
+import { AddGenerationOrders1785500000000 } from '../migrations/1785500000000-AddGenerationOrders';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AddArchiveDossiers1785400000000 } from '../migrations/1785400000000-Add
           AddLedgerInvariantTrigger1785200000002,
           AddCaseSetScope1785300000000,
           AddArchiveDossiers1785400000000,
+          AddGenerationOrders1785500000000,
         ],
       }),
     }),

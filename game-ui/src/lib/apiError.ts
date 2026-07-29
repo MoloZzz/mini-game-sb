@@ -61,6 +61,10 @@ export const USER_MESSAGES: Record<ApiErrorCode, string> = {
   ARCHIVE_PASS_CONSUMED: 'That Archive Pass has already been opened.',
   UNAUTHORIZED: 'Your session has expired. Please sign in again.',
   FORBIDDEN: "You don't have access to that.",
+  GENERATION_ORDER_NOT_FOUND: "That generation order doesn't exist.",
+  INVALID_GENERATION_ORDER_STATE: 'That action is not available for the order right now.',
+  GENERATION_RUN_CONFLICT: 'Another forge run owns this order.',
+  GENERATION_CANDIDATE_MISMATCH: 'The generated candidates do not match this order.',
   INVALID_CREDENTIALS: 'Incorrect email or password.',
   EMAIL_TAKEN: 'An account with that email already exists.',
 };

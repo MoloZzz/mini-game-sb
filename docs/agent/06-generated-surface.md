@@ -7,6 +7,8 @@
 | Method | Route | Source |
 | --- | --- | --- |
 | GET | `/api/admin/cards` | `game-api/src/admin/admin.controller.ts` → `list` |
+| GET | `/api/admin/generation-orders/:id` | `game-api/src/admin/generation-orders.controller.ts` → `get` |
+| GET | `/api/admin/generation-orders` | `game-api/src/admin/generation-orders.controller.ts` → `list` |
 | GET | `/api/auth/me` | `game-api/src/auth/auth.controller.ts` → `me` |
 | GET | `/api/cards/:id` | `game-api/src/cards/cards.controller.ts` → `getById` |
 | GET | `/api/cards` | `game-api/src/cards/cards.controller.ts` → `list` |
@@ -21,7 +23,16 @@
 | GET | `/api/me/milestones` | `game-api/src/milestones/milestones.controller.ts` → `getMilestones` |
 | GET | `/api/me` | `game-api/src/players/players.controller.ts` → `getMe` |
 | PATCH | `/api/admin/cards/:id` | `game-api/src/admin/admin.controller.ts` → `review` |
+| PATCH | `/api/admin/generation-orders/:id` | `game-api/src/admin/generation-orders.controller.ts` → `update` |
 | POST | `/api/admin/cards/ingest` | `game-api/src/admin/admin.controller.ts` → `ingest` |
+| POST | `/api/admin/generation-orders/:id/cancel` | `game-api/src/admin/generation-orders.controller.ts` → `cancel` |
+| POST | `/api/admin/generation-orders/:id/claim` | `game-api/src/admin/generation-orders.controller.ts` → `claim` |
+| POST | `/api/admin/generation-orders/:id/complete` | `game-api/src/admin/generation-orders.controller.ts` → `complete` |
+| POST | `/api/admin/generation-orders/:id/fail` | `game-api/src/admin/generation-orders.controller.ts` → `fail` |
+| POST | `/api/admin/generation-orders/:id/queue` | `game-api/src/admin/generation-orders.controller.ts` → `queue` |
+| POST | `/api/admin/generation-orders/:id/retry` | `game-api/src/admin/generation-orders.controller.ts` → `retry` |
+| POST | `/api/admin/generation-orders/:id/select` | `game-api/src/admin/generation-orders.controller.ts` → `select` |
+| POST | `/api/admin/generation-orders` | `game-api/src/admin/generation-orders.controller.ts` → `create` |
 | POST | `/api/auth/login` | `game-api/src/auth/auth.controller.ts` → `login` |
 | POST | `/api/auth/register` | `game-api/src/auth/auth.controller.ts` → `register` |
 | POST | `/api/cases/:slug/open` | `game-api/src/drops/drops.controller.ts` → `open` |
@@ -41,6 +52,8 @@
 | `cards` | `CardEntity` | `game-api/src/entities/card.entity.ts` |
 | `case_openings` | `CaseOpeningEntity` | `game-api/src/entities/case-opening.entity.ts` |
 | `cases` | `CaseEntity` | `game-api/src/entities/case.entity.ts` |
+| `generation_order_candidates` | `GenerationOrderCandidateEntity` | `game-api/src/entities/generation-order-candidate.entity.ts` |
+| `generation_orders` | `GenerationOrderEntity` | `game-api/src/entities/generation-order.entity.ts` |
 | `player_cards` | `PlayerCardEntity` | `game-api/src/entities/player-card.entity.ts` |
 | `player_milestones` | `PlayerMilestoneEntity` | `game-api/src/entities/player-milestone.entity.ts` |
 | `players` | `PlayerEntity` | `game-api/src/entities/player.entity.ts` |
@@ -56,6 +69,7 @@
 - `game-api/src/migrations/1785200000002-AddLedgerInvariantTrigger.ts`
 - `game-api/src/migrations/1785300000000-AddCaseSetScope.ts`
 - `game-api/src/migrations/1785400000000-AddArchiveDossiers.ts`
+- `game-api/src/migrations/1785500000000-AddGenerationOrders.ts`
 
 ## Shared-type source modules
 

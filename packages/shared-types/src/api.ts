@@ -143,6 +143,96 @@ export interface ReviewCardRequest {
   flavorText?: string | null;
 }
 
+// --- Admin / offline generation orders ---
+
+export const GENERATION_ORDER_STATUSES = [
+  'draft', 'ready', 'generating', 'review', 'completed', 'failed', 'cancelled',
+] as const;
+export type GenerationOrderStatus = (typeof GENERATION_ORDER_STATUSES)[number];
+
+export const GENERATION_CANDIDATE_STATUSES = ['planned', 'generated', 'selected', 'discarded'] as const;
+export type GenerationCandidateStatus = (typeof GENERATION_CANDIDATE_STATUSES)[number];
+
+export interface GenerationOrderCandidateDto {
+  id: string;
+  index: number;
+  slug: string;
+  seed: string;
+  status: GenerationCandidateStatus;
+  cardId: string | null;
+}
+
+export interface GenerationOrderDto {
+  id: string;
+  status: GenerationOrderStatus;
+  title: string;
+  brief: string;
+  archetype: Archetype;
+  element: Element | null;
+  suggestedRarity: Rarity;
+  candidateCount: number;
+  setId: string | null;
+  recipeProfile: 'card-v1';
+  createdByPlayerId: string;
+  createdAt: string;
+  readyAt: string | null;
+  generatedAt: string | null;
+  completedAt: string | null;
+  failureCode: string | null;
+  candidates: GenerationOrderCandidateDto[];
+}
+
+export interface CreateGenerationOrderRequest {
+  title: string;
+  brief: string;
+  archetype: Archetype;
+  element: Element | null;
+  suggestedRarity: Rarity;
+  candidateCount?: number;
+  setId?: string | null;
+}
+
+export interface UpdateGenerationOrderRequest {
+  title?: string;
+  brief?: string;
+  archetype?: Archetype;
+  element?: Element | null;
+  suggestedRarity?: Rarity;
+  candidateCount?: number;
+  setId?: string | null;
+}
+
+/** Service-token-only snapshot consumed by `forge.py order run`. */
+export interface ForgeGenerationOrderDto {
+  id: string;
+  runId: string;
+  brief: string;
+  archetype: Archetype;
+  element: Element | null;
+  suggestedRarity: Rarity;
+  recipeProfile: 'card-v1';
+  candidates: Array<{ id: string; index: number; slug: string; seed: string }>;
+}
+
+export interface CompleteGenerationOrderRequest {
+  runId: string;
+  candidates: Array<{
+    candidateId: string;
+    imagePath: string;
+    thumbPath: string;
+    genMeta: Record<string, unknown>;
+  }>;
+}
+
+export interface SelectGenerationOrderCandidateRequest {
+  candidateId: string;
+  name: string;
+  rarity?: Rarity;
+  attack?: number;
+  defense?: number;
+  flavorText?: string | null;
+}
+
 export type AdminListCardsResponse = Paginated<AdminCardDto>;
 
 // --- Errors ---
@@ -163,6 +253,10 @@ export const API_ERROR_CODES = [
   'ARCHIVE_PASS_CONSUMED',
   'UNAUTHORIZED',
   'FORBIDDEN',
+  'GENERATION_ORDER_NOT_FOUND',
+  'INVALID_GENERATION_ORDER_STATE',
+  'GENERATION_RUN_CONFLICT',
+  'GENERATION_CANDIDATE_MISMATCH',
   'INVALID_CREDENTIALS',
   'EMAIL_TAKEN',
 ] as const;

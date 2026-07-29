@@ -8,6 +8,8 @@
 
 Ingest is idempotent by card slug. It requires `FORGE_SERVICE_TOKEN` and sends it as `X-Service-Token`; game-api accepts that token or an admin JWT only. It is safe to rerun an interrupted batch or ingest: completed image pairs are skipped and known slugs are not inserted again.
 
+Admin generation orders use `forge.py order run --id <uuid>`: the CLI claims a ready order, generates its fixed-seed candidates offline, and submits them as drafts for review.
+
 ## Hardware constraints
 
 Target hardware is a 4 GB RTX 3050 Laptop GPU. Keep generation at 512×512, fp16, batch size 1, with one pipeline resident. `forge.py doctor` must pass before a real batch. Start with `--dry-run` or a small recipe batch; use attention slicing or CPU offload only after a real OOM because each slows generation.

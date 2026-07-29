@@ -14,6 +14,8 @@
 | `POST /me/daily-bonus`, `GET /me/drops`, `GET /me/collection`, `GET /me/milestones` | authenticated | inventory/collection/milestones |
 | `GET/PATCH /admin/cards` | admin JWT | admin |
 | `POST /admin/cards/ingest` | admin JWT or `X-Service-Token` | admin/forge |
+| `GET/POST /admin/generation-orders`, queue/retry/select | admin JWT | generation-order workflow |
+| `POST /admin/generation-orders/:id/claim|complete|fail` | admin JWT or `X-Service-Token` | offline forge |
 
 Request validation is global (`whitelist`, transformed DTOs). Controllers must return shared DTOs through `CardMapper`; asset paths become static URLs there. Keep error codes in `packages/shared-types/src/api.ts` in sync with throw sites and UI handling. `LoggingInterceptor` (`game-api/src/common/logging.interceptor.ts`, registered as a global `APP_INTERCEPTOR` in `app.module.ts`) logs one line per request — method, path, status, duration, player id when authenticated — via the Nest `Logger` under the `HTTP` context.
 
@@ -27,6 +29,7 @@ Request validation is global (`whitelist`, transformed DTOs). Controllers must r
 | --- | --- |
 | `players` | identity, role, balance cache, pity, daily-claim state |
 | `cards` | generated/reviewed card catalog; only `approved` is playable |
+| `generation_orders`, `generation_order_candidates` | durable offline forge work and deterministic candidate provenance |
 | `cases` | price and rarity weights |
 | `case_openings` | immutable open record, reel ids, seed, nonce, idempotency key |
 | `player_cards` | one row per owned instance; `sold_at` is a soft delete |
@@ -40,6 +43,7 @@ Schema changes require a migration under `game-api/src/migrations/` and explicit
 - Module wiring: `game-api/src/app.module.ts`
 - API client counterpart: `game-ui/src/lib/api.ts`
 - API error mapping: `game-api/src/common/api-error.ts`
+- Offline order state machine: `game-api/src/admin/generation-orders.service.ts`
 - Entity registry: `game-api/src/entities/index.ts`
 - Environment reference: `.env.example`
 

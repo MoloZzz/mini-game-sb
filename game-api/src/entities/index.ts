@@ -2,6 +2,8 @@ import { ArchiveDossierEntity } from './archive-dossier.entity';
 import { ArchiveNoteEntity } from './archive-note.entity';
 import { ArchivePassEntity } from './archive-pass.entity';
 import { CardEntity } from './card.entity';
+import { GenerationOrderCandidateEntity } from './generation-order-candidate.entity';
+import { GenerationOrderEntity } from './generation-order.entity';
 import { CaseOpeningEntity } from './case-opening.entity';
 import { CaseEntity } from './case.entity';
 import { PlayerCardEntity } from './player-card.entity';
@@ -13,6 +15,8 @@ export { ArchiveDossierEntity } from './archive-dossier.entity';
 export { ArchiveNoteEntity } from './archive-note.entity';
 export { ArchivePassEntity } from './archive-pass.entity';
 export { CardEntity } from './card.entity';
+export { GenerationOrderCandidateEntity } from './generation-order-candidate.entity';
+export { GenerationOrderEntity } from './generation-order.entity';
 export { PlayerEntity } from './player.entity';
 export { CaseEntity } from './case.entity';
 export { CaseOpeningEntity } from './case-opening.entity';
@@ -25,6 +29,8 @@ export const ALL_ENTITIES = [
   ArchiveNoteEntity,
   ArchivePassEntity,
   CardEntity,
+  GenerationOrderCandidateEntity,
+  GenerationOrderEntity,
   PlayerEntity,
   CaseEntity,
   CaseOpeningEntity,

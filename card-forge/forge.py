@@ -160,6 +160,18 @@ def _build_parser() -> argparse.ArgumentParser:
         default=CARD_FORGE_DIR / "manifest.json",
         help="Path to manifest.json (default: manifest.json next to forge.py)",
     )
+
+    order_parser = subparsers.add_parser("order", help="Run one server-authored card generation order")
+    order_sub = order_parser.add_subparsers(dest="order_action")
+    order_run = order_sub.add_parser("run", help="Claim, generate and submit one order")
+    order_run.add_argument("--id", required=True, help="Generation order UUID")
+    order_run.add_argument("--api-url", default=_default_api_url())
+    order_run.add_argument("--storage-dir", type=Path, default=_default_storage_dir())
+    order_run.add_argument("--model-id", default=_default_model_id())
+    order_run.add_argument("--config", type=Path, default=CARD_FORGE_DIR / "recipes.yaml")
+    order_run.add_argument("--attention-slicing", action="store_true")
+    order_run.add_argument("--cpu-offload", action="store_true")
+    order_run.add_argument("--dry-run", action="store_true")
     ingest_parser.add_argument(
         "--api-url",
         type=str,
@@ -249,6 +261,22 @@ def _run_ingest(args: argparse.Namespace) -> int:
     )
 
 
+def _run_order(args: argparse.Namespace) -> int:
+    if args.order_action != "run":
+        print("ERROR: specify 'run'")
+        return 2
+    service_token = _default_service_token()
+    if not service_token:
+        print("ERROR: FORGE_SERVICE_TOKEN is not set.")
+        return 1
+    import orders
+    return orders.run_order(
+        order_id=args.id, api_url=args.api_url, service_token=service_token,
+        storage_dir=args.storage_dir, model_id=args.model_id, recipes_path=args.config,
+        attention_slicing=args.attention_slicing, cpu_offload=args.cpu_offload, dry_run=args.dry_run,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     _load_dotenv_files()
 
@@ -264,6 +292,7 @@ def main(argv: list[str] | None = None) -> int:
         "batch": _run_batch,
         "cases": _run_cases,
         "ingest": _run_ingest,
+        "order": _run_order,
     }
 
     try:

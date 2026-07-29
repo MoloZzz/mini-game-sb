@@ -7,7 +7,7 @@ import {
   type ReviewCardRequest,
 } from '@card-game/shared-types';
 
-import { getAdminCards, reviewCard } from '@/lib/api';
+import { getAdminCards, reviewCard, selectGenerationOrderCandidate } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 
 import { CardReviewPanel } from './CardReviewPanel';
@@ -44,6 +44,13 @@ function editsFromCard(card: AdminCardDto): ReviewCardRequest {
     defense: card.defense,
     flavorText: card.flavorText,
   };
+}
+
+function generationOrderId(card: AdminCardDto): string | null {
+  const source = card.genMeta.generationOrder;
+  if (typeof source !== 'object' || source === null) return null;
+  const value = (source as Record<string, unknown>).orderId;
+  return typeof value === 'string' ? value : null;
 }
 
 function hasSeenCheatSheet(): boolean {
@@ -271,8 +278,22 @@ export function AdminReview() {
       goNext();
 
       try {
-        const updated = await reviewCard(original.id, body);
-        setCards((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        const orderId = status === 'approved' ? generationOrderId(original) : null;
+        if (orderId) {
+          await selectGenerationOrderCandidate(orderId, {
+            candidateId: (original.genMeta.generationOrder as Record<string, unknown>).candidateId as string,
+            name: body.name ?? original.name,
+            rarity: body.rarity,
+            attack: body.attack,
+            defense: body.defense,
+            flavorText: body.flavorText,
+          });
+          // Choosing one candidate atomically rejects its siblings server-side.
+          setCards((prev) => prev.filter((card) => generationOrderId(card) !== orderId));
+        } else {
+          const updated = await reviewCard(original.id, body);
+          setCards((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        }
         void refreshCounts();
       } catch (err) {
         // Roll back exactly this card, not the whole list — other

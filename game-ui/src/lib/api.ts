@@ -9,6 +9,7 @@ import type {
   CollectionGoalDto,
   CollectionProgressDto,
   CreateArchiveDossierResponse,
+  CreateGenerationOrderRequest,
   DropHistoryItemDto,
   InventoryPageDto,
   ListCollectionCardsQuery,
@@ -18,6 +19,8 @@ import type {
   OpenArchivePassResponse,
   PlayerDto,
   ReviewCardRequest,
+  GenerationOrderDto,
+  SelectGenerationOrderCandidateRequest,
   SellCardResponse,
 } from '@card-game/shared-types';
 
@@ -202,6 +205,27 @@ export function reviewCard(id: string, body: ReviewCardRequest): Promise<AdminCa
   return request<AdminCardDto>(`/admin/cards/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
+  });
+}
+
+export function getGenerationOrders(): Promise<GenerationOrderDto[]> {
+  return request<GenerationOrderDto[]>('/admin/generation-orders');
+}
+
+export function createGenerationOrder(body: CreateGenerationOrderRequest): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>('/admin/generation-orders', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function queueGenerationOrder(id: string): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/queue`, { method: 'POST' });
+}
+
+export function selectGenerationOrderCandidate(
+  orderId: string,
+  body: SelectGenerationOrderCandidateRequest,
+): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(orderId)}/select`, {
+    method: 'POST', body: JSON.stringify(body),
   });
 }
 
