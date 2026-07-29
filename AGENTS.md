@@ -16,6 +16,14 @@ Do not begin implementation until this gate is complete. Do not bulk-read `card-
 
 For every implementation change, run `npm run brain:impact` before editing. It names the context packs that the current working-tree change can affect. If you add or remove an API route, entity, migration, shared-type export, or UI feature, run `npm run sync:brain` before tests; `npm test` rejects an outdated generated surface.
 
+## Mandatory handoff trace
+
+At the end of every implementation or review task, include one compact, user-visible line in the final response:
+
+`Brain trace — context: <packs read>; impact: <packs flagged or n/a>; knowledge: <files updated, or none + reason>; verify: <command/result>.`
+
+This is an audit receipt, not a request for private reasoning. Do not include a chain of thought or repeat the packs' contents.
+
 Rules that prevent expensive mistakes:
 
 - Treat `packages/shared-types` as the API contract: change it before both consumers and update API mocks/tests in the same change.

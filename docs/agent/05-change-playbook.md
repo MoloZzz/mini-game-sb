@@ -27,6 +27,7 @@
    - `npm run build --workspace game-api`
 
 6. Update this knowledge system only if a stable fact changes: architecture ownership, API route/DTO, invariant, command, runbook, or known seam. Keep it under the stated word limits; link to source instead of reproducing implementation detail. If an observation is unresolved, put it in `card-game-data/11 - Planning - Open Questions.md`; if it records an enduring trade-off, add an ADR to `card-game-data/10 - Planning - Decisions.md`.
+7. Finish with the one-line `Brain trace` receipt from `AGENTS.md`. This lets the user audit context use without asking the agent to expose private reasoning.
 
 ## Maintenance model
 

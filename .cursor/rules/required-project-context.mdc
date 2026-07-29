@@ -8,3 +8,5 @@ Before investigating, planning, editing, or reviewing this repository, read `AGE
 This is mandatory. Do not begin implementation before completing the context gate. Update the affected pack whenever a stable contract, architecture boundary, invariant, command, runbook, or known seam changes.
 
 For an implementation change, run `npm run brain:impact` before editing. Run `npm run sync:brain` after adding or removing an API route, entity, migration, shared-type export, or UI feature.
+
+Finish every implementation or review response with the one-line `Brain trace` format required by `AGENTS.md`. It is an audit receipt, not private reasoning.

@@ -157,6 +157,9 @@ const agents = existsSync(resolve(root, 'AGENTS.md'))
 if (!agents.includes('docs/agent/00-brief.md')) {
   errors.push('AGENTS.md: must route every agent through docs/agent/00-brief.md');
 }
+if (!agents.includes('Brain trace')) {
+  errors.push('AGENTS.md: must require the Brain trace audit receipt');
+}
 
 for (const relativePath of instructionShims) {
   const absolutePath = resolve(root, relativePath);
@@ -166,6 +169,9 @@ for (const relativePath of instructionShims) {
   }
   if (!readFileSync(absolutePath, 'utf8').includes('AGENTS.md')) {
     errors.push(`${relativePath}: must route agents through AGENTS.md`);
+  }
+  if (!readFileSync(absolutePath, 'utf8').includes('Brain trace')) {
+    errors.push(`${relativePath}: must require the Brain trace audit receipt`);
   }
 }
 

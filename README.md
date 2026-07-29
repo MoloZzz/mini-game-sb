@@ -12,6 +12,8 @@ npm run sync:brain   # regenerate the code-derived surface after structural chan
 npm run check:brain
 ```
 
+For implementation and review tasks, agents must end their handoff with a one-line **Brain trace**: context packs read, change impact, knowledge updated (or why none was needed), and verification result. This is an audit receipt, not internal reasoning.
+
 ## start command
 
 ```
