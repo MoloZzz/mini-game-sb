@@ -10,6 +10,7 @@ import { AddPlayerMilestones1785200000000 } from '../migrations/1785200000000-Ad
 import { UpdateStoneheartCofferPrice1785200000001 } from '../migrations/1785200000001-UpdateStoneheartCofferPrice';
 import { AddLedgerInvariantTrigger1785200000002 } from '../migrations/1785200000002-AddLedgerInvariantTrigger';
 import { AddCaseSetScope1785300000000 } from '../migrations/1785300000000-AddCaseSetScope';
+import { AddArchiveDossiers1785400000000 } from '../migrations/1785400000000-AddArchiveDossiers';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AddCaseSetScope1785300000000 } from '../migrations/1785300000000-AddCas
           UpdateStoneheartCofferPrice1785200000001,
           AddLedgerInvariantTrigger1785200000002,
           AddCaseSetScope1785300000000,
+          AddArchiveDossiers1785400000000,
         ],
       }),
     }),

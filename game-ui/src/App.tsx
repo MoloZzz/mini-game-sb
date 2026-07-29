@@ -16,6 +16,8 @@ import { AdminReview } from '@/features/admin/AdminReview';
 import { Login } from '@/features/auth/Login';
 import { Register } from '@/features/auth/Register';
 import { CollectionPage } from '@/features/collection/CollectionPage';
+import { ArchiveNotesPage } from '@/features/archive/ArchiveNotesPage';
+import { OpenArchivePassScreen } from '@/features/archive/OpenArchivePassScreen';
 import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
 import { Inventory } from '@/features/inventory/Inventory';
 import { Lobby } from '@/features/lobby/Lobby';
@@ -60,8 +62,21 @@ function LobbyRoute({
         onStartExpedition(expedition);
         navigate(`/open/${expedition.caseSlug}`, { state: { expedition } satisfies ExpeditionRouteState });
       }}
+      onOpenArchive={() => navigate('/archive')}
     />
   );
+}
+
+function ArchivePassRoute() {
+  const { passId } = useParams<{ passId: string }>();
+  const navigate = useNavigate();
+  if (!passId) return <Navigate to="/archive" replace />;
+  return <OpenArchivePassScreen passId={passId} onBackToArchive={() => navigate('/archive')} onToInventory={() => navigate('/inventory')} />;
+}
+
+function ArchiveRoute() {
+  const navigate = useNavigate();
+  return <ArchiveNotesPage onOpenPass={(passId) => navigate(`/archive/passes/${passId}/open`)} />;
 }
 
 function OpenRoute({
@@ -109,7 +124,7 @@ export function AppRoutes() {
   // opening so nothing competes with the 5.5 seconds. /login and /register
   // hide it too: its links all point at protected routes a signed-out
   // visitor can't use yet.
-  const fullFocus = pathname.startsWith('/open/') || pathname === '/login' || pathname === '/register';
+  const fullFocus = pathname.startsWith('/open/') || pathname.startsWith('/archive/passes/') || pathname === '/login' || pathname === '/register';
 
   const routes = (
     <Routes>
@@ -153,6 +168,22 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <CollectionPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/archive"
+        element={
+          <RequireAuth>
+            <ArchiveRoute />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/archive/passes/:passId/open"
+        element={
+          <RequireAuth>
+            <ArchivePassRoute />
           </RequireAuth>
         }
       />

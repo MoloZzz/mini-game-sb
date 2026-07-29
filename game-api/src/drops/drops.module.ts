@@ -9,5 +9,6 @@ import { DropsService } from './drops.service';
   imports: [CardsModule, LedgerModule, MilestonesModule],
   controllers: [DropsController],
   providers: [DropsService],
+  exports: [DropsService],
 })
 export class DropsModule {}

@@ -9,6 +9,7 @@ export interface CardTileProps {
   card: CardDto;
   selected?: boolean;
   onSelect?: () => void;
+  disabled?: boolean;
   /** Overlaid on the art — the inventory's `×N` copies count. */
   badge?: ReactNode;
 }
@@ -27,12 +28,13 @@ function MetaLine({ card }: { card: CardDto }) {
  * collection's `UnlockedTile` were forty near-identical lines apiece; the only
  * real difference — the copies badge — is now a prop.
  */
-export function CardTile({ card, selected = false, onSelect, badge }: CardTileProps) {
+export function CardTile({ card, selected = false, onSelect, disabled = false, badge }: CardTileProps) {
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
+      disabled={disabled}
       className={`${TILE_CLASSES} ${selected ? 'ring-2 ring-amber-400' : ''}`}
       style={{ borderColor: rarityColor(card.rarity) }}
     >

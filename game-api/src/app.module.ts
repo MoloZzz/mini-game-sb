@@ -6,6 +6,7 @@ import { LoggingInterceptor } from './common/logging.interceptor';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { AdminModule } from './admin/admin.module';
+import { ArchiveModule } from './archive/archive.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -36,6 +37,7 @@ import { PlayersModule } from './players/players.module';
     DatabaseModule,
     HealthModule,
     AdminModule,
+    ArchiveModule,
     AuthModule,
     CardsModule,
     CasesModule,

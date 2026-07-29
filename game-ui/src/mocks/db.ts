@@ -45,6 +45,8 @@ export interface MockDb {
   dailyBonusAvailableAt: string | null;
   adminCards: AdminCardDto[];
   authUsers: MockAuthUser[];
+  documentedCardIds: string[];
+  archivePasses: Array<{ id: string; earnedAt: string }>;
 }
 
 const NOW = Date.now();
@@ -209,6 +211,8 @@ function createSeed(): MockDb {
     dailyBonusAvailableAt: null,
     adminCards: seedAdminCards(),
     authUsers: seedAuthUsers(),
+    documentedCardIds: [],
+    archivePasses: [],
   };
 }
 

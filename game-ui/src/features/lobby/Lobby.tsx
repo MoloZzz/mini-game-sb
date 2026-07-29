@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { ExpeditionPanel } from '@/features/expeditions/ExpeditionPanel';
 import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
+import { ArchiveTaskPanel } from '@/features/archive/ArchiveTaskPanel';
 
 import { CaseCard } from './CaseCard';
 import { CaseDetail } from './CaseDetail';
@@ -16,6 +17,7 @@ interface LobbyProps {
   onOpenCase: (slug: string) => void;
   completedExpedition?: SessionExpedition | null;
   onStartExpedition?: (expedition: SessionExpedition) => void;
+  onOpenArchive?: () => void;
 }
 
 const EMPTY_BALANCE = { coins: 0, keys: 0 };
@@ -52,6 +54,7 @@ export function Lobby({
   onOpenCase,
   completedExpedition = null,
   onStartExpedition = () => {},
+  onOpenArchive = () => {},
 }: LobbyProps) {
   const { player, cases, drops, loading, error, refresh, claimBonus, bonusError } = useLobbyData();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
@@ -100,11 +103,14 @@ export function Lobby({
         ) : (
           <div className="flex flex-col gap-6">
             {!loading && (
-              <ExpeditionPanel
-                cases={cases}
-                completed={completedExpedition}
-                onStart={onStartExpedition}
-              />
+              <>
+                <ArchiveTaskPanel onOpenArchive={onOpenArchive} />
+                <ExpeditionPanel
+                  cases={cases}
+                  completed={completedExpedition}
+                  onStart={onStartExpedition}
+                />
+              </>
             )}
             {/* The normal case grid remains available whether or not an expedition is selected. */}
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

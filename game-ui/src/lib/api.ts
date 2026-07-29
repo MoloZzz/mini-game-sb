@@ -1,18 +1,21 @@
 import type {
   AdminCardDto,
   AdminListCardsResponse,
+  ArchiveStatusDto,
   CardStatus,
   CaseDto,
   ClaimDailyBonusResponse,
   CollectionCardsResponse,
   CollectionGoalDto,
   CollectionProgressDto,
+  CreateArchiveDossierResponse,
   DropHistoryItemDto,
   InventoryPageDto,
   ListCollectionCardsQuery,
   ListInventoryQuery,
   OpenCaseRequest,
   OpenCaseResponse,
+  OpenArchivePassResponse,
   PlayerDto,
   ReviewCardRequest,
   SellCardResponse,
@@ -149,6 +152,25 @@ export function getCollectionCards(q?: ListCollectionCardsQuery): Promise<Collec
       page: q?.page,
       limit: q?.limit,
     },
+  });
+}
+
+/** Archive Notes are a task-state API, intentionally separate from collection progress. */
+export function getArchive(): Promise<ArchiveStatusDto> {
+  return request<ArchiveStatusDto>('/me/archive');
+}
+
+export function createArchiveDossier(cardIds: [string, string, string]): Promise<CreateArchiveDossierResponse> {
+  return request<CreateArchiveDossierResponse>('/me/archive/dossiers', {
+    method: 'POST',
+    body: JSON.stringify({ cardIds }),
+  });
+}
+
+export function openArchivePass(passId: string, idempotencyKey?: string): Promise<OpenArchivePassResponse> {
+  return request<OpenArchivePassResponse>(`/me/archive/passes/${encodeURIComponent(passId)}/open`, {
+    method: 'POST',
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
   });
 }
 

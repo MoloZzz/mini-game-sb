@@ -8,6 +8,7 @@ import { In, IsNull } from 'typeorm';
 import { CardMapper } from '../cards/card.mapper';
 import { apiError, throwCaseNotFound } from '../common/api-error';
 import {
+  ArchivePassEntity,
   CardEntity,
   CaseEntity,
   CaseOpeningEntity,
@@ -195,6 +196,107 @@ export class DropsService {
 
       // 16. Persist the player (balance + pity + any milestone reward, one row).
       await manager.save(player);
+
+      return {
+        dropId: savedOpening.id,
+        reel,
+        winningIndex: savedOpening.winningIndex,
+        wonCard: this.cardMapper.toCardDto(winnerEntity),
+        isDuplicate: copies > 1,
+        copies,
+        balance: { coins: player.balanceCoins, keys: player.balanceKeys },
+      };
+    });
+  }
+
+  /**
+   * Consumes one player-owned Archive Pass and performs a normal Starter
+   * Chest reveal without a currency debit. The pass, opening and new card
+   * share this one transaction, so a pass cannot be spent twice.
+   */
+  async openArchivePass(
+    playerId: string,
+    passId: string,
+    clientSeed: string | null,
+    idempotencyKey: string | null,
+  ): Promise<OpenCaseResponse> {
+    return this.dataSource.transaction(async (manager) => {
+      const player = await manager
+        .createQueryBuilder(PlayerEntity, 'p')
+        .setLock('pessimistic_write')
+        .where('p.id = :id', { id: playerId })
+        .getOne();
+      if (!player) apiError(401, 'UNAUTHORIZED', 'Player no longer exists');
+
+      if (idempotencyKey) {
+        const existingOpening = await manager.findOne(CaseOpeningEntity, {
+          where: { playerId: player.id, idempotencyKey },
+        });
+        if (existingOpening) return this.buildReplayResponse(manager, existingOpening, player);
+      }
+
+      const pass = await manager.findOne(ArchivePassEntity, { where: { id: passId, playerId: player.id } });
+      if (!pass) apiError(404, 'ARCHIVE_PASS_NOT_FOUND', 'Archive Pass was not found', { passId });
+      if (pass.consumedAt) {
+        apiError(409, 'ARCHIVE_PASS_CONSUMED', 'Archive Pass has already been consumed', { passId });
+      }
+
+      const caseEntity = await manager.findOne(CaseEntity, { where: { slug: 'starter-chest' } });
+      if (!caseEntity || !caseEntity.isActive) throwCaseNotFound('starter-chest');
+
+      const availableRarities = await this.loadAvailableRarities(manager, null);
+      const rng = createCryptoRng();
+      const rolledRarity = rollRarity({
+        weights: caseEntity.rarityWeights,
+        pityCounter: player.pityCounter,
+        availableRarities,
+        rng,
+      });
+      if (rolledRarity === null) {
+        apiError(409, 'EMPTY_POOL', 'No approved cards are available to drop', { rarity: null });
+      }
+
+      const candidates = await manager.find(CardEntity, { where: { status: 'approved', rarity: rolledRarity } });
+      if (candidates.length === 0) {
+        apiError(409, 'EMPTY_POOL', `No approved cards of rarity "${rolledRarity}"`, { rarity: rolledRarity });
+      }
+      const winnerEntity = rng.pick(candidates);
+      const winnerTile: ReelCard = this.cardMapper.toReelTile(winnerEntity);
+      const reel = buildReel({ winner: winnerTile, pool: await this.loadFillerPool(manager, null), rng });
+
+      const openingsSoFar = await manager.count(CaseOpeningEntity, { where: { playerId: player.id } });
+      const savedOpening = await manager.save(
+        manager.create(CaseOpeningEntity, {
+          playerId: player.id,
+          caseId: caseEntity.id,
+          wonCardId: winnerEntity.id,
+          reel: reel.map((tile) => tile.id),
+          winningIndex: WINNING_INDEX,
+          serverSeed: randomBytes(32).toString('hex'),
+          clientSeed,
+          nonce: openingsSoFar + 1,
+          idempotencyKey,
+        }),
+      );
+      await manager.save(
+        manager.create(PlayerCardEntity, {
+          playerId: player.id,
+          cardId: winnerEntity.id,
+          dropId: savedOpening.id,
+          soldAt: null,
+        }),
+      );
+
+      const copies = await manager.count(PlayerCardEntity, {
+        where: { playerId: player.id, cardId: winnerEntity.id, soldAt: IsNull() },
+      });
+      player.pityCounter = nextPityCounter(player.pityCounter, rolledRarity);
+      if (copies === 1) await this.milestoneService.checkAndAward(manager, player);
+      await manager.save(player);
+
+      pass.consumedAt = new Date();
+      pass.openingId = savedOpening.id;
+      await manager.save(pass);
 
       return {
         dropId: savedOpening.id,

@@ -14,6 +14,7 @@ const LINKS: ReadonlyArray<NavItem> = [
   { to: '/', label: 'Play' },
   { to: '/inventory', label: 'Inventory' },
   { to: '/collection', label: 'Collection' },
+  { to: '/archive', label: 'Tasks' },
   { to: '/admin', label: 'Review', requiresRole: 'admin' },
 ];
 

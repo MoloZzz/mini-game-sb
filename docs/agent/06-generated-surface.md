@@ -12,6 +12,7 @@
 | GET | `/api/cards` | `game-api/src/cards/cards.controller.ts` → `list` |
 | GET | `/api/cases` | `game-api/src/cases/cases.controller.ts` → `list` |
 | GET | `/api/health` | `game-api/src/health/health.controller.ts` → `check` |
+| GET | `/api/me/archive` | `game-api/src/archive/archive.controller.ts` → `getStatus` |
 | GET | `/api/me/collection/cards` | `game-api/src/collection/collection.controller.ts` → `getCollectionCards` |
 | GET | `/api/me/collection/goal` | `game-api/src/collection/collection.controller.ts` → `getCollectionGoal` |
 | GET | `/api/me/collection` | `game-api/src/collection/collection.controller.ts` → `getCollection` |
@@ -24,6 +25,8 @@
 | POST | `/api/auth/login` | `game-api/src/auth/auth.controller.ts` → `login` |
 | POST | `/api/auth/register` | `game-api/src/auth/auth.controller.ts` → `register` |
 | POST | `/api/cases/:slug/open` | `game-api/src/drops/drops.controller.ts` → `open` |
+| POST | `/api/me/archive/dossiers` | `game-api/src/archive/archive.controller.ts` → `createDossier` |
+| POST | `/api/me/archive/passes/:passId/open` | `game-api/src/archive/archive.controller.ts` → `openPass` |
 | POST | `/api/me/daily-bonus` | `game-api/src/inventory/inventory.controller.ts` → `claimDailyBonus` |
 | POST | `/api/me/inventory/:instanceId/sell` | `game-api/src/inventory/inventory.controller.ts` → `sellCard` |
 | POST | `/api/me/inventory/sell-bulk` | `game-api/src/inventory/inventory.controller.ts` → `sellBulk` |
@@ -32,6 +35,9 @@
 
 | Table | Entity | Source |
 | --- | --- | --- |
+| `archive_dossiers` | `ArchiveDossierEntity` | `game-api/src/entities/archive-dossier.entity.ts` |
+| `archive_notes` | `ArchiveNoteEntity` | `game-api/src/entities/archive-note.entity.ts` |
+| `archive_passes` | `ArchivePassEntity` | `game-api/src/entities/archive-pass.entity.ts` |
 | `cards` | `CardEntity` | `game-api/src/entities/card.entity.ts` |
 | `case_openings` | `CaseOpeningEntity` | `game-api/src/entities/case-opening.entity.ts` |
 | `cases` | `CaseEntity` | `game-api/src/entities/case.entity.ts` |
@@ -49,6 +55,7 @@
 - `game-api/src/migrations/1785200000001-UpdateStoneheartCofferPrice.ts`
 - `game-api/src/migrations/1785200000002-AddLedgerInvariantTrigger.ts`
 - `game-api/src/migrations/1785300000000-AddCaseSetScope.ts`
+- `game-api/src/migrations/1785400000000-AddArchiveDossiers.ts`
 
 ## Shared-type source modules
 
@@ -60,10 +67,12 @@
 - `packages/shared-types/src/player.ts`
 - `packages/shared-types/src/milestones.ts`
 - `packages/shared-types/src/api.ts`
+- `packages/shared-types/src/archive.ts`
 
 ## UI feature roots
 
 - `game-ui/src/features/admin/`
+- `game-ui/src/features/archive/`
 - `game-ui/src/features/auth/`
 - `game-ui/src/features/collection/`
 - `game-ui/src/features/expeditions/`

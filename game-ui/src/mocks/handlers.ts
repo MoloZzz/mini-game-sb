@@ -18,6 +18,7 @@ import {
   isRarity,
   type AdminCardDto,
   type ApiErrorCode,
+  type ArchiveStatusDto,
   type Archetype,
   type CardDto,
   type CardStatus,
@@ -28,6 +29,8 @@ import {
   type CollectionCardsResponse,
   type CollectionGoalDto,
   type CollectionProgressDto,
+  type CreateArchiveDossierRequest,
+  type CreateArchiveDossierResponse,
   type DropHistoryItemDto,
   type Element,
   type EmptyPoolError,
@@ -70,6 +73,14 @@ function requirePathParam(value: string | readonly string[] | undefined, name: s
 
 function findCardById(id: string): CardDto | undefined {
   return MOCK_CARDS.find((card) => card.id === id);
+}
+
+function archiveNoteCards(): ArchiveStatusDto['noteCards'] {
+  const ownedCardIds = new Set(db.ownedInstances.map((instance) => instance.cardId));
+  const documentedCardIds = new Set(db.documentedCardIds);
+  return MOCK_CARDS
+    .filter((card) => ownedCardIds.has(card.id))
+    .map((card) => ({ card, documented: documentedCardIds.has(card.id) }));
 }
 
 function apiError(code: ApiErrorCode, message: string): { code: ApiErrorCode; message: string } {
@@ -501,6 +512,75 @@ const getCollectionCardsHandlers = mirror('/me/collection/cards', (url) =>
   }),
 );
 
+// --- Archive Notes ---------------------------------------------------------------
+
+const getArchiveHandlers = mirror('/me/archive', (url) =>
+  http.get(url, () => HttpResponse.json({ noteCards: archiveNoteCards(), passes: db.archivePasses })),
+);
+
+const createArchiveDossierHandlers = mirror('/me/archive/dossiers', (url) =>
+  http.post(url, async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as CreateArchiveDossierRequest | null;
+    const cardIds = body?.cardIds;
+    const selected = Array.isArray(cardIds) ? cardIds : [];
+    const eligibleIds = new Set(archiveNoteCards().filter((note) => !note.documented).map((note) => note.card.id));
+
+    if (selected.length !== 3 || new Set(selected).size !== 3 || selected.some((id) => !eligibleIds.has(id))) {
+      return HttpResponse.json(apiError('ARCHIVE_INVALID_DOSSIER', 'Choose three different undocumented cards.'), {
+        status: 400,
+      });
+    }
+
+    const pass = { id: crypto.randomUUID(), earnedAt: new Date().toISOString() };
+    db.documentedCardIds.push(...selected);
+    db.archivePasses.push(pass);
+    const response: CreateArchiveDossierResponse = { pass, documentedCardIds: selected };
+    return HttpResponse.json(response, { status: 201 });
+  }),
+);
+
+const openArchivePassHandlers = mirror('/me/archive/passes/:passId/open', (url) =>
+  http.post(url, ({ params }) => {
+    const passId = requirePathParam(params.passId, 'passId');
+    const passIndex = db.archivePasses.findIndex((pass) => pass.id === passId);
+    if (passIndex === -1) {
+      return HttpResponse.json(apiError('ARCHIVE_PASS_NOT_FOUND', 'This Archive Pass is no longer available.'), { status: 404 });
+    }
+
+    db.archivePasses.splice(passIndex, 1);
+    const starterChest = CASE_SEEDS.find((caseSeed) => caseSeed.slug === 'starter-chest')!;
+    const rarity = rollRarity(starterChest.weights);
+    const wonCard = cardsForCase(starterChest, rarity)[Math.floor(Math.random() * cardsForCase(starterChest, rarity).length)]!;
+    const instance: OwnedInstance = {
+      instanceId: crypto.randomUUID(),
+      cardId: wonCard.id,
+      acquiredAt: new Date().toISOString(),
+    };
+    db.ownedInstances.push(instance);
+    const copies = db.ownedInstances.filter((candidate) => candidate.cardId === wonCard.id).length;
+    const drop: DropHistoryItemDto = {
+      dropId: crypto.randomUUID(),
+      caseSlug: 'archive-cache',
+      caseName: 'Archive Cache',
+      card: wonCard,
+      createdAt: instance.acquiredAt,
+    };
+    db.drops.push(drop);
+    db.casesOpened += 1;
+
+    const response: OpenCaseResponse = {
+      dropId: drop.dropId,
+      reel: buildReel(wonCard),
+      winningIndex: WINNING_INDEX,
+      wonCard,
+      isDuplicate: copies > 1,
+      copies,
+      balance: db.balance,
+    };
+    return HttpResponse.json(response);
+  }),
+);
+
 // --- POST /me/inventory/:instanceId/sell -------------------------------------------
 
 const sellInstanceHandlers = mirror('/me/inventory/:instanceId/sell', (url) =>
@@ -763,6 +843,9 @@ export const handlers: HttpHandler[] = [
   ...getCollectionHandlers,
   ...getCollectionGoalHandlers,
   ...getCollectionCardsHandlers,
+  ...getArchiveHandlers,
+  ...createArchiveDossierHandlers,
+  ...openArchivePassHandlers,
   ...sellInstanceHandlers,
   ...getDropsHandlers,
   ...claimDailyBonusHandlers,

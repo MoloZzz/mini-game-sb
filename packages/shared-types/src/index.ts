@@ -17,3 +17,4 @@ export * from './reel.js';
 export * from './player.js';
 export * from './milestones.js';
 export * from './api.js';
+export * from './archive.js';

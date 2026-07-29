@@ -13,6 +13,8 @@ import { RarityFxLayer } from './RarityFxLayer';
 export interface RevealProps {
   result: OpenCaseResponse;
   onAgain: () => void;
+  /** A pass is single-use, so it returns to its task rather than opening again. */
+  againLabel?: string;
   onToInventory: () => void;
   caseName?: string;
   againDisabled?: boolean;
@@ -34,6 +36,7 @@ const BUTTONS_BASE_DELAY_S = 0.8;
 export function Reveal({
   result,
   onAgain,
+  againLabel = 'Again',
   onToInventory,
   caseName,
   againDisabled,
@@ -144,7 +147,7 @@ export function Reveal({
       >
         {/* "Again" is the whole reason the genre exists: largest, centred, autofocused. */}
         <Button variant="primary" size="lg" autoFocus onClick={onAgain} disabled={againDisabled}>
-          Again
+          {againLabel}
         </Button>
         <Button variant="secondary" size="sm" onClick={onToInventory}>
           To inventory
