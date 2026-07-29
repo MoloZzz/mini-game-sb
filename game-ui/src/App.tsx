@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -16,6 +16,7 @@ import { AdminReview } from '@/features/admin/AdminReview';
 import { Login } from '@/features/auth/Login';
 import { Register } from '@/features/auth/Register';
 import { CollectionPage } from '@/features/collection/CollectionPage';
+import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
 import { Inventory } from '@/features/inventory/Inventory';
 import { Lobby } from '@/features/lobby/Lobby';
 import { OpenCaseScreen } from '@/features/open/OpenCaseScreen';
@@ -39,20 +40,53 @@ function RequireAuth({ children, role }: { children: ReactNode; role?: PlayerRol
   return <>{children}</>;
 }
 
-function LobbyRoute() {
-  const navigate = useNavigate();
-  return <Lobby onOpenCase={(slug) => navigate(`/open/${slug}`)} />;
+interface ExpeditionRouteState {
+  expedition?: SessionExpedition;
 }
 
-function OpenRoute() {
+function LobbyRoute({
+  completedExpedition,
+  onStartExpedition,
+}: {
+  completedExpedition: SessionExpedition | null;
+  onStartExpedition: (expedition: SessionExpedition) => void;
+}) {
+  const navigate = useNavigate();
+  return (
+    <Lobby
+      onOpenCase={(slug) => navigate(`/open/${slug}`)}
+      completedExpedition={completedExpedition}
+      onStartExpedition={(expedition) => {
+        onStartExpedition(expedition);
+        navigate(`/open/${expedition.caseSlug}`, { state: { expedition } satisfies ExpeditionRouteState });
+      }}
+    />
+  );
+}
+
+function OpenRoute({
+  activeExpedition,
+  onExpeditionComplete,
+}: {
+  activeExpedition: SessionExpedition | null;
+  onExpeditionComplete: (expedition: SessionExpedition) => void;
+}) {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (!slug) return <Navigate to="/" replace />;
 
   // Falls back to the seed name so the header reads properly before (or
   // without) a /cases round trip.
   const caseName = CASE_SEEDS.find((c) => c.slug === slug)?.name;
+  const routeExpedition = (location.state as ExpeditionRouteState | null)?.expedition;
+  const expedition =
+    routeExpedition &&
+    activeExpedition?.kind === routeExpedition.kind &&
+    activeExpedition.caseSlug === slug
+      ? activeExpedition
+      : null;
 
   return (
     <OpenCaseScreen
@@ -60,12 +94,17 @@ function OpenRoute() {
       caseName={caseName}
       onBackToLobby={() => navigate('/')}
       onToInventory={() => navigate('/inventory')}
+      expedition={expedition}
+      onExpeditionComplete={() => expedition && onExpeditionComplete(expedition)}
+      onToExpeditionCollection={() => navigate('/collection')}
     />
   );
 }
 
 export function AppRoutes() {
   const pathname = useLocation().pathname;
+  const [activeExpedition, setActiveExpedition] = useState<SessionExpedition | null>(null);
+  const [completedExpedition, setCompletedExpedition] = useState<SessionExpedition | null>(null);
   // The reel is a full-focus screen — the nav strip is hidden while a case is
   // opening so nothing competes with the 5.5 seconds. /login and /register
   // hide it too: its links all point at protected routes a signed-out
@@ -80,7 +119,13 @@ export function AppRoutes() {
         path="/"
         element={
           <RequireAuth>
-            <LobbyRoute />
+            <LobbyRoute
+              completedExpedition={completedExpedition}
+              onStartExpedition={(expedition) => {
+                setActiveExpedition(expedition);
+                setCompletedExpedition(null);
+              }}
+            />
           </RequireAuth>
         }
       />
@@ -88,7 +133,10 @@ export function AppRoutes() {
         path="/open/:slug"
         element={
           <RequireAuth>
-            <OpenRoute />
+            <OpenRoute
+              activeExpedition={activeExpedition}
+              onExpeditionComplete={setCompletedExpedition}
+            />
           </RequireAuth>
         }
       />

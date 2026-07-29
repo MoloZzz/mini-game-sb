@@ -66,6 +66,7 @@
 - `game-ui/src/features/admin/`
 - `game-ui/src/features/auth/`
 - `game-ui/src/features/collection/`
+- `game-ui/src/features/expeditions/`
 - `game-ui/src/features/inventory/`
 - `game-ui/src/features/lobby/`
 - `game-ui/src/features/open/`

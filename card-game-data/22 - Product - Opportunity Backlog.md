@@ -17,7 +17,8 @@ status: active
 
 ### O-002 · Session expeditions
 
-- **Статус:** decided-for-test (owner delegated strategy choice on 2026-07-29).
+- **Статус:** ready-for-test (owner delegated the MVP boundary on 2026-07-29;
+  brief → [[24 - Product - Session Expeditions Brief]]).
 - **Job / сегмент-гіпотеза:** collector — know what to do in this session without
   a calendar obligation.
 - **Проблема:** a set explains a long-term chase but not always the next

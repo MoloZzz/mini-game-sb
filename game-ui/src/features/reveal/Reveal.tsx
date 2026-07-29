@@ -16,6 +16,9 @@ export interface RevealProps {
   onToInventory: () => void;
   caseName?: string;
   againDisabled?: boolean;
+  expeditionComplete?: boolean;
+  expeditionCollectionLabel?: string;
+  onToExpeditionCollection?: () => void;
 }
 
 /** Buttons appear once the card is fully readable — see the roulette spec's timeline. */
@@ -28,7 +31,16 @@ const BUTTONS_BASE_DELAY_S = 0.8;
  *  - ~500ms: the card is fully readable at `lg` size.
  *  - ~800ms: the buttons appear, "Again" pre-focused.
  */
-export function Reveal({ result, onAgain, onToInventory, caseName, againDisabled }: RevealProps) {
+export function Reveal({
+  result,
+  onAgain,
+  onToInventory,
+  caseName,
+  againDisabled,
+  expeditionComplete = false,
+  expeditionCollectionLabel,
+  onToExpeditionCollection,
+}: RevealProps) {
   const { wonCard, isDuplicate, copies, balance } = result;
   const reducedMotion = usePrefersReducedMotion();
   const fx = RARITY_FX[wonCard.rarity];
@@ -111,6 +123,18 @@ export function Reveal({ result, onAgain, onToInventory, caseName, againDisabled
         Balance: <span className="font-semibold text-neutral-200">{balance.coins} coins</span>,{' '}
         <span className="font-semibold text-neutral-200">{balance.keys} keys</span>
       </p>
+
+      {expeditionComplete && (
+        <div className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-center">
+          <p className="text-sm font-semibold text-emerald-300">Expedition complete</p>
+          <p className="mt-1 text-xs text-neutral-400">This session direction ends here; it grants no extra reward.</p>
+          {onToExpeditionCollection && expeditionCollectionLabel && (
+            <button type="button" onClick={onToExpeditionCollection} className="mt-3 text-sm font-semibold text-amber-300 underline underline-offset-4">
+              {expeditionCollectionLabel}
+            </button>
+          )}
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}

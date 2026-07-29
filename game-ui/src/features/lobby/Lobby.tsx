@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { CASE_SEEDS, type CaseDto } from '@card-game/shared-types';
 
 import { BalanceDisplay } from '@/components/BalanceDisplay';
+import { ExpeditionPanel } from '@/features/expeditions/ExpeditionPanel';
+import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
 
 import { CaseCard } from './CaseCard';
 import { CaseDetail } from './CaseDetail';
@@ -10,6 +12,8 @@ import { useLobbyData } from './useLobbyData';
 
 interface LobbyProps {
   onOpenCase: (slug: string) => void;
+  completedExpedition?: SessionExpedition | null;
+  onStartExpedition?: (expedition: SessionExpedition) => void;
 }
 
 const EMPTY_BALANCE = { coins: 0, keys: 0 };
@@ -42,7 +46,11 @@ function CaseCardSkeleton() {
  * belongs to the reel flow (owned elsewhere); this screen only hands the
  * slug upward via `onOpenCase`, keeping that call in exactly one place.
  */
-export function Lobby({ onOpenCase }: LobbyProps) {
+export function Lobby({
+  onOpenCase,
+  completedExpedition = null,
+  onStartExpedition = () => {},
+}: LobbyProps) {
   const { player, cases, drops, loading, error, refresh, claimBonus, bonusError } = useLobbyData();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
@@ -98,11 +106,15 @@ export function Lobby({ onOpenCase }: LobbyProps) {
             />
           </div>
         ) : (
-          // 9 cases, not the original 3 — capped at 3 columns (a clean 3x3
-          // grid with no orphaned last row) and centred with a max-width
-          // rather than growing to a 4th/5th column on wide screens, which
-          // would leave a lone tile stranded on its own row for any case
-          // count that isn't a multiple of 4.
+          <div className="flex flex-col gap-6">
+            {!loading && (
+              <ExpeditionPanel
+                cases={cases}
+                completed={completedExpedition}
+                onStart={onStartExpedition}
+              />
+            )}
+            {/* The normal case grid remains available whether or not an expedition is selected. */}
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loading
               ? Array.from({ length: CASE_SEEDS.length }).map((_, i) => <CaseCardSkeleton key={i} />)
@@ -114,6 +126,7 @@ export function Lobby({ onOpenCase }: LobbyProps) {
                     <CaseCard case={c} onOpen={onOpenCase} balance={balance} />
                   </div>
                 ))}
+          </div>
           </div>
         )}
       </main>

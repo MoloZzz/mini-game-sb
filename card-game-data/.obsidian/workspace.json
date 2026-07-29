@@ -11,10 +11,14 @@
             "id": "8d53591df7d16767",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Реальна економіка + розділення гравців - Plan.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "Реальна економіка + розділення гравців - Plan"
             }
           }
         ]
@@ -179,7 +183,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "c3b7c851d201ecb3",
+  "active": "8d53591df7d16767",
   "lastOpenFiles": [
     "11 - Planning - Open Questions.md",
     "Реальна економіка + розділення гравців - Plan.md",

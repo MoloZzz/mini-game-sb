@@ -101,6 +101,27 @@ describe('OpenCaseScreen — the full open → reel → reveal loop against MSW'
     expect(again).toHaveFocus();
   });
 
+  it('marks the selected expedition complete after its successful reveal', async () => {
+    const onComplete = vi.fn();
+    const onToCollection = vi.fn();
+    render(
+      <OpenCaseScreen
+        slug="cinderbound-cache"
+        caseName="Cinderbound Cache"
+        onBackToLobby={() => {}}
+        onToInventory={() => {}}
+        expedition={{ kind: 'ashen-wastes', caseSlug: 'cinderbound-cache' }}
+        onExpeditionComplete={onComplete}
+        onToExpeditionCollection={onToCollection}
+      />,
+    );
+
+    expect(await screen.findByText(/expedition complete/i, {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    await screen.getByRole('button', { name: /view ashen wastes collection/i }).click();
+    expect(onToCollection).toHaveBeenCalledTimes(1);
+  });
+
   it('surfaces a failed opening without leaving the player stuck', async () => {
     server.use(
       http.post('*/api/cases/:slug/open', () =>

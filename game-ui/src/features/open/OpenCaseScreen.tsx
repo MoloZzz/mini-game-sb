@@ -7,12 +7,18 @@ import { newIdempotencyKey, openCase } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 import { Reel } from '@/features/reel/Reel';
 import { Reveal } from '@/features/reveal/Reveal';
+import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
+import { expeditionCollectionLabel } from '@/features/expeditions/sessionExpedition';
 
 export interface OpenCaseScreenProps {
   slug: string;
   caseName?: string;
   onBackToLobby: () => void;
   onToInventory: () => void;
+  /** Optional browser-memory-only session objective selected from the lobby. */
+  expedition?: SessionExpedition | null;
+  onExpeditionComplete?: () => void;
+  onToExpeditionCollection?: () => void;
   /** Fires with the post-opening balance so an outer shell can stay in sync. */
   onBalanceChange?: (balance: OpenCaseResponse['balance']) => void;
 }
@@ -41,6 +47,9 @@ export function OpenCaseScreen({
   caseName,
   onBackToLobby,
   onToInventory,
+  expedition = null,
+  onExpeditionComplete,
+  onToExpeditionCollection,
   onBalanceChange,
 }: OpenCaseScreenProps) {
   const [attempt, setAttempt] = useState(0);
@@ -55,6 +64,7 @@ export function OpenCaseScreen({
   // reel would never start.
   const startedRef = useRef<string | null>(null);
   const currentKeyRef = useRef<string>('');
+  const expeditionCompletedRef = useRef(false);
   const mountedRef = useRef(true);
   const onBalanceChangeRef = useRef(onBalanceChange);
   onBalanceChangeRef.current = onBalanceChange;
@@ -65,6 +75,10 @@ export function OpenCaseScreen({
       mountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    expeditionCompletedRef.current = false;
+  }, [expedition?.caseSlug, expedition?.kind]);
 
   useEffect(() => {
     const attemptKey = `${slug}#${attempt}`;
@@ -97,7 +111,11 @@ export function OpenCaseScreen({
     setPhase((current) =>
       current.kind === 'spinning' ? { kind: 'revealed', result: current.result } : current,
     );
-  }, []);
+    if (expedition && !expeditionCompletedRef.current) {
+      expeditionCompletedRef.current = true;
+      onExpeditionComplete?.();
+    }
+  }, [expedition, onExpeditionComplete]);
 
   const handleAgain = useCallback(() => setAttempt((n) => n + 1), []);
 
@@ -134,6 +152,9 @@ export function OpenCaseScreen({
           onAgain={handleAgain}
           onToInventory={onToInventory}
           againDisabled={busy}
+          expeditionComplete={Boolean(expedition)}
+          expeditionCollectionLabel={expedition ? expeditionCollectionLabel(expedition) : undefined}
+          onToExpeditionCollection={expedition ? onToExpeditionCollection : undefined}
         />
       )}
 

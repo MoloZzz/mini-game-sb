@@ -90,11 +90,10 @@ describe('Lobby', () => {
     }
   });
 
-  it('renders all 9 seed cases at once', async () => {
+  it('renders every seed case at once', async () => {
     render(<Lobby onOpenCase={() => {}} />);
 
-    await waitFor(() => expect(screen.getAllByTestId('case-card')).toHaveLength(9));
-    expect(CASE_SEEDS.length).toBe(9);
+    await waitFor(() => expect(screen.getAllByTestId('case-card')).toHaveLength(CASE_SEEDS.length));
   });
 
   it('themes every element case with its element label, and the two element:null cases as Classic', async () => {
