@@ -131,6 +131,27 @@ if (writeGenerated) {
   errors.push(`${generatedPath}: stale; run npm run sync:brain`);
 }
 
+const packageManifestPath = 'package.json';
+try {
+  const packageManifest = JSON.parse(readFileSync(resolve(root, packageManifestPath), 'utf8'));
+  if (packageManifest.scripts?.['brain:task'] !== 'node scripts/brain-task.mjs') {
+    errors.push('package.json: must expose npm run brain:task as the mandatory task router');
+  }
+  if (packageManifest.scripts?.['brain:usage'] !== 'node scripts/brain-task.mjs --usage') {
+    errors.push('package.json: must expose npm run brain:usage for local task-route audit');
+  }
+} catch (error) {
+  errors.push(`${packageManifestPath}: invalid JSON (${error instanceof Error ? error.message : String(error)})`);
+}
+
+if (!existsSync(resolve(root, 'scripts/brain-task.mjs'))) {
+  errors.push('scripts/brain-task.mjs: missing mandatory task router');
+}
+const gitignore = existsSync(resolve(root, '.gitignore')) ? readFileSync(resolve(root, '.gitignore'), 'utf8') : '';
+if (!gitignore.includes('.brain/audit/')) {
+  errors.push('.gitignore: must keep the local task-route audit out of version control');
+}
+
 const productIndexPath = 'card-game-data/agent-product-index.json';
 const productIntelligencePaths = [
   'card-game-data/18 - Product - Strategy.md',
@@ -201,8 +222,8 @@ if (!agents.includes('docs/agent/00-brief.md')) {
 if (!agents.includes('Brain trace')) {
   errors.push('AGENTS.md: must require the Brain trace audit receipt');
 }
-if (!agents.includes('brain:product')) {
-  errors.push('AGENTS.md: must require the product decision bundle for product and design tasks');
+if (!agents.includes('brain:task')) {
+  errors.push('AGENTS.md: must require the mandatory task router');
 }
 
 for (const relativePath of instructionShims) {
@@ -217,8 +238,36 @@ for (const relativePath of instructionShims) {
   if (!readFileSync(absolutePath, 'utf8').includes('Brain trace')) {
     errors.push(`${relativePath}: must require the Brain trace audit receipt`);
   }
-  if (!readFileSync(absolutePath, 'utf8').includes('brain:product')) {
-    errors.push(`${relativePath}: must require the product decision bundle for product and design tasks`);
+  if (!readFileSync(absolutePath, 'utf8').includes('brain:task')) {
+    errors.push(`${relativePath}: must require the mandatory task router`);
+  }
+}
+
+const PRODUCT_RECEIPT_MAX_AGE_MS = 8 * 60 * 60 * 1000;
+function isProductSensitivePath(path) {
+  return path.startsWith('card-game-data/')
+    || /^(game-api\/src\/(drops|inventory|ledger|milestones|collection|players)\/|game-ui\/src\/features\/(lobby|open|reveal|collection|inventory)\/|packages\/shared-types\/src\/(rarity|case|player|milestones|reel)\.ts)/.test(path);
+}
+
+const productSensitiveChanges = changedFiles().filter(isProductSensitivePath);
+if (productSensitiveChanges.length > 0) {
+  const receiptPath = '.brain/audit/active-task-route.json';
+  if (!existsSync(resolve(root, receiptPath))) {
+    errors.push(`Product-sensitive changes require a fresh task route receipt; run npm run brain:task -- "<complete user request>" before tests. Changed: ${productSensitiveChanges.join(', ')}`);
+  } else {
+    try {
+      const receipt = JSON.parse(readFileSync(resolve(root, receiptPath), 'utf8'));
+      const age = Date.now() - Date.parse(receipt.at);
+      if (receipt.workflow !== 'product-intelligence-required') {
+        errors.push(`Product-sensitive changes have a ${String(receipt.workflow)} receipt; rerun npm run brain:task with the complete product request.`);
+      } else if (!Number.isFinite(age) || age < 0 || age > PRODUCT_RECEIPT_MAX_AGE_MS) {
+        errors.push(`Product-sensitive changes require a task route receipt newer than ${PRODUCT_RECEIPT_MAX_AGE_MS / 3_600_000} hours.`);
+      } else if (!Array.isArray(receipt.selectedPaths) || !receipt.selectedPaths.includes('card-game-data/18 - Product - Strategy.md')) {
+        errors.push('Product task receipt is incomplete; rerun npm run brain:task to create the full Product Intelligence bundle.');
+      }
+    } catch (error) {
+      errors.push(`${receiptPath}: invalid JSON (${error instanceof Error ? error.message : String(error)})`);
+    }
   }
 }
 

@@ -3,6 +3,8 @@ import { RARITY_META, type CollectionCardDto, type Rarity } from '@card-game/sha
 
 export interface CollectionGalleryProps {
   items: CollectionCardDto[];
+  selectedId: string | null;
+  onSelect: (entry: CollectionCardDto) => void;
 }
 
 function initials(name: string): string {
@@ -37,7 +39,15 @@ function LockedTile({ rarity }: { rarity: Rarity }) {
   );
 }
 
-function UnlockedTile({ card }: { card: NonNullable<CollectionCardDto['card']> }) {
+function UnlockedTile({
+  card,
+  selected,
+  onSelect,
+}: {
+  card: NonNullable<CollectionCardDto['card']>;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   // A broken thumb must never blank a tile — same fallback pattern as the
   // inventory grid and the drop reveal.
   const [broken, setBroken] = useState(false);
@@ -45,8 +55,13 @@ function UnlockedTile({ card }: { card: NonNullable<CollectionCardDto['card']> }
   const metaLine = [card.element, card.archetype].filter(Boolean).join(' · ');
 
   return (
-    <div
-      className="flex flex-col overflow-hidden rounded-lg border-2 bg-neutral-900"
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`flex flex-col overflow-hidden rounded-lg border-2 bg-neutral-900 text-left transition-transform hover:-translate-y-0.5 ${
+        selected ? 'ring-2 ring-amber-400' : ''
+      }`}
       style={{ borderColor: color }}
     >
       <div className="relative aspect-square w-full" style={{ backgroundColor: `${color}1a` }}>
@@ -75,7 +90,7 @@ function UnlockedTile({ card }: { card: NonNullable<CollectionCardDto['card']> }
           <p className="truncate text-[10px] uppercase tracking-wide text-neutral-500">{metaLine}</p>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -85,12 +100,17 @@ function UnlockedTile({ card }: { card: NonNullable<CollectionCardDto['card']> }
  * masking happens server-side, so this component never has real art to
  * accidentally render for a locked slot.
  */
-export function CollectionGallery({ items }: CollectionGalleryProps) {
+export function CollectionGallery({ items, selectedId, onSelect }: CollectionGalleryProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {items.map((entry) =>
         entry.owned && entry.card ? (
-          <UnlockedTile key={entry.id} card={entry.card} />
+          <UnlockedTile
+            key={entry.id}
+            card={entry.card}
+            selected={entry.id === selectedId}
+            onSelect={() => onSelect(entry)}
+          />
         ) : (
           <LockedTile key={entry.id} rarity={entry.rarity} />
         ),

@@ -34,6 +34,8 @@ card-forge/out/
 *.log
 npm-debug.log*
 yarn-error.log*
+.agents/brain-audit/
+.brain/audit/
 
 # editors / os
 .DS_Store
