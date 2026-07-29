@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse, type HttpHandler } from 'msw';
 import {
+  ARCHETYPES,
   CARD_STATUSES,
   CASE_SEEDS,
   DAILY_BONUS,
@@ -15,11 +16,14 @@ import {
   isRarity,
   type AdminCardDto,
   type ApiErrorCode,
+  type Archetype,
   type CardDto,
   type CardStatus,
   type CaseDto,
   type CaseSeed,
   type ClaimDailyBonusResponse,
+  type CollectionCardDto,
+  type CollectionCardsResponse,
   type CollectionProgressDto,
   type DropHistoryItemDto,
   type Element,
@@ -399,6 +403,49 @@ const getCollectionHandlers = mirror('/me/collection', (url) =>
   }),
 );
 
+// --- GET /me/collection/cards -------------------------------------------------------
+
+function parseArchetype(value: string | null): Archetype | undefined {
+  if (value !== null && (ARCHETYPES as readonly string[]).includes(value)) return value as Archetype;
+  return undefined;
+}
+
+/** Same ordering `CardsService.findMany` uses server-side: rarity desc, name asc. */
+function sortedCatalog(): CardDto[] {
+  return [...MOCK_CARDS].sort((a, b) => {
+    const byRarity = RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity];
+    return byRarity !== 0 ? byRarity : a.name.localeCompare(b.name);
+  });
+}
+
+const getCollectionCardsHandlers = mirror('/me/collection/cards', (url) =>
+  http.get(url, ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const rarity = parseRarity(params.get('rarity'));
+    const element = parseElement(params.get('element'));
+    const archetype = parseArchetype(params.get('archetype'));
+    const page = parsePositiveInt(params.get('page'), 1);
+    const limit = parsePositiveInt(params.get('limit'), 40);
+
+    let catalog = sortedCatalog();
+    if (rarity) catalog = catalog.filter((c) => c.rarity === rarity);
+    if (element) catalog = catalog.filter((c) => c.element === element);
+    if (archetype) catalog = catalog.filter((c) => c.archetype === archetype);
+
+    const ownedCardIds = new Set(db.ownedInstances.map((i) => i.cardId));
+    const total = catalog.length;
+    const pageItems = catalog.slice((page - 1) * limit, page * limit);
+
+    const items: CollectionCardDto[] = pageItems.map((card) => {
+      const owned = ownedCardIds.has(card.id);
+      return { id: card.id, rarity: card.rarity, owned, card: owned ? card : null };
+    });
+
+    const response: CollectionCardsResponse = { items, total, page, limit };
+    return HttpResponse.json(response);
+  }),
+);
+
 // --- POST /me/inventory/:instanceId/sell -------------------------------------------
 
 const sellInstanceHandlers = mirror('/me/inventory/:instanceId/sell', (url) =>
@@ -659,6 +706,7 @@ export const handlers: HttpHandler[] = [
   ...getMeHandlers,
   ...getInventoryHandlers,
   ...getCollectionHandlers,
+  ...getCollectionCardsHandlers,
   ...sellInstanceHandlers,
   ...getDropsHandlers,
   ...claimDailyBonusHandlers,

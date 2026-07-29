@@ -15,6 +15,7 @@ import { ToastProvider } from '@/components/Toast';
 import { AdminReview } from '@/features/admin/AdminReview';
 import { Login } from '@/features/auth/Login';
 import { Register } from '@/features/auth/Register';
+import { CollectionPage } from '@/features/collection/CollectionPage';
 import { Inventory } from '@/features/inventory/Inventory';
 import { Lobby } from '@/features/lobby/Lobby';
 import { OpenCaseScreen } from '@/features/open/OpenCaseScreen';
@@ -96,6 +97,14 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <Inventory />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/collection"
+        element={
+          <RequireAuth>
+            <CollectionPage />
           </RequireAuth>
         }
       />

@@ -4,9 +4,11 @@ import type {
   CardStatus,
   CaseDto,
   ClaimDailyBonusResponse,
+  CollectionCardsResponse,
   CollectionProgressDto,
   DropHistoryItemDto,
   InventoryPageDto,
+  ListCollectionCardsQuery,
   ListInventoryQuery,
   OpenCaseRequest,
   OpenCaseResponse,
@@ -131,6 +133,18 @@ export function getInventory(q?: ListInventoryQuery): Promise<InventoryPageDto> 
 
 export function getCollectionProgress(): Promise<CollectionProgressDto> {
   return request<CollectionProgressDto>('/me/collection');
+}
+
+export function getCollectionCards(q?: ListCollectionCardsQuery): Promise<CollectionCardsResponse> {
+  return request<CollectionCardsResponse>('/me/collection/cards', {
+    query: {
+      rarity: q?.rarity,
+      element: q?.element,
+      archetype: q?.archetype,
+      page: q?.page,
+      limit: q?.limit,
+    },
+  });
 }
 
 export function sellInstance(instanceId: string): Promise<SellCardResponse> {

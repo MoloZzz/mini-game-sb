@@ -1,8 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
-import type { CollectionProgressDto } from '@card-game/shared-types';
+import { Controller, Get, Query } from '@nestjs/common';
+import type { CollectionCardsResponse, CollectionProgressDto } from '@card-game/shared-types';
 import { CurrentPlayer } from '../auth/decorators/current-player.decorator';
 import type { CurrentPlayerPayload } from '../auth/types';
 import { CollectionService } from './collection.service';
+import { ListCollectionCardsQueryDto } from './dto/list-collection-cards.query';
 
 /**
  * Shares the `me` base path with `PlayersController` and
@@ -18,5 +19,13 @@ export class CollectionController {
     @CurrentPlayer() { id: playerId }: CurrentPlayerPayload,
   ): Promise<CollectionProgressDto> {
     return this.collectionService.getProgress(playerId);
+  }
+
+  @Get('collection/cards')
+  async getCollectionCards(
+    @CurrentPlayer() { id: playerId }: CurrentPlayerPayload,
+    @Query() query: ListCollectionCardsQueryDto,
+  ): Promise<CollectionCardsResponse> {
+    return this.collectionService.getCards(playerId, query);
   }
 }

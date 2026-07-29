@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { RARITIES } from '@card-game/shared-types';
-import type { CollectionProgressDto, Rarity } from '@card-game/shared-types';
+import type {
+  CollectionCardDto,
+  CollectionCardsResponse,
+  CollectionProgressDto,
+  ListCollectionCardsQuery,
+  Rarity,
+} from '@card-game/shared-types';
 import type { DataSource } from 'typeorm';
+import { CardMapper } from '../cards/card.mapper';
+import { CardsService } from '../cards/cards.service';
 import { PoolService } from './pool.service';
 
 @Injectable()
@@ -10,6 +18,8 @@ export class CollectionService {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly poolService: PoolService,
+    private readonly cardsService: CardsService,
+    private readonly cardMapper: CardMapper,
   ) {}
 
   /**
@@ -37,6 +47,56 @@ export class CollectionService {
     }
 
     return { owned, total, byRarity };
+  }
+
+  /**
+   * `GET /me/collection/cards` — the dex grid, paginated over the approved
+   * pool (same filters/ordering as `GET /cards`). Each slot is masked
+   * server-side: a card the player doesn't own comes back as `{id, rarity,
+   * owned: false, card: null}`, never with art or a name attached.
+   */
+  async getCards(playerId: string, query: ListCollectionCardsQuery): Promise<CollectionCardsResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 40;
+
+    const { items, total } = await this.cardsService.findMany({
+      status: 'approved',
+      rarity: query.rarity,
+      element: query.element,
+      archetype: query.archetype,
+      page,
+      limit,
+    });
+
+    const ownedIds = await this.getOwnedCardIds(
+      playerId,
+      items.map((card) => card.id),
+    );
+
+    const dtoItems: CollectionCardDto[] = items.map((card) => {
+      const owned = ownedIds.has(card.id);
+      return {
+        id: card.id,
+        rarity: card.rarity,
+        owned,
+        card: owned ? this.cardMapper.toCardDto(card) : null,
+      };
+    });
+
+    return { items: dtoItems, total, page, limit };
+  }
+
+  /** Which of `cardIds` this player owns at least one unsold copy of. */
+  private async getOwnedCardIds(playerId: string, cardIds: string[]): Promise<Set<string>> {
+    if (cardIds.length === 0) return new Set();
+
+    const rows = await this.dataSource.query<Array<{ card_id: string }>>(
+      `SELECT DISTINCT pc.card_id
+       FROM player_cards pc
+       WHERE pc.player_id = $1 AND pc.sold_at IS NULL AND pc.card_id = ANY($2::uuid[])`,
+      [playerId, cardIds],
+    );
+    return new Set(rows.map((row) => row.card_id));
   }
 
   /** One query, `COUNT(DISTINCT c.id)` grouped by rarity — never one query per card. */

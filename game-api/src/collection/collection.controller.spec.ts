@@ -1,15 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import type { CollectionProgressDto } from '@card-game/shared-types';
+import type { CollectionCardsResponse, CollectionProgressDto } from '@card-game/shared-types';
 import type { CurrentPlayerPayload } from '../auth/types';
 import { CollectionController } from './collection.controller';
 import { CollectionService } from './collection.service';
+import { ListCollectionCardsQueryDto } from './dto/list-collection-cards.query';
 
 describe('CollectionController', () => {
   let controller: CollectionController;
-  let collectionService: { getProgress: jest.Mock };
+  let collectionService: { getProgress: jest.Mock; getCards: jest.Mock };
 
   beforeEach(async () => {
-    collectionService = { getProgress: jest.fn() };
+    collectionService = { getProgress: jest.fn(), getCards: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CollectionController],
@@ -39,5 +40,18 @@ describe('CollectionController', () => {
 
     expect(collectionService.getProgress).toHaveBeenCalledWith('player-1');
     expect(result).toBe(progress);
+  });
+
+  it('getCollectionCards delegates to CollectionService.getCards with the player id and query', async () => {
+    const page: CollectionCardsResponse = { items: [], total: 0, page: 1, limit: 40 };
+    collectionService.getCards.mockResolvedValue(page);
+
+    const currentPlayer: CurrentPlayerPayload = { id: 'player-1', role: 'player' };
+    const query = new ListCollectionCardsQueryDto();
+    query.rarity = 'mythic';
+    const result = await controller.getCollectionCards(currentPlayer, query);
+
+    expect(collectionService.getCards).toHaveBeenCalledWith('player-1', query);
+    expect(result).toBe(page);
   });
 });

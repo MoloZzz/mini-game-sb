@@ -44,6 +44,19 @@ export interface CollectionProgressDto {
   byRarity: Record<Rarity, { owned: number; total: number }>;
 }
 
+/**
+ * One dex slot for `GET /me/collection/cards`. Masked server-side until
+ * owned: a locked slot carries only `id`/`rarity` (enough to draw a
+ * rarity-coloured "?" tile) and `card` is null — the API never ships the
+ * art or name for a card the player hasn't pulled yet.
+ */
+export interface CollectionCardDto {
+  id: string;
+  rarity: Rarity;
+  owned: boolean;
+  card: CardDto | null;
+}
+
 export interface DropHistoryItemDto {
   dropId: string;
   caseSlug: string;

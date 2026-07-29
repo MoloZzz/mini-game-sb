@@ -1,5 +1,5 @@
 import type { AdminCardDto, Archetype, CardDto, CardStatus, Element, GenMeta } from './card.js';
-import type { Balance, InventoryItemDto } from './player.js';
+import type { Balance, CollectionCardDto, InventoryItemDto } from './player.js';
 import type { Rarity } from './rarity.js';
 import type { ReelTileDto } from './reel.js';
 
@@ -65,6 +65,18 @@ export interface SellCardResponse {
   gained: { coins: number };
   balance: Balance;
 }
+
+// --- GET /me/collection/cards — the dex grid ---
+
+export interface ListCollectionCardsQuery {
+  rarity?: Rarity;
+  element?: Element;
+  archetype?: Archetype;
+  page?: number;
+  limit?: number;
+}
+
+export type CollectionCardsResponse = Paginated<CollectionCardDto>;
 
 // --- POST /me/inventory/sell-bulk ---
 

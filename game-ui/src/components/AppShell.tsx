@@ -13,6 +13,7 @@ interface NavItem {
 const LINKS: ReadonlyArray<NavItem> = [
   { to: '/', label: 'Play' },
   { to: '/inventory', label: 'Inventory' },
+  { to: '/collection', label: 'Collection' },
   { to: '/admin', label: 'Review', requiresRole: 'admin' },
 ];
 
