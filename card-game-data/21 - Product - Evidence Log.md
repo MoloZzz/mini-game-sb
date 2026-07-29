@@ -49,6 +49,38 @@ status: active
   нового, середнього та майже повного акаунта; потім порівняти малий
   onboarding runway з condition-based recovery у scripted playtest.
 
+### E-2026-07-29-02 · Seeded model of current session economy
+
+- **Дата:** 2026-07-29
+- **Статус:** raw
+- **Тип:** локальна подія
+- **Джерело й спосіб:** `npm.cmd run simulate:economy --workspace game-api --
+  --runs=10000 --max-opens=250` against the seeded local database. The model
+  read 452 approved cards (`188/113/67/37/31/16` by rarity) and ten active
+  cases. It always chose the cheapest affordable coin case, otherwise the
+  cheapest key case; daily bonus was already claimed, so no wait-time income
+  existed during the session.
+- **Вибірка:** 10,000 deterministic simulated runs each for new, mid and
+  near-complete inventories; this is a model of system rules, not players.
+- **Спостереження:** with no duplicate sale, a new post-daily account reached
+  a hard lock after 30.8 opens on average (worst run 27); mid and near-complete
+  accounts stopped after 10. With immediate sale of every duplicate — an
+  optimistic policy absent from the current UI — new accounts averaged 31.9
+  opens, mid 18.4 and near-complete 31.6. Almost every run still reached a
+  balance below the 100-coin Starter Chest before 250 opens.
+- **Інтерпретація:** the current sources are a finite session budget, not a
+  continuous-session economy. Duplicate sale improves the middle and end but
+  cannot be the early-game recovery path.
+- **Пов'язані job / метрика:** [[19 - Product - Jobs To Be Done]] —
+  «перетворити зайве на осмислений наступний шанс»; [[20 - Product - Metric
+  Tree]] — net coins/keys за сесію та невдалі спроби відкрити кейс.
+- **Обмеження:** modelled case choice is not observed behaviour; it does not
+  model UI comprehension, voluntary stopping, targeted Cinderbound Cache
+  choice, manual inventory actions or future recovery mechanics.
+- **Наступна дія:** run a scripted playtest of the zero-balance state and
+  obtain an owner decision on whether the product should support a finite
+  opening session or a repeatable non-timed source of further opens.
+
 ```md
 ### E-<YYYY-MM-DD>-<XX> · <коротка назва>
 

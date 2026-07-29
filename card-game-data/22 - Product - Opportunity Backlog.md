@@ -28,15 +28,18 @@ status: active
 - **Гіпотеза:** якщо гравець бачить скінченний, зрозумілий і нетаймований
   шлях до наступної meaningful action, то він зможе пояснити, що робити
   далі, без відчуття тиску календаря.
-- **Докази:** [[21 - Product - Evidence Log#E-2026-07-29-01]]; локального
-  evidence про частоту чи причину soft lock ще немає.
+- **Докази:** [[21 - Product - Evidence Log#E-2026-07-29-01]] і
+  [[21 - Product - Evidence Log#E-2026-07-29-02]]. Seeded model confirms
+  a finite-session soft lock under its declared policy; player frequency and
+  reason for stopping remain unknown.
 - **Метрика успіху / guardrail:** task-comprehension у playtest; `net
   coins/keys за сесію`, частка балансів нижче ціни найдешевшого кейсу,
   нові unique карти на відкриття, відповідь про тиск/плутанину. Baseline і
   пороги — відкриті.
-- **Найменший тест:** спочатку seeded економічна модель. Потім сценарій
-  нульового балансу: (A) finite onboarding runway, (B) condition-based
-  recovery; порівняти з прозорим zero-state без нової винагороди.
+- **Найменший тест:** [[25 - Product - Currency Continuity Experiment]]:
+  zero-balance сценарій з control, finite onboarding runway та
+  condition-based recovery; перед ним потрібне owner decision про цільову
+  тривалість/відновлюваність opening session.
 - **Вплив на системи:** core loop, економіка, UI.
 - **Ризики й межі:** кожна currency mutation потребує ledger; не вводити
   timer, streak, paid bypass, прихований RNG чи нескінченний source. Не

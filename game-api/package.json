@@ -16,6 +16,7 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "seed": "ts-node -r tsconfig-paths/register src/seed/seed.ts",
+    "simulate:economy": "ts-node -r tsconfig-paths/register src/scripts/simulate-economy.ts",
     "account:bind": "ts-node -r tsconfig-paths/register src/scripts/bind-account.ts",
     "lint": "eslint \"{src,test}/**/*.ts\""
   },
