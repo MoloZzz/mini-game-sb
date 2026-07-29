@@ -44,6 +44,17 @@ export interface CollectionProgressDto {
   byRarity: Record<Rarity, { owned: number; total: number }>;
 }
 
+/** A source-neutral prompt for the next meaningful collection action. */
+export interface CollectionGoalDto {
+  id: string;
+  kind: 'milestone' | 'set';
+  title: string;
+  description: string;
+  progress: { current: number; target: number };
+  reward: Balance | null;
+  action: { label: string; href: string };
+}
+
 /**
  * One dex slot for `GET /me/collection/cards`. Masked server-side until
  * owned: a locked slot carries only `id`/`rarity` (enough to draw a

@@ -13,6 +13,7 @@
 | GET | `/api/cases` | `game-api/src/cases/cases.controller.ts` → `list` |
 | GET | `/api/health` | `game-api/src/health/health.controller.ts` → `check` |
 | GET | `/api/me/collection/cards` | `game-api/src/collection/collection.controller.ts` → `getCollectionCards` |
+| GET | `/api/me/collection/goal` | `game-api/src/collection/collection.controller.ts` → `getCollectionGoal` |
 | GET | `/api/me/collection` | `game-api/src/collection/collection.controller.ts` → `getCollection` |
 | GET | `/api/me/drops` | `game-api/src/inventory/inventory.controller.ts` → `listDrops` |
 | GET | `/api/me/inventory` | `game-api/src/inventory/inventory.controller.ts` → `listInventory` |

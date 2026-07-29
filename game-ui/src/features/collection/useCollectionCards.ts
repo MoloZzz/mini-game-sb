@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
   CollectionCardDto,
+  CollectionGoalDto,
   CollectionProgressDto,
   ListCollectionCardsQuery,
 } from '@card-game/shared-types';
 
-import { getCollectionCards, getCollectionProgress } from '@/lib/api';
+import { getCollectionCards, getCollectionGoal, getCollectionProgress } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 
 /** Grid page size — matches Inventory's own PAGE_SIZE (24) closely enough,
@@ -30,6 +31,7 @@ export interface UseCollectionCardsResult {
   loading: boolean;
   error: string | null;
   progress: CollectionProgressDto | null;
+  goal: CollectionGoalDto | null;
 }
 
 /**
@@ -46,6 +48,7 @@ export function useCollectionCards(): UseCollectionCardsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<CollectionProgressDto | null>(null);
+  const [goal, setGoal] = useState<CollectionGoalDto | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,12 +58,14 @@ export function useCollectionCards(): UseCollectionCardsResult {
     Promise.all([
       getCollectionCards({ ...filters, page, limit: PAGE_SIZE }),
       getCollectionProgress(),
+      getCollectionGoal(),
     ])
-      .then(([pageResult, progressResult]) => {
+      .then(([pageResult, progressResult, goalResult]) => {
         if (cancelled) return;
         setItems(pageResult.items);
         setTotal(pageResult.total);
         setProgress(progressResult);
+        setGoal(goalResult);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -97,5 +102,6 @@ export function useCollectionCards(): UseCollectionCardsResult {
     loading,
     error,
     progress,
+    goal,
   };
 }

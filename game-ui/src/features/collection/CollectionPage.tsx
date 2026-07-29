@@ -3,6 +3,7 @@ import type { CollectionCardDto } from '@card-game/shared-types';
 
 import { CollectionProgress } from '../inventory/CollectionProgress';
 import { CollectionCardDetail } from './CollectionCardDetail';
+import { CollectionGoal } from './CollectionGoal';
 import { CollectionFilters } from './CollectionFilters';
 import { CollectionGallery } from './CollectionGallery';
 import { useCollectionCards } from './useCollectionCards';
@@ -12,7 +13,7 @@ import { useCollectionCards } from './useCollectionCards';
 const SKELETON_TILE_COUNT = 10;
 
 export function CollectionPage() {
-  const { items, total, page, limit, filters, setFilters, setPage, loading, error, progress } =
+  const { items, total, page, limit, filters, setFilters, setPage, loading, error, progress, goal } =
     useCollectionCards();
 
   const [selected, setSelected] = useState<CollectionCardDto | null>(null);
@@ -50,6 +51,8 @@ export function CollectionPage() {
         // the first fetch resolves.
         <div className="h-[124px] animate-pulse rounded-lg border border-neutral-800 bg-neutral-900" />
       )}
+
+      {goal && <CollectionGoal goal={goal} />}
 
       <CollectionFilters value={filters} onChange={handleFiltersChange} />
 

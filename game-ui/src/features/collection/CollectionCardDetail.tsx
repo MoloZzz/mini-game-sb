@@ -124,7 +124,7 @@ export function CollectionCardDetail({ card, onClose }: CollectionCardDetailProp
         >
           <div
             className="relative flex max-h-full flex-col overflow-hidden rounded-lg border-[3px]"
-            style={{ width: 'min(90vw, 480px)', borderColor: color, boxShadow: `0 0 40px 10px ${color}33` }}
+            style={{ width: 'min(85vw, 560px)', borderColor: color, boxShadow: `0 0 40px 10px ${color}33` }}
             onClick={(event) => event.stopPropagation()}
           >
             <button

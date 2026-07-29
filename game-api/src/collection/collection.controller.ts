@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import type { CollectionCardsResponse, CollectionProgressDto } from '@card-game/shared-types';
+import type { CollectionCardsResponse, CollectionGoalDto, CollectionProgressDto } from '@card-game/shared-types';
 import { CurrentPlayer } from '../auth/decorators/current-player.decorator';
 import type { CurrentPlayerPayload } from '../auth/types';
 import { CollectionService } from './collection.service';
@@ -19,6 +19,13 @@ export class CollectionController {
     @CurrentPlayer() { id: playerId }: CurrentPlayerPayload,
   ): Promise<CollectionProgressDto> {
     return this.collectionService.getProgress(playerId);
+  }
+
+  @Get('collection/goal')
+  async getCollectionGoal(
+    @CurrentPlayer() { id: playerId }: CurrentPlayerPayload,
+  ): Promise<CollectionGoalDto | null> {
+    return this.collectionService.getGoal(playerId);
   }
 
   @Get('collection/cards')

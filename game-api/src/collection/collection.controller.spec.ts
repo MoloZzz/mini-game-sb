@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import type { CollectionCardsResponse, CollectionProgressDto } from '@card-game/shared-types';
+import type { CollectionCardsResponse, CollectionGoalDto, CollectionProgressDto } from '@card-game/shared-types';
 import type { CurrentPlayerPayload } from '../auth/types';
 import { CollectionController } from './collection.controller';
 import { CollectionService } from './collection.service';
@@ -7,10 +7,10 @@ import { ListCollectionCardsQueryDto } from './dto/list-collection-cards.query';
 
 describe('CollectionController', () => {
   let controller: CollectionController;
-  let collectionService: { getProgress: jest.Mock; getCards: jest.Mock };
+  let collectionService: { getProgress: jest.Mock; getGoal: jest.Mock; getCards: jest.Mock };
 
   beforeEach(async () => {
-    collectionService = { getProgress: jest.fn(), getCards: jest.fn() };
+    collectionService = { getProgress: jest.fn(), getGoal: jest.fn(), getCards: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CollectionController],
@@ -18,6 +18,18 @@ describe('CollectionController', () => {
     }).compile();
 
     controller = module.get<CollectionController>(CollectionController);
+  });
+
+  it('getCollectionGoal delegates to CollectionService with the current player id', async () => {
+    const goal: CollectionGoalDto = {
+      id: 'unique_10', kind: 'milestone', title: '10 unique cards', description: 'Collect 2 more unique cards to claim this milestone.',
+      progress: { current: 8, target: 10 }, reward: { coins: 200, keys: 0 }, action: { label: 'Choose a case', href: '/' },
+    };
+    collectionService.getGoal.mockResolvedValue(goal);
+    const currentPlayer: CurrentPlayerPayload = { id: 'player-1', role: 'player' };
+
+    await expect(controller.getCollectionGoal(currentPlayer)).resolves.toBe(goal);
+    expect(collectionService.getGoal).toHaveBeenCalledWith('player-1');
   });
 
   it('delegates to CollectionService with the id from @CurrentPlayer()', async () => {

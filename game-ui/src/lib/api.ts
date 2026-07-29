@@ -5,6 +5,7 @@ import type {
   CaseDto,
   ClaimDailyBonusResponse,
   CollectionCardsResponse,
+  CollectionGoalDto,
   CollectionProgressDto,
   DropHistoryItemDto,
   InventoryPageDto,
@@ -133,6 +134,10 @@ export function getInventory(q?: ListInventoryQuery): Promise<InventoryPageDto> 
 
 export function getCollectionProgress(): Promise<CollectionProgressDto> {
   return request<CollectionProgressDto>('/me/collection');
+}
+
+export function getCollectionGoal(): Promise<CollectionGoalDto | null> {
+  return request<CollectionGoalDto | null>('/me/collection/goal');
 }
 
 export function getCollectionCards(q?: ListCollectionCardsQuery): Promise<CollectionCardsResponse> {

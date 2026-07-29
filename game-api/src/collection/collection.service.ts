@@ -4,6 +4,7 @@ import { RARITIES } from '@card-game/shared-types';
 import type {
   CollectionCardDto,
   CollectionCardsResponse,
+  CollectionGoalDto,
   CollectionProgressDto,
   ListCollectionCardsQuery,
   Rarity,
@@ -11,6 +12,7 @@ import type {
 import type { DataSource } from 'typeorm';
 import { CardMapper } from '../cards/card.mapper';
 import { CardsService } from '../cards/cards.service';
+import { MilestoneService } from '../milestones/milestone.service';
 import { PoolService } from './pool.service';
 
 @Injectable()
@@ -20,6 +22,7 @@ export class CollectionService {
     private readonly poolService: PoolService,
     private readonly cardsService: CardsService,
     private readonly cardMapper: CardMapper,
+    private readonly milestoneService: MilestoneService,
   ) {}
 
   /**
@@ -47,6 +50,27 @@ export class CollectionService {
     }
 
     return { owned, total, byRarity };
+  }
+
+  /**
+   * The first source is the nearest unearned milestone. The contract also
+   * supports future themed sets without reshaping this endpoint or its UI.
+   */
+  async getGoal(playerId: string): Promise<CollectionGoalDto | null> {
+    const status = await this.milestoneService.getStatus(playerId);
+    const tier = status.tiers.find((candidate) => !candidate.earned);
+    if (!tier) return null;
+
+    const remaining = Math.max(0, tier.uniqueCards - status.ownedUniqueCards);
+    return {
+      id: tier.key,
+      kind: 'milestone',
+      title: `${tier.uniqueCards} unique cards`,
+      description: `Collect ${remaining} more unique ${remaining === 1 ? 'card' : 'cards'} to claim this milestone.`,
+      progress: { current: status.ownedUniqueCards, target: tier.uniqueCards },
+      reward: tier.reward,
+      action: { label: 'Choose a case', href: '/' },
+    };
   }
 
   /**

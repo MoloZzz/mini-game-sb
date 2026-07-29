@@ -11,6 +11,7 @@ import {
   RARITIES,
   RARITY_META,
   RARITY_ORDER,
+  MILESTONE_LADDER,
   WINNING_INDEX,
   isAtLeast,
   isRarity,
@@ -24,6 +25,7 @@ import {
   type ClaimDailyBonusResponse,
   type CollectionCardDto,
   type CollectionCardsResponse,
+  type CollectionGoalDto,
   type CollectionProgressDto,
   type DropHistoryItemDto,
   type Element,
@@ -403,6 +405,26 @@ const getCollectionHandlers = mirror('/me/collection', (url) =>
   }),
 );
 
+const getCollectionGoalHandlers = mirror('/me/collection/goal', (url) =>
+  http.get(url, () => {
+    const current = new Set(db.ownedInstances.map((instance) => instance.cardId)).size;
+    const tier = MILESTONE_LADDER.find((candidate) => current < candidate.uniqueCards);
+    if (!tier) return HttpResponse.json(null);
+
+    const remaining = tier.uniqueCards - current;
+    const response: CollectionGoalDto = {
+      id: tier.key,
+      kind: 'milestone',
+      title: `${tier.uniqueCards} unique cards`,
+      description: `Collect ${remaining} more unique ${remaining === 1 ? 'card' : 'cards'} to claim this milestone.`,
+      progress: { current, target: tier.uniqueCards },
+      reward: tier.reward,
+      action: { label: 'Choose a case', href: '/' },
+    };
+    return HttpResponse.json(response);
+  }),
+);
+
 // --- GET /me/collection/cards -------------------------------------------------------
 
 function parseArchetype(value: string | null): Archetype | undefined {
@@ -706,6 +728,7 @@ export const handlers: HttpHandler[] = [
   ...getMeHandlers,
   ...getInventoryHandlers,
   ...getCollectionHandlers,
+  ...getCollectionGoalHandlers,
   ...getCollectionCardsHandlers,
   ...sellInstanceHandlers,
   ...getDropsHandlers,

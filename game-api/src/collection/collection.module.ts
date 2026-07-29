@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CardsModule } from '../cards/cards.module';
+import { MilestonesModule } from '../milestones/milestones.module';
 import { CollectionController } from './collection.controller';
 import { CollectionService } from './collection.service';
 import { PoolService } from './pool.service';
@@ -12,7 +13,7 @@ import { PoolService } from './pool.service';
  * shared `CardMapper` rather than duplicating catalog querying/mapping.
  */
 @Module({
-  imports: [CardsModule],
+  imports: [CardsModule, MilestonesModule],
   controllers: [CollectionController],
   providers: [PoolService, CollectionService],
   exports: [PoolService],

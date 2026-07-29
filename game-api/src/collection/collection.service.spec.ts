@@ -3,18 +3,21 @@ import type { CardMapper } from '../cards/card.mapper';
 import type { CardsService, FindCardsResult } from '../cards/cards.service';
 import { CollectionService } from './collection.service';
 import { PoolService } from './pool.service';
+import type { MilestoneService } from '../milestones/milestone.service';
 
 function buildService(overrides: {
   dataSource?: Partial<DataSource>;
   poolService?: Partial<PoolService>;
   cardsService?: Partial<CardsService>;
   cardMapper?: Partial<CardMapper>;
+  milestoneService?: Partial<MilestoneService>;
 }) {
   const dataSource = (overrides.dataSource ?? { query: jest.fn().mockResolvedValue([]) }) as unknown as DataSource;
   const poolService = (overrides.poolService ?? {}) as unknown as PoolService;
   const cardsService = (overrides.cardsService ?? {}) as unknown as CardsService;
   const cardMapper = (overrides.cardMapper ?? {}) as unknown as CardMapper;
-  return new CollectionService(dataSource, poolService, cardsService, cardMapper);
+  const milestoneService = (overrides.milestoneService ?? {}) as unknown as MilestoneService;
+  return new CollectionService(dataSource, poolService, cardsService, cardMapper, milestoneService);
 }
 
 describe('CollectionService.getProgress', () => {
@@ -59,6 +62,37 @@ describe('CollectionService.getProgress', () => {
     await service.getProgress('player-42');
 
     expect(query).toHaveBeenCalledWith(expect.any(String), ['player-42']);
+  });
+});
+
+describe('CollectionService.getGoal', () => {
+  it('maps the nearest unearned milestone into the source-neutral collection-goal contract', async () => {
+    const getStatus = jest.fn().mockResolvedValue({
+      ownedUniqueCards: 8,
+      tiers: [
+        { key: 'unique_10', uniqueCards: 10, reward: { coins: 200, keys: 0 }, earned: false, awardedAt: null },
+      ],
+    });
+    const service = buildService({ milestoneService: { getStatus } });
+
+    await expect(service.getGoal('player-1')).resolves.toEqual({
+      id: 'unique_10',
+      kind: 'milestone',
+      title: '10 unique cards',
+      description: 'Collect 2 more unique cards to claim this milestone.',
+      progress: { current: 8, target: 10 },
+      reward: { coins: 200, keys: 0 },
+      action: { label: 'Choose a case', href: '/' },
+    });
+    expect(getStatus).toHaveBeenCalledWith('player-1');
+  });
+
+  it('returns null after every milestone is earned', async () => {
+    const service = buildService({
+      milestoneService: { getStatus: jest.fn().mockResolvedValue({ ownedUniqueCards: 432, tiers: [{ earned: true }] }) },
+    });
+
+    await expect(service.getGoal('player-1')).resolves.toBeNull();
   });
 });
 
