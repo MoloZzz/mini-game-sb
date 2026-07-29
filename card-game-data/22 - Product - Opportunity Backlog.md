@@ -15,6 +15,30 @@ status: active
 
 ## Opportunities
 
+### O-002 · Session expeditions
+
+- **Статус:** decided-for-test (owner delegated strategy choice on 2026-07-29).
+- **Job / сегмент-гіпотеза:** collector — know what to do in this session without
+  a calendar obligation.
+- **Проблема:** a set explains a long-term chase but not always the next
+  meaningful action in a short session.
+- **Гіпотеза:** one optional session expedition with a visible, finite action
+  will create a clearer next step than a generic milestone.
+- **Докази:** none; it is not a retention claim.
+- **Метрика / guardrail:** `case_opened → reveal_completed → collection_viewed`;
+  guardrail new unique cards per opening, net coins/keys per session, and a
+  qualitative report of pressure or confusion. Baseline and threshold are open.
+- **Найменший тест:** scripted playtest, one expedition versus no expedition;
+  ask “What would you do next, and why?”
+- **Вплив:** core loop, economy, UI; no real-money scope.
+- **Ризики:** a daily/streak version could manufacture obligation or become an
+  uncontrolled currency source. MVP excludes streaks, timers and new currency.
+- **Оцінка:** session expedition 4 × 5 × 2 / 4 = 10; daily task 3 × 4 × 2 / 3 =
+  8. Confidence is weak because no player evidence exists.
+- **Наступне рішення:** implement only the smallest non-economic session flow
+  after the Ashen Wastes playtest; stop or revise if players cannot explain why
+  they chose it or report pressure.
+
 ### O-001 · Ashen Wastes set
 
 - **Статус:** testing (implemented locally on 2026-07-29; owner delegated the product choice).
