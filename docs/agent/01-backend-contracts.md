@@ -15,7 +15,7 @@
 | `GET/PATCH /admin/cards` | admin JWT | admin |
 | `POST /admin/cards/ingest` | admin JWT or `X-Service-Token` | admin/forge |
 
-Request validation is global (`whitelist`, transformed DTOs). Controllers must return shared DTOs through `CardMapper`; asset paths become static URLs there. Keep error codes in `packages/shared-types/src/api.ts` in sync with throw sites and UI handling.
+Request validation is global (`whitelist`, transformed DTOs). Controllers must return shared DTOs through `CardMapper`; asset paths become static URLs there. Keep error codes in `packages/shared-types/src/api.ts` in sync with throw sites and UI handling. `LoggingInterceptor` (`game-api/src/common/logging.interceptor.ts`, registered as a global `APP_INTERCEPTOR` in `app.module.ts`) logs one line per request — method, path, status, duration, player id when authenticated — via the Nest `Logger` under the `HTTP` context.
 
 ## Contract ownership
 
