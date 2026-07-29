@@ -15,6 +15,39 @@ status: active
 
 ## Opportunities
 
+### O-003 · Currency continuity without timed pressure
+
+- **Статус:** discovery.
+- **Job / сегмент-гiпотеза:** [[19 - Product - Jobs To Be Done]] —
+  колекціонер хоче отримувати осмислений наступний шанс, коли дублікатів ще
+  мало або баланс нижчий за ціну кейсу.
+- **Проблема або можливість:** owner-reported observation says players can
+  reach a balance with no immediate currency source. Current sources are an
+  initial grant, daily bonus, duplicate sale and milestones; early duplicate
+  resale is structurally weak. Sample and frequency are unknown.
+- **Гіпотеза:** якщо гравець бачить скінченний, зрозумілий і нетаймований
+  шлях до наступної meaningful action, то він зможе пояснити, що робити
+  далі, без відчуття тиску календаря.
+- **Докази:** [[21 - Product - Evidence Log#E-2026-07-29-01]]; локального
+  evidence про частоту чи причину soft lock ще немає.
+- **Метрика успіху / guardrail:** task-comprehension у playtest; `net
+  coins/keys за сесію`, частка балансів нижче ціни найдешевшого кейсу,
+  нові unique карти на відкриття, відповідь про тиск/плутанину. Baseline і
+  пороги — відкриті.
+- **Найменший тест:** спочатку seeded економічна модель. Потім сценарій
+  нульового балансу: (A) finite onboarding runway, (B) condition-based
+  recovery; порівняти з прозорим zero-state без нової винагороди.
+- **Вплив на системи:** core loop, економіка, UI.
+- **Ризики й межі:** кожна currency mutation потребує ledger; не вводити
+  timer, streak, paid bypass, прихований RNG чи нескінченний source. Не
+  змінювати одночасно case price, daily bonus і duplicate sell value.
+- **Оцінка:** onboarding runway `4 × 4 × 2 / 2 = 16`; condition-based
+  recovery `3 × 5 × 2 / 3 = 10`; duplicate protection `3 × 4 × 2 / 3 = 8`.
+  Confidence слабкий: джерела — зовнішні, локального playtest немає.
+- **Наступне рішення:** обрати лише один MVP після моделі й тесту; зупинити,
+  якщо він не прибирає soft lock або створює тиск/позитивний довгостроковий
+  currency drift.
+
 ### O-002 · Session expeditions
 
 - **Статус:** ready-for-test (owner delegated the MVP boundary on 2026-07-29;

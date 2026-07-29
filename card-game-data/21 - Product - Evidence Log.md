@@ -17,6 +17,38 @@ status: active
 
 Додай один запис на спостереження. Не редагуй старий результат так, щоб він зник: зафіксуй новіший запис, який його уточнює або спростовує.
 
+### E-2026-07-29-01 · Desk research: безперервність колекційної сесії
+
+- **Дата:** 2026-07-29
+- **Статус:** raw
+- **Тип:** зовнішнє дослідження
+- **Джерело й спосіб:** незалежний desk review шести вузьких напрямів з
+  валідацією першоджерел. [Hearthstone](https://news.blizzard.com/en-gb/article/23357896/ashes-of-outland-patch-17-0-march-26)
+  документує duplicate protection у межах сету й рідкості без зміни rarity
+  distribution; [MTG Arena](https://magic.wizards.com/en/news/mtg-arena/mtg-arena-economy-2022-03-17)
+  описує економіку як усі способи заробітку й витрат ресурсів для різних
+  стадій гравця; [Machinations](https://machinations.io/docs/framework-basics)
+  формалізує source, pool, drain і stochastic flow; [Nielsen Norman Group](https://media.nngroup.com/media/articles/attachments/Heuristic_Summary_Letter_compressed.pdf)
+  підтверджує вимоги до видимості стану та конструктивного recovery UX.
+- **Вибірка:** не дослідження наших гравців; зовнішні продукти з іншими
+  бізнес-моделями та один методологічний/UX-огляд.
+- **Спостереження:** зовнішні приклади використовують protected draws,
+  finite guaranteed progress і прозорі правила як альтернативи очікуванню;
+  вони не є доказом retention або попиту в цій локальній грі.
+- **Інтерпретація:** варто змоделювати й playtest-ити проблему soft lock
+  окремо від бажання мати довшу сесію. Duplicate protection зменшує втрату
+  прогресу, але саме по собі не створює коштів для відкриття з нульовим
+  балансом.
+- **Пов'язані job / метрика:** [[19 - Product - Jobs To Be Done]] —
+  «перетворити зайве на осмислений наступний шанс»; [[20 - Product - Metric
+  Tree]] — net coins/keys за сесію, невдалі спроби відкрити кейс і якісна
+  причина зупинки.
+- **Обмеження:** немає локального зрізу частки гравців нижче ціни кейсу,
+  вибірки playtest або причинного порівняння варіантів.
+- **Наступна дія:** спершу прогнати моделювання балансу за seeded RNG для
+  нового, середнього та майже повного акаунта; потім порівняти малий
+  onboarding runway з condition-based recovery у scripted playtest.
+
 ```md
 ### E-<YYYY-MM-DD>-<XX> · <коротка назва>
 
