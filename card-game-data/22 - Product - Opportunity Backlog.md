@@ -36,10 +36,10 @@ status: active
   coins/keys за сесію`, частка балансів нижче ціни найдешевшого кейсу,
   нові unique карти на відкриття, відповідь про тиск/плутанину. Baseline і
   пороги — відкриті.
-- **Найменший тест:** [[25 - Product - Currency Continuity Experiment]]:
-  zero-balance сценарій з control, finite onboarding runway та
-  condition-based recovery; перед ним потрібне owner decision про цільову
-  тривалість/відновлюваність opening session.
+- **Найменший тест:** [[26 - Product - Archive Dossiers Brief]]: zero-balance
+  сценарій з three-card dossier → one bounded Archive Pass. Owner selected
+  the long-session direction in ADR-018; the exact mechanism remains a
+  proposal until the scripted playtest.
 - **Вплив на системи:** core loop, економіка, UI.
 - **Ризики й межі:** кожна currency mutation потребує ledger; не вводити
   timer, streak, paid bypass, прихований RNG чи нескінченний source. Не

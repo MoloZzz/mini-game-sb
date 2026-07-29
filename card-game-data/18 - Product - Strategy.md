@@ -71,6 +71,13 @@ status: active
 4. Крафт, shop та NPC-аукціон розглядати тільки тоді, коли playtest покаже, що
    дублікати або відсутня ціль реально зупиняють loop.
 
+**Уточнення рішення · 2026-07-29:** після seeded моделювання currency
+continuity власник підтвердив іншу форму сесії: гра має досліджувати
+довший добровільний case loop через один bounded, нетаймований activity
+source, а не лише через більший стартовий grant. Це не змінює межі проти
+FOMO або нескінченного currency faucet; точний MVP → [[26 - Product -
+Archive Dossiers Brief]].
+
 Порівняні варіанти для кроку 2: щоденні задачі (reach 3 × impact 4 × confidence
 2 / effort 3 = **8**) проти session expeditions (4 × 5 × 2 / 4 = **10**).
 Confidence в обох слабкий: evidence відсутній. Обрано експедиції, бо вони
