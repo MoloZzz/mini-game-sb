@@ -103,7 +103,7 @@ export class DropsService {
       player.balanceKeys += deltaKeys;
 
       // 6. Availability: which rarities actually have >= 1 approved card.
-      const availableRarities = await this.loadAvailableRarities(manager);
+      const availableRarities = await this.loadAvailableRarities(manager, caseEntity.setId);
 
       // 7. Roll the rarity via the pure engine (crypto RNG only).
       const rng = createCryptoRng();
@@ -122,7 +122,7 @@ export class DropsService {
 
       // 8. Pick the winning card uniformly among approved cards of that rarity.
       const candidates = await manager.find(CardEntity, {
-        where: { status: 'approved', rarity: rolledRarity },
+        where: { status: 'approved', rarity: rolledRarity, ...(caseEntity.setId ? { setId: caseEntity.setId } : {}) },
       });
       if (candidates.length === 0) {
         apiError(409, 'EMPTY_POOL', `No approved cards of rarity "${rolledRarity}"`, {
@@ -133,7 +133,7 @@ export class DropsService {
       const winnerTile: ReelCard = this.cardMapper.toReelTile(winnerEntity);
 
       // 9. Build the filler pool and the 60-tile reel around the winner.
-      const pool = await this.loadFillerPool(manager);
+      const pool = await this.loadFillerPool(manager, caseEntity.setId);
       const reel: ReelTileDto[] = buildReel({ winner: winnerTile, pool, rng });
 
       // 10. Insert case_openings.
@@ -208,21 +208,22 @@ export class DropsService {
     });
   }
 
-  private async loadAvailableRarities(manager: EntityManager): Promise<Set<Rarity>> {
+  private async loadAvailableRarities(manager: EntityManager, setId: string | null): Promise<Set<Rarity>> {
     const rows = await manager
       .createQueryBuilder(CardEntity, 'c')
       .select('DISTINCT c.rarity', 'rarity')
       .where("c.status = 'approved'")
+      .andWhere(setId ? 'c.set_id = :setId' : '1 = 1', { setId })
       .getRawMany<{ rarity: Rarity }>();
     return new Set(rows.map((row) => row.rarity));
   }
 
   /** Six bounded queries — one per rarity — so the reel query stays cheap. */
-  private async loadFillerPool(manager: EntityManager): Promise<FillerPool> {
+  private async loadFillerPool(manager: EntityManager, setId: string | null): Promise<FillerPool> {
     const pool: Partial<Record<Rarity, ReelCard[]>> = {};
     for (const rarity of RARITIES) {
       const cards = await manager.find(CardEntity, {
-        where: { status: 'approved', rarity },
+        where: { status: 'approved', rarity, ...(setId ? { setId } : {}) },
         take: FILLER_POOL_CAP_PER_RARITY,
       });
       pool[rarity] = cards.map((card) => this.cardMapper.toReelTile(card));

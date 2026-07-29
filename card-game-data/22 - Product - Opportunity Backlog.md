@@ -17,7 +17,7 @@ status: active
 
 ### O-001 · Ashen Wastes set
 
-- **Статус:** decided (owner delegated the product choice on 2026-07-29).
+- **Статус:** testing (implemented locally on 2026-07-29; owner delegated the product choice).
 - **Job / сегмент-гіпотеза:** collector — see an incomplete themed set and
   move toward finishing it.
 - **Проблема:** the current full-pool gallery shows missing cards but does not
@@ -31,8 +31,8 @@ status: active
 - **Найменший тест:** scripted local playtest: show the set goal after a
   reveal and ask, “What would you do next, and why?”
 - **Вплив:** core loop, economy, content/lore, UI.
-- **Ризики:** a targeted case can distort duplicate EV; no completion reward
-  may be introduced before the case economy is modeled.
+- **Ризики:** a targeted case can distort duplicate EV; the implemented 400-coin
+  profile has full-duplicate EV 208.45 coins (52.1%); no completion reward.
 - **Оцінка:** reach 4 × impact 5 × confidence 2 / effort 4 = 10; confidence
   is weak because there is no recorded player evidence.
 - **Наступне рішення:** model case price/odds across new, mid, and

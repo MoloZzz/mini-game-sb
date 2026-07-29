@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import {
   ARCHETYPES,
   CASE_SEEDS,
+  ASHEN_WASTES_CARDS,
+  ASHEN_WASTES_SET_ID,
   ELEMENTS,
   INITIAL_GRANT,
   POOL_SEED_RATIOS,
@@ -189,11 +191,31 @@ async function seedCases(dataSource: DataSource): Promise<void> {
       priceKeys: seed.priceKeys,
       imagePath: seed.imagePath,
       rarityWeights: seed.weights,
+      setId: seed.setId,
       isActive: true,
     });
     await caseRepo.save(entity);
     console.log(`Seeded case "${seed.slug}".`);
   }
+}
+
+async function seedAshenWastesCards(dataSource: DataSource): Promise<void> {
+  const cardRepo = dataSource.getRepository(CardEntity);
+  let inserted = 0;
+  for (const cardSeed of ASHEN_WASTES_CARDS) {
+    if (await cardRepo.findOne({ where: { slug: cardSeed.slug } })) continue;
+    const [min, max] = RARITY_META[cardSeed.rarity].statRange;
+    await cardRepo.save(cardRepo.create({
+      ...cardSeed,
+      flavorText: 'A survivor of the Ashen Wastes guards the last heat of the forge.',
+      attack: randomInt(min, max + 1), defense: randomInt(min, max + 1),
+      imagePath: `cards/placeholder-${cardSeed.rarity}.png`, thumbPath: `thumbs/placeholder-${cardSeed.rarity}.png`,
+      status: 'approved', setId: ASHEN_WASTES_SET_ID,
+      genMeta: { placeholder: true, thematicSet: 'ashen-wastes' },
+    }));
+    inserted++;
+  }
+  console.log(`Ashen Wastes cards: inserted ${inserted}, skipped ${ASHEN_WASTES_CARDS.length - inserted}.`);
 }
 
 async function seedPlaceholderCards(dataSource: DataSource, n: number): Promise<void> {
@@ -314,6 +336,10 @@ async function main(): Promise<void> {
 
   await AppDataSource.initialize();
   try {
+    // The seed uses entity repositories below, so its schema must be current
+    // before TypeORM selects every mapped column (including new case scopes).
+    await AppDataSource.runMigrations();
+
     if (args.reset) {
       assertResetAllowed(config.databaseUrl);
       await AppDataSource.query(
@@ -324,6 +350,7 @@ async function main(): Promise<void> {
 
     await seedPlayer(AppDataSource);
     await seedCases(AppDataSource);
+    await seedAshenWastesCards(AppDataSource);
 
     writeCaseImages(casesDir);
     writeRarityPlaceholderImages(cardsDir, thumbsDir);

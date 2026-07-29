@@ -12,6 +12,7 @@
 export * from './rarity.js';
 export * from './card.js';
 export * from './case.js';
+export * from './thematic-set.js';
 export * from './reel.js';
 export * from './player.js';
 export * from './milestones.js';

@@ -27,7 +27,7 @@ describe('rollRarity', () => {
       }
     });
 
-    it('every CASE_WEIGHTS row sums to 100 via a direct sum, for all nine slugs', () => {
+    it('every CASE_WEIGHTS row sums to 100 via a direct sum, including the scoped set case', () => {
       const slugs = [
         'starter-chest',
         'ember-vault',
@@ -38,6 +38,7 @@ describe('rollRarity', () => {
         'stormglass-case',
         'radiant-ark',
         'void-casket',
+        'cinderbound-cache',
       ];
       expect(Object.keys(CASE_WEIGHTS).sort()).toEqual(slugs.sort());
       for (const slug of slugs) {

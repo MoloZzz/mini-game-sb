@@ -12,6 +12,7 @@ import {
   RARITY_META,
   RARITY_ORDER,
   MILESTONE_LADDER,
+  THEMATIC_SET_SEEDS,
   WINNING_INDEX,
   isAtLeast,
   isRarity,
@@ -87,7 +88,23 @@ function apiError(code: ApiErrorCode, message: string): { code: ApiErrorCode; me
  * (e.g. a mostly-common case still shows some commons, not just its rarest
  * possible pull).
  */
-function previewCardsFor(weights: RarityWeights): CardDto[] {
+const CINDERBOUND_MOCK_COUNTS: Record<Rarity, number> = {
+  common: 6, uncommon: 5, rare: 3, epic: 2, legendary: 1, mythic: 1,
+};
+const CINDERBOUND_MOCK_CARD_IDS = new Set(
+  RARITIES.flatMap((rarity) => cardsByRarity[rarity]
+    .slice(0, CINDERBOUND_MOCK_COUNTS[rarity])
+    .map((card) => card.id)),
+);
+
+function cardsForCase(seed: CaseSeed, rarity: Rarity): CardDto[] {
+  return seed.slug === 'cinderbound-cache'
+    ? cardsByRarity[rarity].slice(0, CINDERBOUND_MOCK_COUNTS[rarity])
+    : cardsByRarity[rarity];
+}
+
+function previewCardsFor(seed: CaseSeed): CardDto[] {
+  const { weights } = seed;
   const rarestFirst = [...RARITIES].reverse();
   const eligibleRarities = rarestFirst.filter((rarity) => weights[rarity] > 0);
   if (eligibleRarities.length === 0) return [];
@@ -102,7 +119,7 @@ function previewCardsFor(weights: RarityWeights): CardDto[] {
 
   while (cards.length < 6 && round < maxRounds) {
     const rarity = eligibleRarities[round % eligibleRarities.length];
-    const pool = cardsByRarity[rarity];
+    const pool = cardsForCase(seed, rarity);
     const taken = takenPerRarity.get(rarity) ?? 0;
     if (taken < pool.length) {
       cards.push(pool[taken]);
@@ -121,7 +138,7 @@ function buildCaseDto(seed: CaseSeed): CaseDto {
     priceKeys: seed.priceKeys,
     imageUrl: `/mock/cases/${seed.slug}.svg`,
     odds: seed.weights,
-    previewCards: previewCardsFor(seed.weights),
+    previewCards: previewCardsFor(seed),
   };
 }
 
@@ -205,7 +222,7 @@ const openCaseHandlers = mirror('/cases/:slug/open', (url) =>
       db.pityCounter >= PITY_THRESHOLD ? applyPity(caseSeed.weights) : caseSeed.weights;
     const rarity = rollRarity(effectiveWeights);
 
-    const pool = cardsByRarity[rarity];
+    const pool = cardsForCase(caseSeed, rarity);
     if (pool.length === 0 || body?.clientSeed === FORCE_EMPTY_POOL_SEED) {
       const err: EmptyPoolError = {
         code: 'EMPTY_POOL',
@@ -407,7 +424,23 @@ const getCollectionHandlers = mirror('/me/collection', (url) =>
 
 const getCollectionGoalHandlers = mirror('/me/collection/goal', (url) =>
   http.get(url, () => {
-    const current = new Set(db.ownedInstances.map((instance) => instance.cardId)).size;
+    const set = THEMATIC_SET_SEEDS[0]!;
+    const current = new Set(
+      db.ownedInstances.map((instance) => instance.cardId).filter((id) => CINDERBOUND_MOCK_CARD_IDS.has(id)),
+    ).size;
+    const setTarget = Object.values(CINDERBOUND_MOCK_COUNTS).reduce((sum, count) => sum + count, 0);
+    if (current < setTarget) {
+      const response: CollectionGoalDto = {
+        id: set.slug,
+        kind: 'set',
+        title: set.name,
+        description: `${set.description} Collect ${setTarget - current} more cards to complete the set.`,
+        progress: { current, target: setTarget },
+        reward: null,
+        action: { label: 'Open Cinderbound Cache', href: `/open/${set.caseSlug}` },
+      };
+      return HttpResponse.json(response);
+    }
     const tier = MILESTONE_LADDER.find((candidate) => current < candidate.uniqueCards);
     if (!tier) return HttpResponse.json(null);
 

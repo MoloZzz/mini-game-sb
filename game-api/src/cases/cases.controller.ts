@@ -15,8 +15,7 @@ export class CasesController {
   @Public()
   @Get()
   async list(): Promise<CaseDto[]> {
-    const { cases, previewCards } = await this.casesService.findActive();
-    const previewCardDtos = previewCards.map((card) => this.cardMapper.toCardDto(card));
+    const { cases, previewCardsByCase } = await this.casesService.findActive();
 
     return cases.map((caseEntity) => ({
       slug: caseEntity.slug,
@@ -25,7 +24,7 @@ export class CasesController {
       priceKeys: caseEntity.priceKeys,
       imageUrl: this.cardMapper.toUrl(caseEntity.imagePath),
       odds: caseEntity.rarityWeights,
-      previewCards: previewCardDtos,
+      previewCards: (previewCardsByCase.get(caseEntity.slug) ?? []).map((card) => this.cardMapper.toCardDto(card)),
     }));
   }
 }

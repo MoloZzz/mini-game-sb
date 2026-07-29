@@ -47,9 +47,9 @@ export class CardsService {
   }
 
   /** Top approved cards by rarity, best first — used by CasesService for previewCards. */
-  async findTopApproved(limit: number): Promise<CardEntity[]> {
+  async findTopApproved(limit: number, setId?: string): Promise<CardEntity[]> {
     return this.cardsRepository.find({
-      where: { status: 'approved' },
+      where: { status: 'approved', ...(setId ? { setId } : {}) },
       order: { rarity: 'DESC', name: 'ASC' },
       take: limit,
     });

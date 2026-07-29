@@ -21,7 +21,7 @@ export class CasesService {
    * broken by slug. `previewCards` is the SAME top-6-approved-cards list
    * reused for every case — one query total, not one per case.
    */
-  async findActive(): Promise<{ cases: CaseEntity[]; previewCards: Awaited<ReturnType<CardsService['findTopApproved']>> }> {
+  async findActive(): Promise<{ cases: CaseEntity[]; previewCardsByCase: Map<string, Awaited<ReturnType<CardsService['findTopApproved']>>> }> {
     const cases = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.is_active = true')
@@ -29,9 +29,17 @@ export class CasesService {
       .addOrderBy('case.slug', 'ASC')
       .getMany();
 
-    const previewCards = await this.cardsService.findTopApproved(PREVIEW_CARD_COUNT);
-
-    return { cases, previewCards };
+    const globalPreview = await this.cardsService.findTopApproved(PREVIEW_CARD_COUNT);
+    const previewCardsByCase = new Map<string, Awaited<ReturnType<CardsService['findTopApproved']>>>();
+    for (const caseEntity of cases) {
+      previewCardsByCase.set(
+        caseEntity.slug,
+        caseEntity.setId
+          ? await this.cardsService.findTopApproved(PREVIEW_CARD_COUNT, caseEntity.setId)
+          : globalPreview,
+      );
+    }
+    return { cases, previewCardsByCase };
   }
 
   async findBySlug(slug: string): Promise<CaseEntity | null> {

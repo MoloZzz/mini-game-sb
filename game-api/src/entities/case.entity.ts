@@ -32,6 +32,10 @@ export class CaseEntity {
   @Column({ name: 'rarity_weights', type: 'jsonb' })
   rarityWeights!: RarityWeights;
 
+  /** Null for global cases; a set case can only draw cards in this set. */
+  @Column({ name: 'set_id', type: 'uuid', nullable: true })
+  setId!: string | null;
+
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 

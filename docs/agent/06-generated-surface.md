@@ -48,12 +48,14 @@
 - `game-api/src/migrations/1785200000000-AddPlayerMilestones.ts`
 - `game-api/src/migrations/1785200000001-UpdateStoneheartCofferPrice.ts`
 - `game-api/src/migrations/1785200000002-AddLedgerInvariantTrigger.ts`
+- `game-api/src/migrations/1785300000000-AddCaseSetScope.ts`
 
 ## Shared-type source modules
 
 - `packages/shared-types/src/rarity.ts`
 - `packages/shared-types/src/card.ts`
 - `packages/shared-types/src/case.ts`
+- `packages/shared-types/src/thematic-set.ts`
 - `packages/shared-types/src/reel.ts`
 - `packages/shared-types/src/player.ts`
 - `packages/shared-types/src/milestones.ts`

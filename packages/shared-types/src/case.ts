@@ -1,5 +1,6 @@
 import type { CardDto, Element } from './card.js';
 import type { Rarity } from './rarity.js';
+import { ASHEN_WASTES_SET_ID } from './thematic-set.js';
 
 /** Percentage weights per rarity. Every row must sum to exactly 100. */
 export type RarityWeights = Record<Rarity, number>;
@@ -111,6 +112,14 @@ export const CASE_WEIGHTS: Readonly<Record<string, RarityWeights>> = {
     legendary: 10.0,
     mythic: 3.0,
   },
+  'cinderbound-cache': {
+    common: 35.0,
+    uncommon: 28.0,
+    rare: 18.0,
+    epic: 10.0,
+    legendary: 6.0,
+    mythic: 3.0,
+  },
 };
 
 export interface CaseSeed {
@@ -128,6 +137,8 @@ export interface CaseSeed {
    * odds table before any network call.
    */
   element: Element | null;
+  /** When present, the server may draw only approved cards in this set. */
+  setId: string | null;
 }
 
 export const CASE_SEEDS: readonly CaseSeed[] = [
@@ -139,6 +150,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/starter-chest.png',
     weights: CASE_WEIGHTS['starter-chest']!,
     element: null,
+    setId: null,
   },
   {
     // Fire-flavoured by name, but deliberately not part of the element set —
@@ -151,6 +163,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/ember-vault.png',
     weights: CASE_WEIGHTS['ember-vault']!,
     element: null,
+    setId: null,
   },
   {
     slug: 'arcane-reliquary',
@@ -160,6 +173,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/arcane-reliquary.png',
     weights: CASE_WEIGHTS['arcane-reliquary']!,
     element: null,
+    setId: null,
   },
   {
     slug: 'ashen-forge',
@@ -169,6 +183,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/ashen-forge.png',
     weights: CASE_WEIGHTS['ashen-forge']!,
     element: 'fire',
+    setId: null,
   },
   {
     slug: 'tidal-vault',
@@ -178,6 +193,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/tidal-vault.png',
     weights: CASE_WEIGHTS['tidal-vault']!,
     element: 'water',
+    setId: null,
   },
   {
     // 180->120 (economy fix, part 1): at 180 this was strictly dominated by
@@ -194,6 +210,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/stoneheart-coffer.png',
     weights: CASE_WEIGHTS['stoneheart-coffer']!,
     element: 'earth',
+    setId: null,
   },
   {
     slug: 'stormglass-case',
@@ -203,6 +220,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/stormglass-case.png',
     weights: CASE_WEIGHTS['stormglass-case']!,
     element: 'air',
+    setId: null,
   },
   {
     slug: 'radiant-ark',
@@ -212,6 +230,7 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/radiant-ark.png',
     weights: CASE_WEIGHTS['radiant-ark']!,
     element: 'light',
+    setId: null,
   },
   {
     slug: 'void-casket',
@@ -221,6 +240,17 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     imagePath: 'cases/void-casket.png',
     weights: CASE_WEIGHTS['void-casket']!,
     element: 'shadow',
+    setId: null,
+  },
+  {
+    slug: 'cinderbound-cache',
+    name: 'Cinderbound Cache',
+    priceCoins: 400,
+    priceKeys: null,
+    imagePath: 'cases/cinderbound-cache.png',
+    weights: CASE_WEIGHTS['cinderbound-cache']!,
+    element: 'fire',
+    setId: ASHEN_WASTES_SET_ID,
   },
 ];
 

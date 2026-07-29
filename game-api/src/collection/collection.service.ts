@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { RARITIES } from '@card-game/shared-types';
+import { RARITIES, THEMATIC_SET_SEEDS } from '@card-game/shared-types';
 import type {
   CollectionCardDto,
   CollectionCardsResponse,
@@ -57,6 +57,29 @@ export class CollectionService {
    * supports future themed sets without reshaping this endpoint or its UI.
    */
   async getGoal(playerId: string): Promise<CollectionGoalDto | null> {
+    for (const set of THEMATIC_SET_SEEDS) {
+      const [row] = await this.dataSource.query<Array<{ owned: number; total: number }>>(
+        `SELECT COUNT(DISTINCT pc.card_id) FILTER (WHERE pc.sold_at IS NULL)::int AS owned,
+                COUNT(c.id)::int AS total
+         FROM cards c
+         LEFT JOIN player_cards pc ON pc.card_id = c.id AND pc.player_id = $1
+         WHERE c.status = 'approved' AND c.set_id = $2`,
+        [playerId, set.id],
+      );
+      const owned = Number(row?.owned ?? 0);
+      const total = Number(row?.total ?? 0);
+      if (total > 0 && owned < total) {
+        return {
+          id: set.slug,
+          kind: 'set',
+          title: set.name,
+          description: `${set.description} Collect ${total - owned} more ${total - owned === 1 ? 'card' : 'cards'} to complete the set.`,
+          progress: { current: owned, target: total },
+          reward: null,
+          action: { label: 'Open Cinderbound Cache', href: `/open/${set.caseSlug}` },
+        };
+      }
+    }
     const status = await this.milestoneService.getStatus(playerId);
     const tier = status.tiers.find((candidate) => !candidate.earned);
     if (!tier) return null;

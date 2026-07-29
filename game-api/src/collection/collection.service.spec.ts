@@ -66,14 +66,27 @@ describe('CollectionService.getProgress', () => {
 });
 
 describe('CollectionService.getGoal', () => {
+  it('prioritizes an incomplete approved thematic set and links to its scoped case', async () => {
+    const query = jest.fn().mockResolvedValue([{ owned: 3, total: 20 }]);
+    const getStatus = jest.fn();
+    const service = buildService({ dataSource: { query }, milestoneService: { getStatus } });
+
+    await expect(service.getGoal('player-1')).resolves.toEqual(expect.objectContaining({
+      id: 'ashen-wastes', kind: 'set', progress: { current: 3, target: 20 }, reward: null,
+      action: { label: 'Open Cinderbound Cache', href: '/open/cinderbound-cache' },
+    }));
+    expect(getStatus).not.toHaveBeenCalled();
+  });
+
   it('maps the nearest unearned milestone into the source-neutral collection-goal contract', async () => {
+    const query = jest.fn().mockResolvedValue([{ owned: 0, total: 0 }]);
     const getStatus = jest.fn().mockResolvedValue({
       ownedUniqueCards: 8,
       tiers: [
         { key: 'unique_10', uniqueCards: 10, reward: { coins: 200, keys: 0 }, earned: false, awardedAt: null },
       ],
     });
-    const service = buildService({ milestoneService: { getStatus } });
+    const service = buildService({ dataSource: { query }, milestoneService: { getStatus } });
 
     await expect(service.getGoal('player-1')).resolves.toEqual({
       id: 'unique_10',
@@ -89,6 +102,7 @@ describe('CollectionService.getGoal', () => {
 
   it('returns null after every milestone is earned', async () => {
     const service = buildService({
+      dataSource: { query: jest.fn().mockResolvedValue([{ owned: 20, total: 20 }]) },
       milestoneService: { getStatus: jest.fn().mockResolvedValue({ ownedUniqueCards: 432, tiers: [{ earned: true }] }) },
     });
 
