@@ -1,4 +1,4 @@
-import { POOL_TARGET_TOTAL, RARITIES, RARITY_META, type CollectionProgressDto } from '@card-game/shared-types';
+import { RARITIES, RARITY_META, type CollectionProgressDto } from '@card-game/shared-types';
 
 export interface CollectionProgressProps {
   progress: CollectionProgressDto;
@@ -6,19 +6,21 @@ export interface CollectionProgressProps {
 
 /**
  * The screen's reason to exist beyond storage (04 - Game Design - Core
- * Loop.md §4): a headline "owned / POOL_TARGET_TOTAL" plus a per-rarity
- * breakdown against each rarity's poolTarget, so a pile of duplicates reads
- * as a collection with a visible finish line.
+ * Loop.md §4): a headline "owned / total" plus a per-rarity breakdown, so a
+ * pile of duplicates reads as a collection with a visible finish line. Both
+ * numbers come straight from the server (`GET /me/collection`, computed
+ * against the real approved-card pool in the database) — there is no local
+ * pool-size constant to go stale.
  */
 export function CollectionProgress({ progress }: CollectionProgressProps) {
-  const overallPct = POOL_TARGET_TOTAL > 0 ? (progress.owned / POOL_TARGET_TOTAL) * 100 : 0;
+  const overallPct = progress.total > 0 ? (progress.owned / progress.total) * 100 : 0;
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">Collection</h2>
         <p className="text-lg font-bold text-neutral-100">
-          {progress.owned} / {POOL_TARGET_TOTAL}
+          {progress.owned} / {progress.total}
         </p>
       </div>
 

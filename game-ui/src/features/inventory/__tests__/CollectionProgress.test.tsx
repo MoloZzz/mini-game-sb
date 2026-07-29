@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import { POOL_TARGET_TOTAL, RARITIES, RARITY_META, type CollectionProgressDto } from '@card-game/shared-types';
+import { RARITIES, type CollectionProgressDto, type Rarity } from '@card-game/shared-types';
 
 import { CollectionProgress } from '../CollectionProgress';
 
@@ -26,42 +26,58 @@ beforeEach(() => {
   stubMatchMedia();
 });
 
-/** One owned card per rarity — keeps every "owned / total" row textually
- * distinct since each rarity's poolTarget differs. */
+/**
+ * Deliberately NOT 110 (the old hardcoded pool total) — these totals exist
+ * only to prove the component renders exactly what the server payload says,
+ * with nothing hardcoded on the client. One owned card per rarity keeps
+ * every "owned / total" row textually distinct.
+ */
+const FAKE_RARITY_TOTALS: Record<Rarity, number> = {
+  common: 180,
+  uncommon: 108,
+  rare: 64,
+  epic: 35,
+  legendary: 30,
+  mythic: 15,
+};
+
 function buildProgress(): CollectionProgressDto {
   const byRarity = {} as CollectionProgressDto['byRarity'];
   let owned = 0;
+  let total = 0;
   for (const rarity of RARITIES) {
-    const total = RARITY_META[rarity].poolTarget;
-    byRarity[rarity] = { owned: 1, total };
+    const rarityTotal = FAKE_RARITY_TOTALS[rarity];
+    byRarity[rarity] = { owned: 1, total: rarityTotal };
     owned += 1;
+    total += rarityTotal;
   }
-  return { owned, total: POOL_TARGET_TOTAL, byRarity };
+  return { owned, total, byRarity };
 }
 
 describe('CollectionProgress', () => {
-  it('shows the headline total against POOL_TARGET_TOTAL', () => {
+  it('shows the headline total from the server payload, not a client constant', () => {
     const progress = buildProgress();
     render(<CollectionProgress progress={progress} />);
 
-    expect(screen.getByText(`${progress.owned} / ${POOL_TARGET_TOTAL}`)).toBeInTheDocument();
+    expect(screen.getByText(`${progress.owned} / ${progress.total}`)).toBeInTheDocument();
   });
 
-  it('shows a per-rarity row whose total equals RARITY_META[r].poolTarget, for every rarity', () => {
+  it('shows a per-rarity row whose total equals progress.byRarity[r].total, for every rarity', () => {
     const progress = buildProgress();
     render(<CollectionProgress progress={progress} />);
 
     for (const rarity of RARITIES) {
-      const expectedTotal = RARITY_META[rarity].poolTarget;
-      // Fails loudly if a future change to poolTarget isn't reflected in the
-      // rendered breakdown — the assertion is built from RARITY_META itself,
-      // not a hardcoded number.
+      const expectedTotal = progress.byRarity[rarity].total;
+      // Fails loudly if a future change to the server payload isn't reflected
+      // in the rendered breakdown — the assertion is built from the payload
+      // itself, not a hardcoded number.
       expect(screen.getByText(`1 / ${expectedTotal}`)).toBeInTheDocument();
     }
   });
 
-  it("sums every rarity's poolTarget to POOL_TARGET_TOTAL", () => {
-    const sum = RARITIES.reduce((acc, r) => acc + RARITY_META[r].poolTarget, 0);
-    expect(sum).toBe(POOL_TARGET_TOTAL);
+  it("sums every rarity's byRarity total to the headline total", () => {
+    const progress = buildProgress();
+    const sum = RARITIES.reduce((acc, r) => acc + progress.byRarity[r].total, 0);
+    expect(sum).toBe(progress.total);
   });
 });

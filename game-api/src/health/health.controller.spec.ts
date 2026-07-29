@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { POOL_TARGET_TOTAL, WINNING_INDEX } from '@card-game/shared-types';
+import { RARITIES, RARITY_META, WINNING_INDEX } from '@card-game/shared-types';
 import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
@@ -21,7 +21,8 @@ describe('HealthController', () => {
   });
 
   it('resolves shared-types constants correctly (proves jest<->shared-types wiring)', () => {
-    expect(POOL_TARGET_TOTAL).toBe(110);
+    expect(RARITIES.length).toBe(6);
+    expect(RARITY_META.mythic.sellValue).toBe(3000);
     expect(WINNING_INDEX).toBe(55);
   });
 });

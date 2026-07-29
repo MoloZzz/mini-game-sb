@@ -61,7 +61,22 @@ export const TRANSACTION_TYPES = [
 ] as const;
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
 
+/** `admin` is only ever assigned by the offline `account:bind` CLI — never via HTTP. */
+export const PLAYER_ROLES = ['player', 'admin'] as const;
+export type PlayerRole = (typeof PLAYER_ROLES)[number];
+
 /** Economy constants — source: 04 - Game Design - Core Loop.md */
 export const INITIAL_GRANT: Balance = { coins: 1000, keys: 5 };
-export const DAILY_BONUS: Balance = { coins: 500, keys: 1 };
+/**
+ * Raised 500->800 coins, 1->2 keys (economy fix, part 1). Deliberately the
+ * ONLY reward-VALUE change in this pass besides the milestone ladder itself:
+ * `sellValue` and case prices (other than `stoneheart-coffer`, see its own
+ * migration) are untouched, because raising `sellValue` would multiply a
+ * near-zero EV at collection start and a near-full-price EV at collection
+ * completion — a complete collection's Starter Chest EV is already 61
+ * against a 100-coin price, so doubling `sellValue` would push it past 100
+ * and make the case a money printer exactly when the player has the most to
+ * sell.
+ */
+export const DAILY_BONUS: Balance = { coins: 800, keys: 2 };
 export const DAILY_BONUS_COOLDOWN_MS = 24 * 60 * 60 * 1000;

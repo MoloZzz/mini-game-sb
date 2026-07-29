@@ -9,16 +9,21 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import type { AdminCardDto, AdminListCardsResponse, IngestResponse } from '@card-game/shared-types';
 import type { Request } from 'express';
 import { CardMapper } from '../cards/card.mapper';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { ServiceTokenGuard } from '../auth/guards/service-token.guard';
 import { AdminService } from './admin.service';
 import { AdminListCardsQueryDto } from './dto/list-admin-cards.query';
 import { IngestRequestDto } from './dto/ingest.dto';
 import { ReviewCardDto } from './dto/review-card.dto';
 
 /** `card-forge` ingest + manual card review (vault 03, "Admin"). */
+@Roles('admin')
 @Controller('admin/cards')
 export class AdminController {
   constructor(
@@ -26,6 +31,20 @@ export class AdminController {
     private readonly cardMapper: CardMapper,
   ) {}
 
+  /**
+   * `@Public()` takes this route out of the global `JwtAuthGuard` pipeline,
+   * and `@Roles()` (empty) overrides the class-level `@Roles('admin')` so
+   * the global `RolesGuard` doesn't reject it either — both would otherwise
+   * run BEFORE `ServiceTokenGuard` below and see no `request.player`
+   * (card-forge's batch script authenticates with a static
+   * `X-Service-Token`, not a JWT, since it runs unattended for ~45 minutes
+   * and shouldn't hold a user session). `ServiceTokenGuard` is the sole,
+   * self-sufficient authority for this one route: it accepts EITHER a valid
+   * service token OR a valid admin JWT and rejects everything else.
+   */
+  @Public()
+  @Roles()
+  @UseGuards(ServiceTokenGuard)
   @Post('ingest')
   @HttpCode(200)
   async ingest(@Body() body: IngestRequestDto): Promise<IngestResponse> {

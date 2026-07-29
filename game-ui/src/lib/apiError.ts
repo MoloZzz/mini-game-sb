@@ -52,6 +52,11 @@ export const USER_MESSAGES: Record<ApiErrorCode, string> = {
   CARD_NOT_FOUND: "That card doesn't exist.",
   INSTANCE_NOT_FOUND: "That card copy is no longer in your inventory.",
   LAST_COPY: "Can't sell your last copy.",
+  BULK_SELL_CAP_EXCEEDED: 'That selection is too large to sell at once. Try fewer cards.',
   DAILY_BONUS_NOT_READY: "Daily bonus isn't ready yet.",
   CASE_INACTIVE: "That case isn't available right now.",
+  UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+  FORBIDDEN: "You don't have access to that.",
+  INVALID_CREDENTIALS: 'Incorrect email or password.',
+  EMAIL_TAKEN: 'An account with that email already exists.',
 };

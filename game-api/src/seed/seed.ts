@@ -4,7 +4,7 @@ import {
   CASE_SEEDS,
   ELEMENTS,
   INITIAL_GRANT,
-  POOL_TARGET_TOTAL,
+  POOL_SEED_RATIOS,
   RARITIES,
   RARITY_META,
   weightsSumTo100,
@@ -14,6 +14,7 @@ import { randomInt } from 'crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { DataSource } from 'typeorm';
+import { hashPassword } from '../auth/password.util';
 import configuration from '../config/configuration';
 import { AppDataSource } from '../database/data-source';
 import { CardEntity, CaseEntity, PlayerEntity, TransactionEntity } from '../entities';
@@ -58,12 +59,17 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/** Sum of `POOL_SEED_RATIOS` — the denominator for the proportional split below. */
+const POOL_SEED_RATIO_TOTAL = RARITIES.reduce((sum, r) => sum + POOL_SEED_RATIOS[r], 0);
+
 /**
  * Spreads N placeholder cards across all six rarities proportionally to
- * `RARITY_META[r].poolTarget` (40/30/20/12/6/2 out of 110). Every rarity
- * gets at least one card once N >= 6 (the number of rarities): each rarity
- * is seeded with a floor of 1, then the remainder is distributed by the
- * largest-remainder method so the total always equals N exactly.
+ * `POOL_SEED_RATIOS` (180/108/64/35/30/15) — the synthetic placeholder
+ * pool's shape, NOT the real approved-card pool (see the doc comment on
+ * `POOL_SEED_RATIOS`). Every rarity gets at least one card once N >= 6 (the
+ * number of rarities): each rarity is seeded with a floor of 1, then the
+ * remainder is distributed by the largest-remainder method so the total
+ * always equals N exactly.
  */
 function allocateRarityCounts(n: number): Record<Rarity, number> {
   const counts = Object.fromEntries(RARITIES.map((r) => [r, 0])) as Record<Rarity, number>;
@@ -77,12 +83,12 @@ function allocateRarityCounts(n: number): Record<Rarity, number> {
   }
 
   for (const r of RARITIES) counts[r] = 1;
-  let remaining = n - RARITIES.length;
+  const remaining = n - RARITIES.length;
 
   const fracParts: Array<{ rarity: Rarity; frac: number }> = [];
   let flooredSum = 0;
   for (const r of RARITIES) {
-    const exact = (remaining * RARITY_META[r].poolTarget) / POOL_TARGET_TOTAL;
+    const exact = (remaining * POOL_SEED_RATIOS[r]) / POOL_SEED_RATIO_TOTAL;
     const floor = Math.floor(exact);
     counts[r] += floor;
     flooredSum += floor;
@@ -98,6 +104,17 @@ function allocateRarityCounts(n: number): Record<Rarity, number> {
   return counts;
 }
 
+/**
+ * Only creates a player when BOTH `SEED_PLAYER_EMAIL` and
+ * `SEED_PLAYER_PASSWORD` are set — a fresh database is otherwise left with
+ * no player row at all, rather than one nobody can ever bind or log into
+ * (a bare, unbound `players` row created here would have no email/password
+ * for `npm run account:bind` to match against by anything but `--player`/
+ * `--id`, but more importantly there would be no way to know it exists
+ * without already knowing the seed script's internals). When either env
+ * var is missing, seed no player and point at `npm run account:bind`
+ * for binding one manually later.
+ */
 async function seedPlayer(dataSource: DataSource): Promise<void> {
   const playerRepo = dataSource.getRepository(PlayerEntity);
   const existing = await playerRepo.findOne({ where: { displayName: 'Molo' } });
@@ -106,9 +123,26 @@ async function seedPlayer(dataSource: DataSource): Promise<void> {
     return;
   }
 
+  const email = process.env.SEED_PLAYER_EMAIL;
+  const password = process.env.SEED_PLAYER_PASSWORD;
+
+  if (!email || !password) {
+    console.log(
+      'SEED_PLAYER_EMAIL / SEED_PLAYER_PASSWORD not both set — creating no player. ' +
+        'Bind an existing player later with, e.g.: ' +
+        'echo "yourpassword" | npm run account:bind -- --player "Molo" --email you@example.com --role admin',
+    );
+    return;
+  }
+
+  const passwordHash = await hashPassword(password);
+
   await dataSource.transaction(async (manager) => {
     const player = manager.create(PlayerEntity, {
       displayName: 'Molo',
+      email: email.toLowerCase(),
+      passwordHash,
+      role: 'player',
       balanceCoins: INITIAL_GRANT.coins,
       balanceKeys: INITIAL_GRANT.keys,
       pityCounter: 0,
@@ -129,7 +163,9 @@ async function seedPlayer(dataSource: DataSource): Promise<void> {
     await manager.save(grantTx);
   });
 
-  console.log('Seeded player "Molo" (1000 coins, 5 keys) + initial_grant transaction.');
+  console.log(
+    `Seeded player "Molo" (1000 coins, 5 keys, bound to ${email.toLowerCase()}) + initial_grant transaction.`,
+  );
 }
 
 async function seedCases(dataSource: DataSource): Promise<void> {
@@ -238,6 +274,33 @@ function writeRarityPlaceholderImages(cardsDir: string, thumbsDir: string): void
   }
 }
 
+/**
+ * `--reset` TRUNCATEs six tables against whatever `DATABASE_URL` resolves to.
+ * That is the single largest threat to the live card pool and play history, so
+ * it is fused twice: an explicit opt-in env var, and a database-name check that
+ * refuses anything other than the local dev database. The resolved DSN is
+ * printed (password redacted) before either check so an operator pointing at
+ * the wrong host sees it in the failure message.
+ */
+function assertResetAllowed(databaseUrl: string): void {
+  const dsn = new URL(databaseUrl);
+  const dbName = dsn.pathname.replace(/^\//, '');
+  const redacted = `${dsn.protocol}//${dsn.username}@${dsn.host}/${dbName}`;
+  console.log(`--reset target: ${redacted}`);
+
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== '1') {
+    throw new Error(
+      '--reset refused: set ALLOW_DESTRUCTIVE_SEED=1 to truncate. ' +
+        `Target was ${redacted}.`,
+    );
+  }
+  if (dbName !== 'cardgame') {
+    throw new Error(
+      `--reset refused: database is "${dbName}", expected "cardgame". Target was ${redacted}.`,
+    );
+  }
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const config = configuration();
@@ -252,6 +315,7 @@ async function main(): Promise<void> {
   await AppDataSource.initialize();
   try {
     if (args.reset) {
+      assertResetAllowed(config.databaseUrl);
       await AppDataSource.query(
         'TRUNCATE TABLE "transactions", "player_cards", "case_openings", "cases", "players", "cards" RESTART IDENTITY CASCADE',
       );

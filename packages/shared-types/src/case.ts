@@ -180,9 +180,16 @@ export const CASE_SEEDS: readonly CaseSeed[] = [
     element: 'water',
   },
   {
+    // 180->120 (economy fix, part 1): at 180 this was strictly dominated by
+    // the 100-coin Starter Chest (34% EV ratio vs. Starter Chest's 61%), so
+    // no player had any reason to buy it. At 120 the ratio is 51% and its
+    // narrower rare band buys measurably faster collection. This constant
+    // alone never reaches a live database — `seedCases` skips slugs that
+    // already exist — so the matching migration
+    // `UpdateStoneheartCofferPrice` carries the real `UPDATE`.
     slug: 'stoneheart-coffer',
     name: 'Stoneheart Coffer',
-    priceCoins: 180,
+    priceCoins: 120,
     priceKeys: null,
     imagePath: 'cases/stoneheart-coffer.png',
     weights: CASE_WEIGHTS['stoneheart-coffer']!,

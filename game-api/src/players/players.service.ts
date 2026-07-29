@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import type { AppConfig } from '../config/configuration';
+import { apiError } from '../common/api-error';
 import { CaseOpeningEntity, PlayerCardEntity, PlayerEntity } from '../entities';
 
 @Injectable()
@@ -14,37 +13,21 @@ export class PlayersService {
     private readonly caseOpeningsRepository: Repository<CaseOpeningEntity>,
     @InjectRepository(PlayerCardEntity)
     private readonly playerCardsRepository: Repository<PlayerCardEntity>,
-    private readonly configService: ConfigService<AppConfig, true>,
   ) {}
 
   /**
-   * Resolves the single local player (vault 03: no auth — `PLAYER_ID` from
-   * env, or the first seeded row). Stable signature: later stages depend on
-   * this method.
+   * Resolves the player behind an already-verified JWT (`@CurrentPlayer()`
+   * — `JwtAuthGuard` put `sub`/`role` there after checking the signature).
+   * A valid token whose player row no longer exists is an AUTHENTICATION
+   * failure, not a lookup miss: 401 tells the client its session is no
+   * longer valid, rather than leaking whether some arbitrary id exists.
    */
-  async getCurrentPlayer(): Promise<PlayerEntity> {
-    const configuredId = this.configService.get('playerId', { infer: true });
-
-    if (configuredId) {
-      const player = await this.playersRepository.findOne({ where: { id: configuredId } });
-      if (player) return player;
+  async findByIdOrFail(playerId: string): Promise<PlayerEntity> {
+    const player = await this.playersRepository.findOne({ where: { id: playerId } });
+    if (!player) {
+      apiError(401, 'UNAUTHORIZED', 'Player no longer exists');
     }
-
-    const [firstPlayer] = await this.playersRepository.find({
-      order: { createdAt: 'ASC' },
-      take: 1,
-    });
-
-    if (!firstPlayer) {
-      throw new Error('no player seeded — run `npm run seed`');
-    }
-
-    return firstPlayer;
-  }
-
-  async getCurrentPlayerId(): Promise<string> {
-    const player = await this.getCurrentPlayer();
-    return player.id;
+    return player;
   }
 
   async countCasesOpened(playerId: string): Promise<number> {

@@ -25,3 +25,23 @@
  */
 process.env.DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://cardgame:cardgame@localhost:5433/cardgame_test';
+
+/**
+ * `configuration.ts` throws at startup if `JWT_SECRET` is unset (see its
+ * comment: a default secret is equivalent to no auth at all). That's correct
+ * for production but would otherwise make every e2e suite fail to boot, so
+ * — same pattern as `DATABASE_URL` above — this file is the one place early
+ * enough to set a fixed test-only value before `AppModule` ever reads it.
+ * Never used outside `cardgame_test`.
+ */
+process.env.JWT_SECRET = process.env.E2E_JWT_SECRET ?? 'e2e-test-jwt-secret-do-not-use-in-prod';
+
+/**
+ * Mirrors what `card-forge` would send as `X-Service-Token` in production.
+ * Fixed so `auth.e2e-spec.ts` can assert the happy path (valid token -> 200)
+ * deterministically; the "unset -> always rejected" fail-closed case is
+ * exercised there by building a second, throwaway Nest app with this env var
+ * deleted for the duration of that one test.
+ */
+process.env.FORGE_SERVICE_TOKEN =
+  process.env.E2E_FORGE_SERVICE_TOKEN ?? 'e2e-test-forge-service-token';

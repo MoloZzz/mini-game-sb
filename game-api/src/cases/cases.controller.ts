@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import type { CaseDto } from '@card-game/shared-types';
+import { Public } from '../auth/decorators/public.decorator';
 import { CardMapper } from '../cards/card.mapper';
 import { CasesService } from './cases.service';
 
@@ -11,6 +12,7 @@ export class CasesController {
   ) {}
 
   /** Bare array per the contract — this list is never paginated. */
+  @Public()
   @Get()
   async list(): Promise<CaseDto[]> {
     const { cases, previewCards } = await this.casesService.findActive();

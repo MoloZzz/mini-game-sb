@@ -38,26 +38,35 @@ export interface RarityMeta {
   readonly color: string;
   /** Coins gained when selling one duplicate instance. */
   readonly sellValue: number;
-  /** Target number of approved cards of this rarity in the finished pool. */
-  readonly poolTarget: number;
   /** Inclusive ATK/DEF range used to auto-fill stats at review time (Q4). */
   readonly statRange: readonly [min: number, max: number];
 }
 
 export const RARITY_META: Readonly<Record<Rarity, RarityMeta>> = {
-  common: { color: '#9CA3AF', sellValue: 15, poolTarget: 40, statRange: [1, 4] },
-  uncommon: { color: '#22C55E', sellValue: 40, poolTarget: 30, statRange: [3, 7] },
-  rare: { color: '#3B82F6', sellValue: 100, poolTarget: 20, statRange: [6, 10] },
-  epic: { color: '#A855F7', sellValue: 300, poolTarget: 12, statRange: [9, 14] },
-  legendary: { color: '#F59E0B', sellValue: 900, poolTarget: 6, statRange: [13, 18] },
-  mythic: { color: '#EC4899', sellValue: 3000, poolTarget: 2, statRange: [17, 22] },
+  common: { color: '#9CA3AF', sellValue: 15, statRange: [1, 4] },
+  uncommon: { color: '#22C55E', sellValue: 40, statRange: [3, 7] },
+  rare: { color: '#3B82F6', sellValue: 100, statRange: [6, 10] },
+  epic: { color: '#A855F7', sellValue: 300, statRange: [9, 14] },
+  legendary: { color: '#F59E0B', sellValue: 900, statRange: [13, 18] },
+  mythic: { color: '#EC4899', sellValue: 3000, statRange: [17, 22] },
 };
 
-/** 110 — the full collection target. */
-export const POOL_TARGET_TOTAL = RARITIES.reduce(
-  (sum, r) => sum + RARITY_META[r].poolTarget,
-  0,
-);
+/**
+ * Shape of the SYNTHETIC placeholder pool `seed.ts --placeholder-cards N`
+ * generates, expressed as a ratio (180/108/64/35/30/15 — same proportions as
+ * the original 40/30/20/12/6/2 design split). This is NOT a source of truth
+ * about collection progress: the real approved-card pool lives in the
+ * database and must always be queried (see `game-api/src/collection/`),
+ * never inferred from this constant.
+ */
+export const POOL_SEED_RATIOS: Record<Rarity, number> = {
+  common: 180,
+  uncommon: 108,
+  rare: 64,
+  epic: 35,
+  legendary: 30,
+  mythic: 15,
+};
 
 export function isRarity(value: unknown): value is Rarity {
   return typeof value === 'string' && (RARITIES as readonly string[]).includes(value);

@@ -63,6 +63,10 @@ def _default_api_url() -> str:
     return os.environ.get("FORGE_API_URL", "http://localhost:3000/api")
 
 
+def _default_service_token() -> str | None:
+    return os.environ.get("FORGE_SERVICE_TOKEN")
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="forge.py",
@@ -229,9 +233,17 @@ def _run_cases(args: argparse.Namespace) -> int:
 def _run_ingest(args: argparse.Namespace) -> int:
     import ingest  # lazy import, see note in _run_batch
 
+    service_token = _default_service_token()
+    if not service_token:
+        print("ERROR: FORGE_SERVICE_TOKEN is not set.")
+        print("       game-api's ingest endpoint requires it (X-Service-Token header) and will reject this request.")
+        print("       Set FORGE_SERVICE_TOKEN in the environment or in .env to the same value as game-api's FORGE_SERVICE_TOKEN.")
+        return 1
+
     return ingest.run_ingest(
         manifest_path=args.manifest,
         api_url=args.api_url,
+        service_token=service_token,
         chunk_size=args.chunk_size,
         timeout=args.timeout,
     )

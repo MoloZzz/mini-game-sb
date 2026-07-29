@@ -5,20 +5,11 @@ import type {
   ListInventoryQuery,
 } from "@card-game/shared-types";
 
-import { getInventory, sellInstance } from "@/lib/api";
+import { getCollectionProgress, getInventory, sellInstance } from "@/lib/api";
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from "@/lib/apiError";
-import { computeCollectionProgress } from "@/lib/collection";
 
 /** Grid page size. Small on purpose so pagination controls are actually exercised. */
 const PAGE_SIZE = 24;
-
-/**
- * Comfortably above POOL_TARGET_TOTAL (110). One unfiltered request is enough
- * to see the player's whole collection for the progress bar — there is no
- * dedicated progress endpoint (see lib/collection.ts), and the bar must stay
- * correct regardless of whatever rarity/element filter the grid is showing.
- */
-const FULL_COLLECTION_LIMIT = 100;
 
 /** The subset of ListInventoryQuery that InventoryFilters is allowed to touch. */
 export type InventoryFilterState = Pick<
@@ -51,8 +42,10 @@ export interface UseInventoryResult {
 
 /**
  * Owns the inventory screen's data: the filtered/paginated grid request, the
- * unfiltered request that feeds the collection-progress bar, and the sell
- * mutation. Kept out of Inventory.tsx so the screen stays presentational.
+ * dedicated `GET /me/collection` request that feeds the collection-progress
+ * bar (server-computed against the real approved-card pool, never a client
+ * constant), and the sell mutation. Kept out of Inventory.tsx so the screen
+ * stays presentational.
  */
 export function useInventory(): UseInventoryResult {
   const [filters, setFiltersState] = useState<InventoryFilterState>({});
@@ -79,15 +72,12 @@ export function useInventory(): UseInventoryResult {
       limit: PAGE_SIZE,
     };
 
-    Promise.all([
-      getInventory(pageQuery),
-      getInventory({ limit: FULL_COLLECTION_LIMIT }),
-    ])
-      .then(([pageResult, fullResult]) => {
+    Promise.all([getInventory(pageQuery), getCollectionProgress()])
+      .then(([pageResult, progressResult]) => {
         if (cancelled) return;
         setItems(pageResult.items);
         setTotal(pageResult.total);
-        setProgress(computeCollectionProgress(fullResult.items));
+        setProgress(progressResult);
       })
       .catch((err: unknown) => {
         if (cancelled) return;

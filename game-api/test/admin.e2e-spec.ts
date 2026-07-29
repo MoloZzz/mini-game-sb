@@ -10,6 +10,7 @@ import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import type { AppConfig } from '../src/config/configuration';
 import { PlayerEntity } from '../src/entities';
+import { createTestAdmin, deleteTestPlayers, type TestAccount } from './auth.helper';
 
 /**
  * Runs against the isolated `cardgame_test` database (same docker Postgres
@@ -22,12 +23,22 @@ import { PlayerEntity } from '../src/entities';
  * approved placeholder cards, 0 drafts, player at 1000 coins / 5 keys / pity
  * 0, 0 openings, 0 player_cards, 1 `initial_grant` transaction. See
  * `test/open-case.e2e-spec.ts` for the same reset-around-every-test pattern.
+ *
+ * Every route here now sits behind real auth: `POST .../ingest` uses the
+ * `X-Service-Token` header, mirroring what card-forge actually sends in
+ * production; `GET`/`PATCH .../cards[/:id]` use an admin JWT from
+ * `createTestAdmin`, mirroring a human operator. Both are equally valid per
+ * `ServiceTokenGuard` for ingest, but using the service token there (rather
+ * than the admin token used for everything else) keeps this suite honest
+ * about which caller actually hits which route in production.
  */
 describe('Admin surface (e2e)', () => {
   let app: NestExpressApplication;
   let dataSource: DataSource;
+  let admin: TestAccount;
 
   const SLUG_PREFIX = 'test-ingest-';
+  const EMAIL_PREFIX = 'test-admin-suite';
 
   function makeCard(slugSuffix: string, overrides: Partial<IngestCardInput> = {}): IngestCardInput {
     return {
@@ -85,10 +96,14 @@ describe('Admin surface (e2e)', () => {
     // Belt-and-suspenders: wipe any leftovers from a previously-crashed run
     // before asserting anything about counts.
     await deleteTestCards();
+    await deleteTestPlayers(dataSource, EMAIL_PREFIX);
+
+    admin = await createTestAdmin(app, dataSource, { emailPrefix: EMAIL_PREFIX });
   });
 
   afterAll(async () => {
     await deleteTestCards();
+    await deleteTestPlayers(dataSource, EMAIL_PREFIX);
 
     // Verify the restore, loudly.
     const cardCounts: Array<{ status: string; count: string }> = await dataSource.query(
@@ -136,7 +151,10 @@ describe('Admin surface (e2e)', () => {
   it('1. ingest inserts drafts: POST 5 cards -> inserted 5, skipped 0', async () => {
     const cards = [1, 2, 3, 4, 5].map((n) => makeCard(`batch1-${n}`));
 
-    const res = await request(app.getHttpServer()).post('/api/admin/cards/ingest').send({ cards });
+    const res = await request(app.getHttpServer())
+      .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
+      .send({ cards });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ inserted: 5, skipped: 0, skippedSlugs: [] });
@@ -158,7 +176,10 @@ describe('Admin surface (e2e)', () => {
 
     const totalBefore: Array<{ count: string }> = await dataSource.query('SELECT count(*) FROM cards');
 
-    const res = await request(app.getHttpServer()).post('/api/admin/cards/ingest').send({ cards });
+    const res = await request(app.getHttpServer())
+      .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
+      .send({ cards });
 
     expect(res.status).toBe(200);
     expect(res.body.inserted).toBe(0);
@@ -178,6 +199,7 @@ describe('Admin surface (e2e)', () => {
     ];
     const mixedRes = await request(app.getHttpServer())
       .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
       .send({ cards: mixed });
 
     expect(mixedRes.status).toBe(200);
@@ -189,7 +211,10 @@ describe('Admin surface (e2e)', () => {
     const dupSlug = 'batch3-dup';
     const cards = [makeCard(dupSlug), makeCard(dupSlug)];
 
-    const res = await request(app.getHttpServer()).post('/api/admin/cards/ingest').send({ cards });
+    const res = await request(app.getHttpServer())
+      .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
+      .send({ cards });
 
     expect(res.status).toBe(200);
     expect(res.body.inserted).toBe(1);
@@ -200,11 +225,13 @@ describe('Admin surface (e2e)', () => {
   it('4. validation rejects absolute paths (http:// and leading slash) with 400', async () => {
     const httpRes = await request(app.getHttpServer())
       .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
       .send({ cards: [makeCard('bad-http', { imagePath: 'http://evil/x.png' })] });
     expect(httpRes.status).toBe(400);
 
     const slashRes = await request(app.getHttpServer())
       .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
       .send({ cards: [makeCard('bad-slash', { imagePath: '/abs/y.png' })] });
     expect(slashRes.status).toBe(400);
 
@@ -216,7 +243,9 @@ describe('Admin surface (e2e)', () => {
   });
 
   it('5. review queue: GET /api/admin/cards (default) returns only drafts, with genMeta/status/setId/createdAt/imageUrl', async () => {
-    const res = await request(app.getHttpServer()).get('/api/admin/cards');
+    const res = await request(app.getHttpServer())
+      .get('/api/admin/cards')
+      .set('Authorization', `Bearer ${admin.token}`);
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.items)).toBe(true);
@@ -235,7 +264,9 @@ describe('Admin surface (e2e)', () => {
   });
 
   it('6. GET /api/admin/cards?status=approved -> total 60', async () => {
-    const res = await request(app.getHttpServer()).get('/api/admin/cards?status=approved');
+    const res = await request(app.getHttpServer())
+      .get('/api/admin/cards?status=approved')
+      .set('Authorization', `Bearer ${admin.token}`);
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(60);
   });
@@ -245,12 +276,13 @@ describe('Admin surface (e2e)', () => {
   it('7. PATCH review: approve with no stats auto-fills ATK/DEF within the rarity range', async () => {
     const ingestRes = await request(app.getHttpServer())
       .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
       .send({ cards: [makeCard('review-target', { suggestedRarity: 'common' })] });
     expect(ingestRes.body.inserted).toBe(1);
 
-    const listRes = await request(app.getHttpServer()).get(
-      `/api/admin/cards?status=draft&limit=100`,
-    );
+    const listRes = await request(app.getHttpServer())
+      .get(`/api/admin/cards?status=draft&limit=100`)
+      .set('Authorization', `Bearer ${admin.token}`);
     const target = listRes.body.items.find((i: { slug: string }) =>
       i.slug.endsWith('review-target'),
     );
@@ -259,6 +291,7 @@ describe('Admin surface (e2e)', () => {
 
     const patchRes = await request(app.getHttpServer())
       .patch(`/api/admin/cards/${approvedCardId}`)
+      .set('Authorization', `Bearer ${admin.token}`)
       .send({ status: 'approved', name: 'Ember Drake', rarity: 'epic' });
 
     expect(patchRes.status).toBe(200);
@@ -299,9 +332,9 @@ describe('Admin surface (e2e)', () => {
     }
 
     // And the admin draft queue must never include an already-approved card.
-    const draftRes = await request(app.getHttpServer()).get(
-      '/api/admin/cards?status=draft&limit=100',
-    );
+    const draftRes = await request(app.getHttpServer())
+      .get('/api/admin/cards?status=draft&limit=100')
+      .set('Authorization', `Bearer ${admin.token}`);
     const draftIds: string[] = draftRes.body.items.map((i: { id: string }) => i.id);
     expect(draftIds.includes(approvedCardId)).toBe(false);
   });
@@ -309,12 +342,13 @@ describe('Admin surface (e2e)', () => {
   it('8. explicit stats win: PATCH with attack/defense keeps exact values even outside the rarity range', async () => {
     const ingestRes = await request(app.getHttpServer())
       .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
       .send({ cards: [makeCard('explicit-stats', { suggestedRarity: 'mythic' })] });
     expect(ingestRes.body.inserted).toBe(1);
 
-    const listRes = await request(app.getHttpServer()).get(
-      `/api/admin/cards?status=draft&limit=100`,
-    );
+    const listRes = await request(app.getHttpServer())
+      .get(`/api/admin/cards?status=draft&limit=100`)
+      .set('Authorization', `Bearer ${admin.token}`);
     const target = listRes.body.items.find((i: { slug: string }) =>
       i.slug.endsWith('explicit-stats'),
     );
@@ -322,6 +356,7 @@ describe('Admin surface (e2e)', () => {
 
     const patchRes = await request(app.getHttpServer())
       .patch(`/api/admin/cards/${target.id}`)
+      .set('Authorization', `Bearer ${admin.token}`)
       .send({ status: 'approved', attack: 3, defense: 4 });
 
     expect(patchRes.status).toBe(200);
@@ -336,6 +371,7 @@ describe('Admin surface (e2e)', () => {
   it('9. PATCH unknown uuid -> 404 CARD_NOT_FOUND', async () => {
     const res = await request(app.getHttpServer())
       .patch('/api/admin/cards/00000000-0000-4000-8000-000000000000')
+      .set('Authorization', `Bearer ${admin.token}`)
       .send({ status: 'approved' });
     expect(res.status).toBe(404);
     expect(res.body.code).toBe('CARD_NOT_FOUND');
@@ -344,12 +380,13 @@ describe('Admin surface (e2e)', () => {
   it('explicit null clears element/flavorText; an absent key leaves them untouched', async () => {
     const ingestRes = await request(app.getHttpServer())
       .post('/api/admin/cards/ingest')
+      .set('X-Service-Token', process.env.FORGE_SERVICE_TOKEN!)
       .send({ cards: [makeCard('null-clear', { element: 'water' })] });
     expect(ingestRes.body.inserted).toBe(1);
 
-    const listRes = await request(app.getHttpServer()).get(
-      '/api/admin/cards?status=draft&limit=100',
-    );
+    const listRes = await request(app.getHttpServer())
+      .get('/api/admin/cards?status=draft&limit=100')
+      .set('Authorization', `Bearer ${admin.token}`);
     const target = listRes.body.items.find((i: { slug: string }) => i.slug.endsWith('null-clear'));
     expect(target).toBeDefined();
     expect(target.element).toBe('water');
@@ -357,6 +394,7 @@ describe('Admin surface (e2e)', () => {
     // First PATCH: touch only flavorText, leave element alone.
     const firstPatch = await request(app.getHttpServer())
       .patch(`/api/admin/cards/${target.id}`)
+      .set('Authorization', `Bearer ${admin.token}`)
       .send({ flavorText: 'a watery tale' });
     expect(firstPatch.status).toBe(200);
     expect(firstPatch.body.element).toBe('water');
@@ -365,6 +403,7 @@ describe('Admin surface (e2e)', () => {
     // Second PATCH: explicit null clears element, absent flavorText stays.
     const secondPatch = await request(app.getHttpServer())
       .patch(`/api/admin/cards/${target.id}`)
+      .set('Authorization', `Bearer ${admin.token}`)
       .send({ element: null });
     expect(secondPatch.status).toBe(200);
     expect(secondPatch.body.element).toBeNull();

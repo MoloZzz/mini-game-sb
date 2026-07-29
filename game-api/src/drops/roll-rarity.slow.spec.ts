@@ -68,7 +68,7 @@ describe('rollRarity probability distribution at N=200000', () => {
       table.push({ rarity, p, observed, se, z });
     }
 
-    // eslint-disable-next-line no-console
+     
     console.log(
       '\nrarity     | expected p | observed p |  z-score\n' +
         '-----------|------------|------------|---------\n' +

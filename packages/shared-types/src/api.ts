@@ -66,6 +66,32 @@ export interface SellCardResponse {
   balance: Balance;
 }
 
+// --- POST /me/inventory/sell-bulk ---
+
+/**
+ * Server-side cap on the number of instances one bulk-sell request can
+ * resolve to. A request over this is rejected outright (`BULK_SELL_CAP_EXCEEDED`)
+ * rather than silently truncated, so the caller always knows exactly what
+ * did and didn't sell.
+ */
+export const SELL_BULK_MAX_INSTANCES = 500;
+
+/**
+ * Two of the three variants share a `mode` discriminant; `instanceIds` has
+ * none — the caller names instances directly instead of a selection rule.
+ */
+export type SellBulkRequest =
+  | { mode: 'all_duplicates' }
+  | { mode: 'by_rarity'; rarities: Rarity[] }
+  | { instanceIds: string[] };
+
+export interface SellBulkResponse {
+  /** Always equals the number of new ledger rows this request wrote. */
+  soldCount: number;
+  gained: { coins: number };
+  balance: Balance;
+}
+
 export interface ClaimDailyBonusResponse {
   gained: Balance;
   balance: Balance;
@@ -116,8 +142,13 @@ export const API_ERROR_CODES = [
   'CARD_NOT_FOUND',
   'INSTANCE_NOT_FOUND',
   'LAST_COPY',
+  'BULK_SELL_CAP_EXCEEDED',
   'DAILY_BONUS_NOT_READY',
   'CASE_INACTIVE',
+  'UNAUTHORIZED',
+  'FORBIDDEN',
+  'INVALID_CREDENTIALS',
+  'EMAIL_TAKEN',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -150,6 +181,13 @@ export interface EmptyPoolError extends ApiError {
 export interface LastCopyError extends ApiError {
   code: 'LAST_COPY';
   cardId: string;
+}
+
+/** 400 — a bulk-sell request resolved to more instances than `SELL_BULK_MAX_INSTANCES`. */
+export interface BulkSellCapExceededError extends ApiError {
+  code: 'BULK_SELL_CAP_EXCEEDED';
+  requested: number;
+  max: number;
 }
 
 export type { InventoryItemDto };

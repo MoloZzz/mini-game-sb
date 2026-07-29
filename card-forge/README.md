@@ -116,9 +116,9 @@ slug format: `{recipe_id}-{seed:x}` truncated to 48 chars (longest in the curren
 
 ## Ingest
 
-`ingest` POSTs `manifest.json` to `POST /admin/cards/ingest` on game-api in chunks. It is idempotent by slug: a second run inserts nothing. If game-api is not running, ingest exits with a clear message and code 2; that is expected, the images are already on disk and ingest can be re-run later.
+`ingest` POSTs `manifest.json` to `POST /admin/cards/ingest` on game-api in chunks, sending an `X-Service-Token` header set from `FORGE_SERVICE_TOKEN` (see Environment variables above). It is idempotent by slug: a second run inserts nothing. If game-api is not running, ingest exits with a clear message and code 2; that is expected, the images are already on disk and ingest can be re-run later. If game-api rejects the token (401/403), ingest exits with a message naming `FORGE_SERVICE_TOKEN` so the mismatch is obvious.
 
-To verify idempotency without game-api, in two terminals:
+To verify idempotency without game-api, in two terminals (with `FORGE_SERVICE_TOKEN` set in the environment — `mock_api.py` does not check it, but `forge.py ingest` still requires it to be set before sending anything):
 ```
 .venv/Scripts/python.exe mock_api.py --port 3000
 .venv/Scripts/python.exe forge.py ingest --api-url http://localhost:3000/api
@@ -166,4 +166,6 @@ Keep a running note of `recipe id -> what actually came out`. After 20 batches n
 
 ## Environment variables
 
-Read from `.env` at repo root or `card-forge/.env` if present; real environment variables win over both. `FORGE_API_URL`, `FORGE_STORAGE_DIR`, `FORGE_MODEL_ID`, `HF_HOME`.
+Read from `.env` at repo root or `card-forge/.env` if present; real environment variables win over both. `FORGE_API_URL`, `FORGE_SERVICE_TOKEN`, `FORGE_STORAGE_DIR`, `FORGE_MODEL_ID`, `HF_HOME`.
+
+`FORGE_SERVICE_TOKEN` is required by `forge.py ingest`: game-api's `POST /admin/cards/ingest` is protected by a `ServiceTokenGuard` that checks an `X-Service-Token` header against its own `FORGE_SERVICE_TOKEN` environment variable. Set both to the same value. There is no default — `ingest` fails fast with a clear message if it is unset, instead of sending a request game-api will reject with 401/403.

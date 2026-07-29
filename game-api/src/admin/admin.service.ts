@@ -4,6 +4,7 @@ import type { IngestCardInput, IngestResponse, ReviewCardRequest } from '@card-g
 import type { DataSource, Repository } from 'typeorm';
 import { In } from 'typeorm';
 import { throwCardNotFound } from '../common/api-error';
+import { PoolService } from '../collection/pool.service';
 import { CardEntity } from '../entities';
 import type { AdminListCardsQueryDto } from './dto/list-admin-cards.query';
 import { autofillStats, slugToName } from './stat-autofill';
@@ -19,6 +20,7 @@ export class AdminService {
     @InjectDataSource() private readonly dataSource: DataSource,
     @InjectRepository(CardEntity)
     private readonly cardsRepository: Repository<CardEntity>,
+    private readonly poolService: PoolService,
   ) {}
 
   /**
@@ -43,7 +45,7 @@ export class AdminService {
       deduped.push(card);
     }
 
-    return this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       const slugs = deduped.map((card) => card.slug);
       const existing =
         slugs.length > 0
@@ -85,6 +87,12 @@ export class AdminService {
         skippedSlugs,
       };
     });
+
+    // Ingested cards land as `draft`, not `approved`, so this never actually
+    // moves the approved pool — invalidated anyway to keep the "pool changed
+    // via AdminService" invariant simple and to not depend on that staying true.
+    this.poolService.invalidate();
+    return result;
   }
 
   /** The review queue. Defaults to `status: 'draft'` — unlike the player catalog. */
@@ -124,7 +132,7 @@ export class AdminService {
     body: ReviewCardRequest,
     providedKeys: ReadonlySet<string>,
   ): Promise<CardEntity> {
-    return this.dataSource.transaction(async (manager) => {
+    const updatedCard = await this.dataSource.transaction(async (manager) => {
       const card = await manager.findOne(CardEntity, { where: { id } });
       if (!card) {
         throwCardNotFound(id);
@@ -156,5 +164,10 @@ export class AdminService {
       await manager.save(CardEntity, card);
       return card;
     });
+
+    // A review can change `status` (draft <-> approved) or `rarity` — both
+    // move the approved-per-rarity totals `PoolService` memoizes.
+    this.poolService.invalidate();
+    return updatedCard;
   }
 }

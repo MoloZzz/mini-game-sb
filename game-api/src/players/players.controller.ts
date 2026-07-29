@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { DAILY_BONUS_COOLDOWN_MS } from '@card-game/shared-types';
 import type { PlayerDto } from '@card-game/shared-types';
+import { CurrentPlayer } from '../auth/decorators/current-player.decorator';
+import type { CurrentPlayerPayload } from '../auth/types';
 import { PlayersService } from './players.service';
 
 /**
@@ -19,8 +21,8 @@ export class PlayersController {
   constructor(private readonly playersService: PlayersService) {}
 
   @Get()
-  async getMe(): Promise<PlayerDto> {
-    const player = await this.playersService.getCurrentPlayer();
+  async getMe(@CurrentPlayer() { id: playerId }: CurrentPlayerPayload): Promise<PlayerDto> {
+    const player = await this.playersService.findByIdOrFail(playerId);
 
     const [casesOpened, totalCards, uniqueCards] = await Promise.all([
       this.playersService.countCasesOpened(player.id),

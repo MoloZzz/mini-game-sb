@@ -19,13 +19,18 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
-  app.enableCors({ origin: true });
+  // Reflecting any origin next to a token-issuing API is indefensible —
+  // only the explicit allowlist from config may make cross-origin requests.
+  app.enableCors({ origin: configService.get('corsOrigins', { infer: true }), credentials: false });
 
   const storageDir = configService.get('storageDir', { infer: true });
   app.useStaticAssets(storageDir, { prefix: '/static' });
 
   const port = configService.get('port', { infer: true });
-  await app.listen(port);
+  // Defaults to 127.0.0.1 — binding 0.0.0.0 would publish the admin API to
+  // the local network.
+  const apiHost = configService.get('apiHost', { infer: true });
+  await app.listen(port, apiHost);
 }
 
 bootstrap();

@@ -37,4 +37,32 @@ export class LedgerService {
     });
     return manager.save(transaction);
   }
+
+  /**
+   * Bulk-sell's ledger write (A7). `manager.insert` with an array compiles to
+   * ONE multi-row INSERT — deliberately not a loop of `recordTransaction`
+   * calls, and deliberately not aggregated into a single summary row either:
+   * `transactions` has no jsonb detail column, so collapsing N instances into
+   * one row would destroy per-instance traceability (which instance, which
+   * card) to save what is still a single cheap statement either way. No-op
+   * on an empty array so a caller doesn't need to guard the call site.
+   */
+  async recordBulkTransactions(
+    manager: EntityManager,
+    inputs: RecordTransactionInput[],
+  ): Promise<void> {
+    if (inputs.length === 0) return;
+
+    await manager.insert(
+      TransactionEntity,
+      inputs.map((input) => ({
+        playerId: input.playerId,
+        type: input.type,
+        deltaCoins: input.deltaCoins,
+        deltaKeys: input.deltaKeys,
+        refType: input.refType ?? null,
+        refId: input.refId ?? null,
+      })),
+    );
+  }
 }

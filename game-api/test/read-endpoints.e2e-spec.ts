@@ -2,13 +2,28 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { getDataSourceToken } from '@nestjs/typeorm';
 import { weightsSumTo100 } from '@card-game/shared-types';
 import request from 'supertest';
+import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import type { AppConfig } from '../src/config/configuration';
+import { createTestPlayer, deleteTestPlayers, type TestAccount } from './auth.helper';
 
+/**
+ * `GET /api/me` is behind the global `JwtAuthGuard` now (see auth.e2e-spec.ts
+ * for the full auth surface) — this suite registers its own player via the
+ * helper instead of depending on the seeded 'Molo' row, so its "balance ===
+ * 1000, casesOpened === 0" assertions hold by construction (that's exactly
+ * what a fresh registration grants — see INITIAL_GRANT) rather than by
+ * coincidence of seed/run order.
+ */
 describe('Read endpoints (e2e)', () => {
   let app: NestExpressApplication;
+  let dataSource: DataSource;
+  let player: TestAccount;
+
+  const EMAIL_PREFIX = 'test-read-endpoints';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,9 +47,14 @@ describe('Read endpoints (e2e)', () => {
     app.useStaticAssets(storageDir, { prefix: '/static' });
 
     await app.init();
+
+    dataSource = app.get(getDataSourceToken());
+    await deleteTestPlayers(dataSource, EMAIL_PREFIX);
+    player = await createTestPlayer(app, { emailPrefix: EMAIL_PREFIX });
   });
 
   afterAll(async () => {
+    await deleteTestPlayers(dataSource, EMAIL_PREFIX);
     await app.close();
   });
 
@@ -99,7 +119,9 @@ describe('Read endpoints (e2e)', () => {
   });
 
   it('GET /api/me -> 200 with seeded balance and stats', async () => {
-    const res = await request(app.getHttpServer()).get('/api/me');
+    const res = await request(app.getHttpServer())
+      .get('/api/me')
+      .set('Authorization', `Bearer ${player.token}`);
     expect(res.status).toBe(200);
     expect(res.body.balance.coins).toBe(1000);
     expect(res.body.balance.keys).toBe(5);

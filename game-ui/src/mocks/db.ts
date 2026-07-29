@@ -11,6 +11,7 @@ import {
   type DropHistoryItemDto,
   type Element,
   type GenMeta,
+  type PlayerRole,
   type Rarity,
 } from '@card-game/shared-types';
 
@@ -22,6 +23,19 @@ export interface OwnedInstance {
   acquiredAt: string;
 }
 
+/**
+ * A mock account created via `POST /auth/register` (or seeded below).
+ * `password` is stored in plaintext deliberately — this is an in-memory MSW
+ * fixture, not the real auth store, and never leaves the test/dev process.
+ */
+export interface MockAuthUser {
+  id: string;
+  displayName: string;
+  email: string;
+  password: string;
+  role: PlayerRole;
+}
+
 export interface MockDb {
   balance: Balance;
   ownedInstances: OwnedInstance[];
@@ -30,6 +44,7 @@ export interface MockDb {
   casesOpened: number;
   dailyBonusAvailableAt: string | null;
   adminCards: AdminCardDto[];
+  authUsers: MockAuthUser[];
 }
 
 const NOW = Date.now();
@@ -170,6 +185,20 @@ function seedAdminCards(): AdminCardDto[] {
   return cards;
 }
 
+/**
+ * Two ready-made accounts so mock mode (`VITE_USE_MOCKS=1`) can be logged
+ * into immediately instead of forcing a registration round-trip first —
+ * one of each role, since the whole point of seeding an admin account is
+ * exercising the /admin gate without the offline `account:bind` CLI this
+ * mock has no equivalent of.
+ */
+function seedAuthUsers(): MockAuthUser[] {
+  return [
+    { id: 'mock-player-1', displayName: 'Molo', email: 'player@example.com', password: 'password123', role: 'player' },
+    { id: 'mock-admin-1', displayName: 'Admin', email: 'admin@example.com', password: 'password123', role: 'admin' },
+  ];
+}
+
 function createSeed(): MockDb {
   return {
     balance: { ...INITIAL_GRANT },
@@ -179,6 +208,7 @@ function createSeed(): MockDb {
     casesOpened: 0,
     dailyBonusAvailableAt: null,
     adminCards: seedAdminCards(),
+    authUsers: seedAuthUsers(),
   };
 }
 

@@ -20,6 +20,7 @@ import {
   type CaseDto,
   type CaseSeed,
   type ClaimDailyBonusResponse,
+  type CollectionProgressDto,
   type DropHistoryItemDto,
   type Element,
   type EmptyPoolError,
@@ -31,13 +32,14 @@ import {
   type OpenCaseResponse,
   type Paginated,
   type PlayerDto,
+  type PlayerRole,
   type Rarity,
   type RarityWeights,
   type ReviewCardRequest,
   type SellCardResponse,
 } from '@card-game/shared-types';
 
-import { db, type OwnedInstance } from './db';
+import { db, type MockAuthUser, type OwnedInstance } from './db';
 import { MOCK_CARDS, cardsByRarity } from './fixtures/cards';
 import { buildReel, rollRarity } from './fixtures/reel';
 
@@ -359,6 +361,44 @@ const getInventoryHandlers = mirror('/me/inventory', (url) =>
   }),
 );
 
+// --- GET /me/collection ------------------------------------------------------------
+
+/**
+ * Total pool size mirrors the fixture catalog (`MOCK_CARDS`, 6 cards per
+ * rarity = 36) rather than any design-doc number — deliberately NOT 110 (the
+ * old hardcoded pool constant), so a regression back to that constant would
+ * fail this fixture's own assertions loudly instead of silently matching.
+ */
+function collectionTotalsByRarity(): Record<Rarity, number> {
+  const totals = Object.fromEntries(RARITIES.map((r) => [r, 0])) as Record<Rarity, number>;
+  for (const card of MOCK_CARDS) {
+    totals[card.rarity] += 1;
+  }
+  return totals;
+}
+
+const getCollectionHandlers = mirror('/me/collection', (url) =>
+  http.get(url, () => {
+    const totals = collectionTotalsByRarity();
+    const ownedByRarity = Object.fromEntries(RARITIES.map((r) => [r, 0])) as Record<Rarity, number>;
+    for (const item of groupedInventory()) {
+      ownedByRarity[item.card.rarity] += 1;
+    }
+
+    const byRarity = {} as CollectionProgressDto['byRarity'];
+    let owned = 0;
+    let total = 0;
+    for (const rarity of RARITIES) {
+      byRarity[rarity] = { owned: ownedByRarity[rarity], total: totals[rarity] };
+      owned += ownedByRarity[rarity];
+      total += totals[rarity];
+    }
+
+    const response: CollectionProgressDto = { owned, total, byRarity };
+    return HttpResponse.json(response);
+  }),
+);
+
 // --- POST /me/inventory/:instanceId/sell -------------------------------------------
 
 const sellInstanceHandlers = mirror('/me/inventory/:instanceId/sell', (url) =>
@@ -476,14 +516,155 @@ const reviewCardHandlers = mirror('/admin/cards/:id', (url) =>
   }),
 );
 
+// --- Auth: POST /auth/register, POST /auth/login, GET /auth/me -----------------
+//
+// A self-contained mock JWT: unsigned (no real crypto, no shared secret with
+// the real server — the two token schemes are not interchangeable), but
+// shaped exactly like the real one (base64url header.payload.signature) so
+// `decodeClaims` in `src/lib/auth.ts` — the one function that ever reads a
+// token client-side — decodes it identically in mock and live mode.
+
+interface MockAuthResponse {
+  token: string;
+  player: PlayerDto;
+}
+
+function base64UrlEncode(input: string): string {
+  return btoa(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function issueMockToken(user: MockAuthUser): string {
+  const header = base64UrlEncode(JSON.stringify({ alg: 'none', typ: 'JWT' }));
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const SEVEN_DAYS_S = 7 * 24 * 60 * 60;
+  const payload = base64UrlEncode(
+    JSON.stringify({ sub: user.id, role: user.role, iat: nowSeconds, exp: nowSeconds + SEVEN_DAYS_S }),
+  );
+  // No real signature to compute — this segment only needs to exist so the
+  // token has the expected three-part shape.
+  return `${header}.${payload}.mock-signature`;
+}
+
+function decodeMockToken(token: string): { sub: string; role: PlayerRole } | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const parsed: unknown = JSON.parse(atob(padded));
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const record = parsed as Record<string, unknown>;
+    if (typeof record.sub !== 'string') return null;
+    if (record.role !== 'player' && record.role !== 'admin') return null;
+    return { sub: record.sub, role: record.role };
+  } catch {
+    return null;
+  }
+}
+
+function bearerToken(request: Request): string | null {
+  const header = request.headers.get('authorization');
+  if (!header?.startsWith('Bearer ')) return null;
+  const token = header.slice('Bearer '.length).trim();
+  return token.length > 0 ? token : null;
+}
+
+/** Every mock account shares the single `db.balance`/stats state, same as every other handler here — there's only ever one "current player" in mock mode. */
+function mockPlayerDto(user: MockAuthUser): PlayerDto {
+  const uniqueCards = new Set(db.ownedInstances.map((i) => i.cardId)).size;
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    balance: db.balance,
+    stats: {
+      casesOpened: db.casesOpened,
+      uniqueCards,
+      totalCards: db.ownedInstances.length,
+    },
+    dailyBonusAvailableAt: db.dailyBonusAvailableAt,
+    pityCounter: db.pityCounter,
+  };
+}
+
+interface RegisterBody {
+  displayName?: string;
+  email?: string;
+  password?: string;
+}
+
+const registerHandlers = mirror('/auth/register', (url) =>
+  http.post(url, async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as RegisterBody;
+    const email = (body.email ?? '').toLowerCase();
+
+    if (db.authUsers.some((u) => u.email === email)) {
+      return HttpResponse.json(apiError('EMAIL_TAKEN', `Email ${email} is already registered`), {
+        status: 409,
+      });
+    }
+
+    const user: MockAuthUser = {
+      id: crypto.randomUUID(),
+      displayName: body.displayName ?? 'Player',
+      email,
+      password: body.password ?? '',
+      role: 'player',
+    };
+    db.authUsers.push(user);
+
+    const response: MockAuthResponse = { token: issueMockToken(user), player: mockPlayerDto(user) };
+    return HttpResponse.json(response);
+  }),
+);
+
+interface LoginBody {
+  email?: string;
+  password?: string;
+}
+
+const loginHandlers = mirror('/auth/login', (url) =>
+  http.post(url, async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as LoginBody;
+    const email = (body.email ?? '').toLowerCase();
+    const user = db.authUsers.find((u) => u.email === email);
+
+    if (!user || user.password !== body.password) {
+      return HttpResponse.json(apiError('INVALID_CREDENTIALS', 'Invalid email or password'), {
+        status: 401,
+      });
+    }
+
+    const response: MockAuthResponse = { token: issueMockToken(user), player: mockPlayerDto(user) };
+    return HttpResponse.json(response);
+  }),
+);
+
+const authMeHandlers = mirror('/auth/me', (url) =>
+  http.get(url, ({ request }) => {
+    const token = bearerToken(request);
+    const claims = token ? decodeMockToken(token) : null;
+    const user = claims ? db.authUsers.find((u) => u.id === claims.sub) : undefined;
+
+    if (!user) {
+      return HttpResponse.json(apiError('UNAUTHORIZED', 'Missing or invalid token'), { status: 401 });
+    }
+
+    return HttpResponse.json(mockPlayerDto(user));
+  }),
+);
+
 export const handlers: HttpHandler[] = [
   ...getCasesHandlers,
   ...openCaseHandlers,
   ...getMeHandlers,
   ...getInventoryHandlers,
+  ...getCollectionHandlers,
   ...sellInstanceHandlers,
   ...getDropsHandlers,
   ...claimDailyBonusHandlers,
   ...getAdminCardsHandlers,
   ...reviewCardHandlers,
+  ...registerHandlers,
+  ...loginHandlers,
+  ...authMeHandlers,
 ];

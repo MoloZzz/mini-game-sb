@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -7,14 +8,35 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
-import { CASE_SEEDS } from '@card-game/shared-types';
+import { CASE_SEEDS, type PlayerRole } from '@card-game/shared-types';
 
 import { AppShell } from '@/components/AppShell';
 import { ToastProvider } from '@/components/Toast';
 import { AdminReview } from '@/features/admin/AdminReview';
+import { Login } from '@/features/auth/Login';
+import { Register } from '@/features/auth/Register';
 import { Inventory } from '@/features/inventory/Inventory';
 import { Lobby } from '@/features/lobby/Lobby';
 import { OpenCaseScreen } from '@/features/open/OpenCaseScreen';
+import { AuthProvider, useAuth } from '@/lib/authContext';
+
+/**
+ * Gates a route behind an active session and, optionally, a specific role.
+ * An unauthenticated hit bounces to /login with the attempted location
+ * stashed in router state, so Login can send the player back afterwards.
+ * A logged-in player who fails the role check (e.g. non-admin on /admin)
+ * bounces to the lobby instead — they have a valid session, just not this
+ * permission.
+ */
+function RequireAuth({ children, role }: { children: ReactNode; role?: PlayerRole }) {
+  const { player, role: userRole, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return null;
+  if (!player) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (role && userRole !== role) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 
 function LobbyRoute() {
   const navigate = useNavigate();
@@ -42,16 +64,49 @@ function OpenRoute() {
 }
 
 export function AppRoutes() {
+  const pathname = useLocation().pathname;
   // The reel is a full-focus screen — the nav strip is hidden while a case is
-  // opening so nothing competes with the 5.5 seconds.
-  const fullFocus = useLocation().pathname.startsWith('/open/');
+  // opening so nothing competes with the 5.5 seconds. /login and /register
+  // hide it too: its links all point at protected routes a signed-out
+  // visitor can't use yet.
+  const fullFocus = pathname.startsWith('/open/') || pathname === '/login' || pathname === '/register';
 
   const routes = (
     <Routes>
-      <Route path="/" element={<LobbyRoute />} />
-      <Route path="/open/:slug" element={<OpenRoute />} />
-      <Route path="/inventory" element={<Inventory />} />
-      <Route path="/admin" element={<AdminReview />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <LobbyRoute />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/open/:slug"
+        element={
+          <RequireAuth>
+            <OpenRoute />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <RequireAuth>
+            <Inventory />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth role="admin">
+            <AdminReview />
+          </RequireAuth>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -63,9 +118,11 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <AppRoutes />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

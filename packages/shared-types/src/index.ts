@@ -14,4 +14,5 @@ export * from './card.js';
 export * from './case.js';
 export * from './reel.js';
 export * from './player.js';
+export * from './milestones.js';
 export * from './api.js';

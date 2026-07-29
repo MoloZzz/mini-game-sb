@@ -1,6 +1,7 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { CardDetailResponse, ListCardsResponse } from '@card-game/shared-types';
+import { Public } from '../auth/decorators/public.decorator';
 import { throwCardNotFound } from '../common/api-error';
 import type { AppConfig } from '../config/configuration';
 import { CardMapper } from './card.mapper';
@@ -15,6 +16,7 @@ export class CardsController {
     private readonly configService: ConfigService<AppConfig, true>,
   ) {}
 
+  @Public()
   @Get()
   async list(@Query() query: ListCardsQueryDto): Promise<ListCardsResponse> {
     const { items, total } = await this.cardsService.findMany(query);
@@ -26,6 +28,7 @@ export class CardsController {
     };
   }
 
+  @Public()
   @Get(':id')
   async getById(@Param('id', ParseUUIDPipe) id: string): Promise<CardDetailResponse> {
     const card = await this.cardsService.findById(id);

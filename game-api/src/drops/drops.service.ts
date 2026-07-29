@@ -15,7 +15,7 @@ import {
   PlayerEntity,
 } from '../entities';
 import { LedgerService } from '../ledger/ledger.service';
-import { PlayersService } from '../players/players.service';
+import { MilestoneService } from '../milestones/milestone.service';
 import type { FillerPool, ReelCard } from './build-reel';
 import { buildReel } from './build-reel';
 import { nextPityCounter } from './pity';
@@ -38,16 +38,15 @@ export class DropsService {
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly cardMapper: CardMapper,
     private readonly ledgerService: LedgerService,
-    private readonly playersService: PlayersService,
+    private readonly milestoneService: MilestoneService,
   ) {}
 
   async openCase(
+    playerId: string,
     slug: string,
     clientSeed: string | null,
     idempotencyKey: string | null,
   ): Promise<OpenCaseResponse> {
-    const playerId = await this.playersService.getCurrentPlayerId();
-
     return this.dataSource.transaction(async (manager) => {
       // 1. Lock the player row FIRST, before reading/checking the balance.
       const player = await manager
@@ -57,7 +56,7 @@ export class DropsService {
         .getOne();
 
       if (!player) {
-        throw new Error(`Player ${playerId} not found — run \`npm run seed\``);
+        apiError(401, 'UNAUTHORIZED', 'Player no longer exists');
       }
 
       // 2. Idempotency replay: same key -> same response, no re-charge.
@@ -163,7 +162,16 @@ export class DropsService {
       });
       await manager.save(playerCard);
 
-      // 12. Insert the ledger row (ADR-008 — every balance change goes through it).
+      // 12. Copies of the won card the player owns after this drop. Moved up
+      // from after the final save (economy fix, part 1): the unique-card
+      // count can only change on the FIRST copy, so `copies === 1` is
+      // exactly the signal that gates the milestone check below — on a
+      // duplicate drop the entire milestone path is skipped.
+      const copies = await manager.count(PlayerCardEntity, {
+        where: { playerId: player.id, cardId: winnerEntity.id, soldAt: IsNull() },
+      });
+
+      // 13. Insert the ledger row (ADR-008 — every balance change goes through it).
       await this.ledgerService.recordTransaction(manager, {
         playerId: player.id,
         type: 'case_open',
@@ -173,14 +181,20 @@ export class DropsService {
         refId: savedOpening.id,
       });
 
-      // 13. Update pity and persist the player (balance + pity in one row).
+      // 14. Update pity.
       player.pityCounter = nextPityCounter(player.pityCounter, rolledRarity);
-      await manager.save(player);
 
-      // 14. Copies of the won card the player owns after this drop.
-      const copies = await manager.count(PlayerCardEntity, {
-        where: { playerId: player.id, cardId: winnerEntity.id, soldAt: IsNull() },
-      });
+      // 15. Collection milestones (economy fix, part 1): only a NEW unique
+      // card can cross a threshold, so this only runs on `copies === 1`.
+      // Mutates `player`'s in-memory balance in place; persisted together
+      // with the debit and the pity update by the single `manager.save`
+      // below, so milestone coins/keys and the balance commit atomically.
+      if (copies === 1) {
+        await this.milestoneService.checkAndAward(manager, player);
+      }
+
+      // 16. Persist the player (balance + pity + any milestone reward, one row).
+      await manager.save(player);
 
       return {
         dropId: savedOpening.id,

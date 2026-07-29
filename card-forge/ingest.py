@@ -29,7 +29,13 @@ def _chunked(items: list, size: int):
         yield items[i : i + size]
 
 
-def run_ingest(manifest_path: Path, api_url: str, chunk_size: int = 25, timeout: float = 30.0) -> int:
+def run_ingest(
+    manifest_path: Path,
+    api_url: str,
+    service_token: str,
+    chunk_size: int = 25,
+    timeout: float = 30.0,
+) -> int:
     import requests
 
     manifest_path = Path(manifest_path)
@@ -49,6 +55,7 @@ def run_ingest(manifest_path: Path, api_url: str, chunk_size: int = 25, timeout:
 
     api_url = api_url.rstrip("/")
     endpoint = f"{api_url}/admin/cards/ingest"
+    headers = {"X-Service-Token": service_token}
 
     total_inserted = 0
     total_skipped = 0
@@ -58,7 +65,7 @@ def run_ingest(manifest_path: Path, api_url: str, chunk_size: int = 25, timeout:
         payload = {"cards": [c.model_dump(mode="json") for c in chunk]}
 
         try:
-            response = requests.post(endpoint, json=payload, timeout=timeout)
+            response = requests.post(endpoint, json=payload, headers=headers, timeout=timeout)
         except requests.exceptions.ConnectionError:
             print(f"ERROR: cannot reach game-api at {api_url}")
             print("       POST /admin/cards/ingest failed: connection refused.")
@@ -69,6 +76,12 @@ def run_ingest(manifest_path: Path, api_url: str, chunk_size: int = 25, timeout:
             print(f"ERROR: request to {endpoint} timed out after {timeout}s.")
             print("       The batch output is already on disk; re-run ingest later - it is idempotent.")
             return 2
+
+        if response.status_code in (401, 403):
+            print(f"ERROR: game-api rejected the request with status {response.status_code} for {endpoint}")
+            print("       The X-Service-Token header was missing or did not match.")
+            print("       Set FORGE_SERVICE_TOKEN to the same value as game-api's FORGE_SERVICE_TOKEN env var.")
+            return 1
 
         if not (200 <= response.status_code < 300):
             body = response.text[:500]

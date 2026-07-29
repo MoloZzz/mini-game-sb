@@ -8,6 +8,7 @@ import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import type { AppConfig } from '../src/config/configuration';
 import { PlayerEntity } from '../src/entities';
+import { createTestPlayer, deleteTestPlayers } from './auth.helper';
 
 /**
  * Runs against the isolated `cardgame_test` database (same docker Postgres
@@ -18,14 +19,22 @@ import { PlayerEntity } from '../src/entities';
  * 1000, casesOpened === 0) keeps passing regardless of run order. `npm run
  * test:e2e` runs `--runInBand`, so these resets are never racing another
  * suite's assertions.
+ *
+ * `POST /cases/:slug/open` sits behind the global `JwtAuthGuard` now, so
+ * this suite registers its own player via `auth.helper.ts` instead of the
+ * seeded 'Molo' row — that also removes any dependency on seed state/order.
+ * The player is deleted again in `afterAll`; `resetPlayerState` below only
+ * ever touches this suite's own fixture player.
  */
 describe('POST /api/cases/:slug/open (e2e)', () => {
   let app: NestExpressApplication;
   let dataSource: DataSource;
   let playerId: string;
+  let token: string;
   let staticBaseUrl: string;
   let baseUrl: string;
 
+  const EMAIL_PREFIX = 'test-open-case';
   const ORIGINAL_BALANCE_COINS = 1000;
   const ORIGINAL_BALANCE_KEYS = 5;
   const ORIGINAL_PITY = 0;
@@ -62,10 +71,12 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
 
     dataSource = app.get(getDataSourceToken());
 
-    const player = await dataSource
-      .getRepository(PlayerEntity)
-      .findOneOrFail({ where: { displayName: 'Molo' } });
-    playerId = player.id;
+    // Belt-and-suspenders: wipe any leftover fixture player from a
+    // previously-crashed run before creating a fresh one.
+    await deleteTestPlayers(dataSource, EMAIL_PREFIX);
+    const account = await createTestPlayer(app, { emailPrefix: EMAIL_PREFIX });
+    playerId = account.playerId;
+    token = account.token;
 
     await resetPlayerState(ORIGINAL_BALANCE_COINS, ORIGINAL_BALANCE_KEYS, ORIGINAL_PITY);
   });
@@ -80,20 +91,29 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
    * row would make `SUM(delta_coins) <> balance_coins` a self-inflicted
    * artifact of test setup, not a real bug in the app under test.
    */
+  // Wrapped in a single `dataSource.transaction()` — with the deferred
+  // ledger-invariant constraint trigger live on `players` (see
+  // AddLedgerInvariantTrigger1785200000002), running these as separate
+  // implicit transactions would let the `UPDATE players` commit be checked
+  // against a ledger the preceding `DELETE FROM transactions` had just
+  // emptied. One transaction means the deferred check only ever sees the
+  // final, consistent state at COMMIT.
   async function resetPlayerState(coins: number, keys: number, pity: number): Promise<void> {
-    await dataSource.query('DELETE FROM player_cards');
-    await dataSource.query('DELETE FROM case_openings');
-    await dataSource.query('DELETE FROM transactions');
-    await dataSource.getRepository(PlayerEntity).update(playerId, {
-      balanceCoins: coins,
-      balanceKeys: keys,
-      pityCounter: pity,
+    await dataSource.transaction(async (manager) => {
+      await manager.query('DELETE FROM player_cards');
+      await manager.query('DELETE FROM case_openings');
+      await manager.query('DELETE FROM transactions');
+      await manager.getRepository(PlayerEntity).update(playerId, {
+        balanceCoins: coins,
+        balanceKeys: keys,
+        pityCounter: pity,
+      });
+      await manager.query(
+        `INSERT INTO transactions (player_id, type, delta_coins, delta_keys, ref_type, ref_id)
+         VALUES ($1, 'initial_grant', $2, $3, 'e2e-test-reset', NULL)`,
+        [playerId, coins, keys],
+      );
     });
-    await dataSource.query(
-      `INSERT INTO transactions (player_id, type, delta_coins, delta_keys, ref_type, ref_id)
-       VALUES ($1, 'initial_grant', $2, $3, 'e2e-test-reset', NULL)`,
-      [playerId, coins, keys],
-    );
   }
 
   afterEach(async () => {
@@ -101,6 +121,7 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
   });
 
   afterAll(async () => {
+    await deleteTestPlayers(dataSource, EMAIL_PREFIX);
     await app.close();
   });
 
@@ -114,6 +135,7 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
   it('happy path: opens starter-chest, returns a well-formed reel, debits coins, writes ledger + inventory rows', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/cases/starter-chest/open')
+      .set('Authorization', `Bearer ${token}`)
       .send({});
 
     expect(res.status).toBe(200);
@@ -157,7 +179,10 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
   });
 
   it('404: unknown case slug returns CASE_NOT_FOUND', async () => {
-    const res = await request(app.getHttpServer()).post('/api/cases/does-not-exist/open').send({});
+    const res = await request(app.getHttpServer())
+      .post('/api/cases/does-not-exist/open')
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
     expect(res.status).toBe(404);
     expect(res.body.code).toBe('CASE_NOT_FOUND');
   });
@@ -165,7 +190,10 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
   it('402: insufficient coins returns INSUFFICIENT_FUNDS with need/have', async () => {
     await resetPlayerState(50, ORIGINAL_BALANCE_KEYS, ORIGINAL_PITY);
 
-    const res = await request(app.getHttpServer()).post('/api/cases/starter-chest/open').send({});
+    const res = await request(app.getHttpServer())
+      .post('/api/cases/starter-chest/open')
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
 
     expect(res.status).toBe(402);
     expect(res.body.code).toBe('INSUFFICIENT_FUNDS');
@@ -176,6 +204,7 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
   it('key-priced case: opening arcane-reliquary debits 1 key and writes delta_keys = -1, delta_coins = 0', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/cases/arcane-reliquary/open')
+      .set('Authorization', `Bearer ${token}`)
       .send({});
 
     expect(res.status).toBe(200);
@@ -198,12 +227,14 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
 
     const res1 = await request(app.getHttpServer())
       .post('/api/cases/starter-chest/open')
+      .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', idempotencyKey)
       .send({});
     expect(res1.status).toBe(200);
 
     const res2 = await request(app.getHttpServer())
       .post('/api/cases/starter-chest/open')
+      .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', idempotencyKey)
       .send({});
     expect(res2.status).toBe(200);
@@ -239,9 +270,13 @@ describe('POST /api/cases/:slug/open (e2e)', () => {
         // awaited) so the requests genuinely overlap on the wire, bypassing
         // supertest's per-call ephemeral-server behavior.
         const url = `${baseUrl}/api/cases/starter-chest/open`;
+        const fetchHeaders = {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        };
         const [res1, res2] = await Promise.all([
-          fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
-          fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+          fetch(url, { method: 'POST', headers: fetchHeaders, body: '{}' }),
+          fetch(url, { method: 'POST', headers: fetchHeaders, body: '{}' }),
         ]);
 
         const statuses = [res1.status, res2.status].sort();

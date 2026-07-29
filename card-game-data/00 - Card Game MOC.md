@@ -33,6 +33,7 @@ status: planning
 ### Гейм-дизайн
 - [[04 - Game Design - Core Loop]] — цикл гри, екрани, економіка
 - [[05 - Game Design - Rarity & Drop Rates]] — рідкості, ваги, математика
+- [[12 - Game Design - Economy Rebalance]] — виміряний провал EV, мілстоуни, ремонт рампи
 
 ### Генерація
 - [[06 - Generation - SD Pipeline]] — модель, batch, review

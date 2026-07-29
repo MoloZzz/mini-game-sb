@@ -4,6 +4,7 @@ import type {
   CardStatus,
   CaseDto,
   ClaimDailyBonusResponse,
+  CollectionProgressDto,
   DropHistoryItemDto,
   InventoryPageDto,
   ListInventoryQuery,
@@ -15,6 +16,7 @@ import type {
 } from '@card-game/shared-types';
 
 import { ApiClientError } from './apiError';
+import { clearToken, dispatchLogout, getToken } from './auth';
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api';
 
@@ -49,6 +51,7 @@ function buildUrl(path: string, query?: Record<string, string | number | undefin
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { query, headers, body, ...rest } = options;
   const url = buildUrl(path, query);
+  const token = getToken();
 
   let response: Response;
   try {
@@ -57,6 +60,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       body,
       headers: {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
     });
@@ -69,6 +73,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const parsed: unknown = text.length > 0 ? safeJsonParse(text) : undefined;
 
   if (!response.ok) {
+    // 401 clears the stored token and fires the logout event right here —
+    // once, synchronously, with no follow-up request of any kind. That's
+    // what keeps this a dead end instead of a cycle: nothing here re-calls
+    // `request()`, so there is no way for this branch to trigger itself
+    // again. `AuthProvider` reacts to the event by dropping its player state
+    // (also without issuing a request), and the router takes it from there.
+    if (response.status === 401) {
+      clearToken();
+      dispatchLogout();
+    }
     throw ApiClientError.fromResponseBody(response.status, parsed);
   }
 
@@ -115,6 +129,10 @@ export function getInventory(q?: ListInventoryQuery): Promise<InventoryPageDto> 
   });
 }
 
+export function getCollectionProgress(): Promise<CollectionProgressDto> {
+  return request<CollectionProgressDto>('/me/collection');
+}
+
 export function sellInstance(instanceId: string): Promise<SellCardResponse> {
   return request<SellCardResponse>(`/me/inventory/${encodeURIComponent(instanceId)}/sell`, {
     method: 'POST',
@@ -144,4 +162,50 @@ export function reviewCard(id: string, body: ReviewCardRequest): Promise<AdminCa
     method: 'PATCH',
     body: JSON.stringify(body),
   });
+}
+
+// --- Auth ---
+//
+// Not sourced from `@card-game/shared-types` — the register/login contract
+// hasn't landed there yet, so these mirror `AuthResponse` from
+// `game-api/src/auth/types.ts` by hand. Move them into shared-types instead
+// of duplicating further once that package exposes them.
+
+export interface AuthResponse {
+  token: string;
+  player: PlayerDto;
+}
+
+export interface RegisterPayload {
+  displayName: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export function register(body: RegisterPayload): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export function login(body: LoginPayload): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * `GET /auth/me` — distinct from `getMe()` above (`GET /me`, the
+ * stats/balance endpoint owned by `PlayersController`). This one exists to
+ * verify a stored token is still good and to learn who it belongs to.
+ */
+export function getAuthMe(): Promise<PlayerDto> {
+  return request<PlayerDto>('/auth/me');
 }
