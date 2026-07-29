@@ -9,7 +9,7 @@
 | Economy or drop rule | brief + economy pack + backend pack | shared constants, service, unit/e2e tests |
 | Schema | brief + backend pack | entity, migration, module registration, tests |
 | Art generation/ingest | brief + forge pack + backend pack | manifest schema, forge, admin ingest/tests |
-| Product system, economy, store, auction, lore, story | `brain:retrieve` bundle + vault template | product brief, decisions/open questions, then implementation if approved |
+| Product system, economy, store, auction, lore, story | `brain:product` bundle + `07-product-intelligence` | evidence-first product brief, experiment, then implementation if approved |
 
 ## Required follow-through
 

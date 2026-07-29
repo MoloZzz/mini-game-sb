@@ -9,6 +9,6 @@ This is mandatory. Do not begin implementation before completing the context gat
 
 For an implementation change, run `npm run brain:impact` before editing. Run `npm run sync:brain` after adding or removing an API route, entity, migration, shared-type export, or UI feature.
 
-For a product or design request (economy, auction, shop, progression, lore, story, and similar), run `npm run brain:retrieve -- "<user request>"` and read every `Read now` vault note before proposing a solution.
+For a product or design request (economy, auction, shop, progression, lore, story, and similar), run `npm run brain:product -- "<user request>"` and read every `Read now` vault note plus `docs/agent/07-product-intelligence.md` before proposing a solution.
 
 Finish every implementation or review response with the one-line `Brain trace` format required by `AGENTS.md`. It is an audit receipt, not private reasoning.

@@ -1,0 +1,14 @@
+{
+  "foundation": {
+    "primary": ["card-game-data/13 - Product - Context & Guardrails.md"]
+  },
+  "bundles": [
+    {
+      "id": "retention",
+      "keywords": ["retention", "daily"],
+      "primary": ["card-game-data/20 - Product - Metric Tree.md"],
+      "references": [],
+      "guidance": "Use a recorded outcome metric and a guardrail before claiming retention impact."
+    }
+  ]
+}

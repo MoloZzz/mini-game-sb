@@ -13,6 +13,7 @@ const packs = new Map([
   ['docs/agent/04-card-forge.md', 380],
   ['docs/agent/05-change-playbook.md', 480],
   ['docs/agent/06-generated-surface.md', 620],
+  ['docs/agent/07-product-intelligence.md', 520],
 ]);
 const instructionShims = [
   'CLAUDE.md',
@@ -131,6 +132,14 @@ if (writeGenerated) {
 }
 
 const productIndexPath = 'card-game-data/agent-product-index.json';
+const productIntelligencePaths = [
+  'card-game-data/18 - Product - Strategy.md',
+  'card-game-data/19 - Product - Jobs To Be Done.md',
+  'card-game-data/20 - Product - Metric Tree.md',
+  'card-game-data/21 - Product - Evidence Log.md',
+  'card-game-data/22 - Product - Opportunity Backlog.md',
+  'card-game-data/23 - Product - Monetization Policy.md',
+];
 if (!existsSync(resolve(root, productIndexPath))) {
   errors.push(`${productIndexPath}: missing`);
 } else {
@@ -153,6 +162,12 @@ if (!existsSync(resolve(root, productIndexPath))) {
     }
   } catch (error) {
     errors.push(`${productIndexPath}: invalid JSON (${error instanceof Error ? error.message : String(error)})`);
+  }
+}
+
+for (const path of productIntelligencePaths) {
+  if (!existsSync(resolve(root, path))) {
+    errors.push(`${path}: missing required Product Intelligence source`);
   }
 }
 
@@ -186,8 +201,8 @@ if (!agents.includes('docs/agent/00-brief.md')) {
 if (!agents.includes('Brain trace')) {
   errors.push('AGENTS.md: must require the Brain trace audit receipt');
 }
-if (!agents.includes('brain:retrieve')) {
-  errors.push('AGENTS.md: must require product retrieval for product and design tasks');
+if (!agents.includes('brain:product')) {
+  errors.push('AGENTS.md: must require the product decision bundle for product and design tasks');
 }
 
 for (const relativePath of instructionShims) {
@@ -202,8 +217,8 @@ for (const relativePath of instructionShims) {
   if (!readFileSync(absolutePath, 'utf8').includes('Brain trace')) {
     errors.push(`${relativePath}: must require the Brain trace audit receipt`);
   }
-  if (!readFileSync(absolutePath, 'utf8').includes('brain:retrieve')) {
-    errors.push(`${relativePath}: must require product retrieval for product and design tasks`);
+  if (!readFileSync(absolutePath, 'utf8').includes('brain:product')) {
+    errors.push(`${relativePath}: must require the product decision bundle for product and design tasks`);
   }
 }
 

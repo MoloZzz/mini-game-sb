@@ -53,6 +53,12 @@ status: planning
 - [[15 - Product - Economy Context]] — коротка модель економіки та правила для нових джерел/витрат
 - [[16 - Product - Narrative Bible]] — встановлений лор і безпечний спосіб працювати з прогалинами
 - [[17 - Product - Solution Brief Template]] — формат рішення для нової системи
+- [[18 - Product - Strategy]] — продуктова ціль, робочі сегменти й критерій корисної фічі
+- [[19 - Product - Jobs To Be Done]] — гіпотези потреб гравця, які треба перевіряти
+- [[20 - Product - Metric Tree]] — дерево метрик і локальний план подій
+- [[21 - Product - Evidence Log]] — журнал перевірюваних спостережень і playtest
+- [[22 - Product - Opportunity Backlog]] — гіпотези, MVP та правила пріоритизації
+- [[23 - Product - Monetization Policy]] — поточні межі внутрішньої валюти й умови зміни scope
 
 ## Два рішення, які визначили всю архітектуру
 

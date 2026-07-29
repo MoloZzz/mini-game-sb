@@ -5,7 +5,7 @@ status: active
 
 # Карта продуктових систем
 
-Назад до [[00 - Card Game MOC]] · Межі → [[13 - Product - Context & Guardrails]] · Формат рішення → [[17 - Product - Solution Brief Template]]
+Назад до [[00 - Card Game MOC]] · Межі → [[13 - Product - Context & Guardrails]] · Стратегія → [[18 - Product - Strategy]] · Jobs → [[19 - Product - Jobs To Be Done]] · Формат рішення → [[17 - Product - Solution Brief Template]] · Backlog → [[22 - Product - Opportunity Backlog]]
 
 Статус тут важливіший за назву ідеї. **Реалізовано** — можна спиратися як на факт. **Заплановано** — це напрям, а не обіцянка. **Відкрито** — агенти мусять назвати припущення. **Поза scope** — потребує окремого рішення власника продукту.
 
