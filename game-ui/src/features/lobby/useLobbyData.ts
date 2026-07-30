@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CaseDto, DropHistoryItemDto, PlayerDto } from '@card-game/shared-types';
+import type { CaseDto, PlayerDto } from '@card-game/shared-types';
 
-import { claimDailyBonus, getCases, getDrops, getMe } from '@/lib/api';
+import { claimDailyBonus, getCases, getMe } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 import { getToken } from '@/lib/auth';
 import {
@@ -13,15 +13,12 @@ import {
   loadCachedData,
 } from '@/lib/dataCache';
 
-const DROPS_LIMIT = 20;
-
 export interface LobbyData {
   player: PlayerDto | null;
   cases: CaseDto[];
-  drops: DropHistoryItemDto[];
   loading: boolean;
   error: string | null;
-  /** Re-runs all three GETs — wired to the error banner's retry button. */
+  /** Re-runs both GETs — wired to the error banner's retry button. */
   refresh: () => void;
   claimBonus: () => Promise<void>;
   bonusError: string | null;
@@ -33,7 +30,7 @@ function errorMessage(err: unknown): string {
 }
 
 /**
- * Owns the lobby's three GET requests plus the daily-bonus mutation, kept out
+ * Owns the lobby's two GET requests plus the daily-bonus mutation, kept out
  * of Lobby.tsx so the screen stays presentational and this hook is testable
  * on its own (renderHook, no DOM needed).
  */
@@ -41,14 +38,11 @@ export function useLobbyData(): LobbyData {
   const scope = getToken();
   const playerCacheKey = createDataCacheKey(scope, DATA_CACHE_RESOURCES.player);
   const casesCacheKey = createDataCacheKey(scope, DATA_CACHE_RESOURCES.cases);
-  const dropsCacheKey = createDataCacheKey(scope, DATA_CACHE_RESOURCES.drops, String(DROPS_LIMIT));
   const cachedPlayer = getCachedData<PlayerDto>(playerCacheKey);
   const cachedCases = getCachedData<CaseDto[]>(casesCacheKey);
-  const cachedDrops = getCachedData<DropHistoryItemDto[]>(dropsCacheKey);
-  const hasCachedData = cachedPlayer !== undefined && cachedCases !== undefined && cachedDrops !== undefined;
+  const hasCachedData = cachedPlayer !== undefined && cachedCases !== undefined;
   const [player, setPlayer] = useState<PlayerDto | null>(() => cachedPlayer ?? null);
   const [cases, setCases] = useState<CaseDto[]>(() => cachedCases ?? []);
-  const [drops, setDrops] = useState<DropHistoryItemDto[]>(() => cachedDrops ?? []);
   const [loading, setLoading] = useState(() => !hasCachedData);
   const [error, setError] = useState<string | null>(null);
   const [bonusError, setBonusError] = useState<string | null>(null);
@@ -59,12 +53,10 @@ export function useLobbyData(): LobbyData {
     const force = reloadToken > 0;
     const cachedPlayer = force ? undefined : getCachedData<PlayerDto>(playerCacheKey);
     const cachedCases = force ? undefined : getCachedData<CaseDto[]>(casesCacheKey);
-    const cachedDrops = force ? undefined : getCachedData<DropHistoryItemDto[]>(dropsCacheKey);
 
-    if (cachedPlayer !== undefined && cachedCases !== undefined && cachedDrops !== undefined) {
+    if (cachedPlayer !== undefined && cachedCases !== undefined) {
       setPlayer(cachedPlayer);
       setCases(cachedCases);
-      setDrops(cachedDrops);
       setError(null);
       setLoading(false);
       return;
@@ -76,13 +68,11 @@ export function useLobbyData(): LobbyData {
     Promise.all([
       loadCachedData(playerCacheKey, getMe, { force }),
       loadCachedData(casesCacheKey, getCases, { force }),
-      loadCachedData(dropsCacheKey, () => getDrops(DROPS_LIMIT), { force }),
     ])
-      .then(([playerRes, casesRes, dropsRes]) => {
+      .then(([playerRes, casesRes]) => {
         if (cancelled) return;
         setPlayer(playerRes);
         setCases(casesRes);
-        setDrops(dropsRes);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -95,7 +85,7 @@ export function useLobbyData(): LobbyData {
     return () => {
       cancelled = true;
     };
-  }, [casesCacheKey.id, dropsCacheKey.id, playerCacheKey.id, reloadToken]);
+  }, [casesCacheKey.id, playerCacheKey.id, reloadToken]);
 
   const refresh = useCallback(() => setReloadToken((t) => t + 1), []);
 
@@ -111,14 +101,14 @@ export function useLobbyData(): LobbyData {
       );
       // The mounted screen already has the authoritative response above;
       // invalidate its pre-claim snapshot so a later route remount reloads.
-      invalidateCachedData(playerCacheKey, casesCacheKey, dropsCacheKey);
+      invalidateCachedData(playerCacheKey, casesCacheKey);
       invalidateCachedResources(scope, [DATA_CACHE_RESOURCES.authMe]);
     } catch (err) {
       // On DAILY_BONUS_NOT_READY (or any other failure) the balance is left
       // untouched — only the error surfaces, per the spec.
       setBonusError(errorMessage(err));
     }
-  }, [casesCacheKey.id, dropsCacheKey.id, playerCacheKey.id]);
+  }, [casesCacheKey.id, playerCacheKey.id]);
 
-  return { player, cases, drops, loading, error, refresh, claimBonus, bonusError };
+  return { player, cases, loading, error, refresh, claimBonus, bonusError };
 }

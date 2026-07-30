@@ -31,6 +31,9 @@ const GenerationOrders = lazy(async () => ({
 const CollectionPage = lazy(async () => ({
   default: (await import('@/features/collection/CollectionPage')).CollectionPage,
 }));
+const DropHistoryPage = lazy(async () => ({
+  default: (await import('@/features/history/DropHistoryPage')).DropHistoryPage,
+}));
 const ArchiveNotesPage = lazy(async () => ({
   default: (await import('@/features/archive/ArchiveNotesPage')).ArchiveNotesPage,
 }));
@@ -203,6 +206,14 @@ export function AppRoutes() {
           element={
             <RequireAuth>
               <CollectionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <RequireAuth>
+              <DropHistoryPage />
             </RequireAuth>
           }
         />

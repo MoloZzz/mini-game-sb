@@ -7,6 +7,7 @@
 | Route | Screen | Notes |
 | --- | --- | --- |
 | `/`, `/open/:slug`, `/inventory` | lobby, opening, inventory | authenticated |
+| `/history` | drop history | authenticated; the lobby no longer shows drops |
 | `/admin` | review queue | admin only |
 | `/login`, `/register` | session entry | public |
 
@@ -44,6 +45,7 @@ All browser calls go through `game-ui/src/lib/api.ts`; do not fetch from compone
 | Case lobby and previews | `game-ui/src/features/lobby/` |
 | Reel/reveal animation | `game-ui/src/features/open/`, `game-ui/src/features/reel/`, `game-ui/src/features/reveal/` |
 | Owned cards, filtering, selling | `game-ui/src/features/inventory/` |
+| Drop history (`GET /me/drops`) | `game-ui/src/features/history/` |
 | Collection dex | `game-ui/src/features/collection/` |
 | Draft review | `game-ui/src/features/admin/` |
 | Login/register and session | `game-ui/src/features/auth/`, `game-ui/src/lib/authContext.tsx` |

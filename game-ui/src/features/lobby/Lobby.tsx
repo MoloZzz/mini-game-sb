@@ -10,7 +10,6 @@ import { ArchiveTaskPanel } from '@/features/archive/ArchiveTaskPanel';
 
 import { CaseCard } from './CaseCard';
 import { CaseDetail } from './CaseDetail';
-import { RecentDropsStrip } from './RecentDropsStrip';
 import { useLobbyData } from './useLobbyData';
 
 interface LobbyProps {
@@ -56,7 +55,7 @@ export function Lobby({
   onStartExpedition = () => {},
   onOpenArchive = () => {},
 }: LobbyProps) {
-  const { player, cases, drops, loading, error, refresh, claimBonus, bonusError } = useLobbyData();
+  const { player, cases, loading, error, refresh, claimBonus, bonusError } = useLobbyData();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const selectedCase = useMemo<CaseDto | null>(
@@ -128,11 +127,6 @@ export function Lobby({
           </div>
         )}
       </main>
-
-      <footer>
-        <h2 className="mb-2 text-sm font-semibold text-neutral-400">Recent drops</h2>
-        <RecentDropsStrip drops={drops} />
-      </footer>
     </div>
   );
 }
