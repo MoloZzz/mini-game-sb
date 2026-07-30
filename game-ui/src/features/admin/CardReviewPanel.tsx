@@ -12,9 +12,10 @@ import {
 } from '@card-game/shared-types';
 
 import { Button } from '@/components/Button';
-import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
+import { CardArt } from '@/components/card/CardArt';
+import { CardPreview } from '@/components/card/CardPreview';
+import { Modal } from '@/components/ui/Modal';
 import { Panel } from '@/components/ui/Panel';
-import { rarityColor, rarityTint } from '@/lib/rarityStyle';
 
 import { autofillStatForRarity, checkStatRange, isArchetypeRarityAllowed } from './statValidation';
 
@@ -79,6 +80,8 @@ export function CardReviewPanel({
   genMetaOpen,
   onGenMetaOpenChange,
 }: CardReviewPanelProps) {
+  const [artPreviewOpen, setArtPreviewOpen] = useState(false);
+
   if (!card) {
     return (
       <Panel className="flex h-full items-center justify-center p-8 text-sm text-neutral-500">
@@ -94,6 +97,7 @@ export function CardReviewPanel({
   const attack = edits.attack ?? card.attack;
   const defense = edits.defense ?? card.defense;
   const flavorText = edits.flavorText !== undefined ? edits.flavorText : card.flavorText;
+  const previewCard = { ...card, name, rarity, element, archetype, attack, defense, flavorText };
 
   const stats = checkStatRange(rarity, attack, defense);
   const archetypeRarityAllowed = isArchetypeRarityAllowed(archetype, rarity);
@@ -101,13 +105,13 @@ export function CardReviewPanel({
 
   return (
     <Panel className="flex h-full flex-col gap-4 overflow-y-auto">
-      <ImgWithFallback
+      <CardPreview
         key={card.id}
-        src={card.imageUrl}
-        alt={name}
-        fallbackColor={rarityTint(rarity, 'fallback')}
-        className="mx-auto h-64 w-64 rounded-md border-2 object-cover"
-        style={{ borderColor: rarityColor(rarity) }}
+        card={previewCard}
+        size="lg"
+        showMeta
+        onArtClick={() => setArtPreviewOpen(true)}
+        className="mx-auto shrink-0"
       />
 
       <div className="flex flex-col gap-3">
@@ -309,6 +313,24 @@ export function CardReviewPanel({
           Reject (R)
         </Button>
       </div>
+
+      {artPreviewOpen && (
+        <Modal
+          label={`${name} full-size artwork`}
+          closeButtonLabel="Close full-size artwork"
+          onClose={() => setArtPreviewOpen(false)}
+          size="lg"
+          className="z-50"
+          contentClassName="w-auto items-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 p-2"
+        >
+          <CardArt
+            card={previewCard}
+            source="art"
+            className="h-[min(72vh,640px,90vw)] w-[min(72vh,640px,90vw)] rounded object-contain"
+            loading="eager"
+          />
+        </Modal>
+      )}
     </Panel>
   );
 }

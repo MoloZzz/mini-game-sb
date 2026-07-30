@@ -48,6 +48,10 @@ describe('AdminReview', () => {
 
     await screen.findByText('Feral Serpent');
     expect(screen.getByText('Feral Golem')).toBeInTheDocument();
+    const focusedCard = db.adminCards.find((card) => card.name === 'Feral Serpent');
+    expect(
+      screen.getAllByAltText('Feral Serpent').some((image) => image.getAttribute('src') === focusedCard?.imageUrl),
+    ).toBe(true);
 
     const tiles = screen.getAllByTestId(/^admin-tile-/);
     expect(tiles.length).toBe(24);
@@ -55,6 +59,16 @@ describe('AdminReview', () => {
     await waitFor(() => {
       expect(screen.getByTestId('review-progress')).toHaveTextContent('0 / 24 reviewed');
     });
+  });
+
+  it('opens the focused card artwork in a centered large dialog', async () => {
+    const user = userEvent.setup();
+    render(<AdminReview />);
+
+    await screen.findByRole('button', { name: /view full size/i });
+    await user.click(screen.getByRole('button', { name: /view full size/i }));
+
+    expect(screen.getByRole('dialog', { name: /feral serpent full-size artwork/i })).toHaveClass('max-w-2xl');
   });
 
   it('pressing A approves the focused card and advances focus to the next one', async () => {
