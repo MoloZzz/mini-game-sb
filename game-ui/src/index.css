@@ -9,11 +9,22 @@
     min-height: 100%;
   }
 
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
   body {
     @apply overflow-x-hidden bg-neutral-950 text-neutral-100 antialiased;
   }
 
   :root {
     color-scheme: dark;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
   }
 }
