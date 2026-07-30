@@ -47,7 +47,7 @@ ARCHETYPE_RARITIES: dict[str, tuple[str, ...]] = {
     "construct": _ALL_RARITIES,
     "spirit": _ALL_RARITIES,
     "dragon": ("legendary", "mythic"),
-    "slime": ("common",),
+    "slime": _ALL_RARITIES,
     "sword": ("common", "uncommon"),
     "potion": ("common",),
     "crystal": ("uncommon", "rare"),
@@ -81,12 +81,27 @@ class Recipe:
 
 
 @dataclass(frozen=True)
+class RarityProfile:
+    """Reusable generation controls for every order at one rarity."""
+
+    fragment: str
+    cfg_scale: float
+    steps: int
+
+
+@dataclass(frozen=True)
 class RecipeSet:
     style: str
     quality: str
     negative: str
     recipes: list[Recipe]
+    order_style: str | None = None
+    order_quality: str | None = None
     object_style: str | None = None
+    archetype_fragments: dict[str, str] | None = None
+    element_fragments: dict[str, str] | None = None
+    object_element_fragments: dict[str, str] | None = None
+    rarity_profiles: dict[str, RarityProfile] | None = None
 
     def total_count(self) -> int:
         return sum(r.count for r in self.recipes)
@@ -96,6 +111,61 @@ class RecipeSet:
         for r in self.recipes:
             totals[r.rarity] = totals.get(r.rarity, 0) + r.count
         return totals
+
+    def order_profile(
+        self, archetype: str, element: str | None, rarity: str, brief: str,
+    ) -> tuple[str, str, int, float]:
+        """Compose a server order from shared profiles, not a batch recipe.
+
+        Batch recipes intentionally cover only a curated subset of combinations.
+        Admin orders may use any valid archetype/element/rarity combination, so
+        their prompt and sampler settings must be derived from the top-level
+        profile tables instead of looking up a matching recipe row.
+        """
+        if archetype not in ARCHETYPES:
+            raise ValueError(f"Unknown order archetype '{archetype}'")
+        if rarity not in RARITIES:
+            raise ValueError(f"Unknown order rarity '{rarity}'")
+        allowed = ARCHETYPE_RARITIES[archetype]
+        if rarity not in allowed:
+            raise ValueError(
+                f"Rarity '{rarity}' is not allowed for '{archetype}' "
+                f"(allowed: {', '.join(allowed)})"
+            )
+        if element is not None and element not in ELEMENTS:
+            raise ValueError(f"Unknown order element '{element}'")
+
+        rarities = self.rarity_profiles or {}
+        rarity_profile = rarities.get(rarity)
+        if rarity_profile is None:
+            raise ValueError("recipes.yaml is missing the profile needed for this order")
+
+        normalized_brief = _clean(brief)
+        if not normalized_brief:
+            raise ValueError("Order brief must not be empty")
+        order_style = self.order_style or self.style
+        order_quality = self.order_quality or self.quality
+        # The administrator's brief is the primary creative direction. Order
+        # prompts therefore use compact classifier tags rather than the long
+        # batch recipe fragments, which are tuned for catalogue coverage.
+        tags = [f"{archetype} subject", f"{element} magic" if element else None, f"{rarity} rarity"]
+
+        def compose(candidate_brief: str) -> str:
+            return ", ".join(fragment for fragment in (order_style, candidate_brief, *tags, order_quality) if fragment)
+
+        words = normalized_brief.split(" ")
+        prompt = compose(" ".join(words))
+        token_count, exact = clip_token_count(prompt)
+        while token_count > CLIP_TOKEN_LIMIT and words:
+            words.pop()
+            prompt = compose(" ".join(words))
+            token_count, exact = clip_token_count(prompt)
+        if not words:
+            precision = "exact" if exact else "estimated"
+            raise ValueError(f"Order scaffold is {token_count}/{CLIP_TOKEN_LIMIT} CLIP tokens ({precision}); simplify its profile")
+        if len(words) < len(normalized_brief.split(" ")):
+            print(f"WARN: order brief trimmed to {len(words)} words to fit CLIP's {CLIP_TOKEN_LIMIT}-token limit")
+        return prompt, self.negative, rarity_profile.steps, rarity_profile.cfg_scale
 
 
 def _clean(text: str) -> str:
@@ -212,6 +282,14 @@ def load_recipes(path: str | Path) -> RecipeSet:
     style = _clean(style)
     quality = _clean(quality)
     negative = _clean(negative)
+    order_style_raw = data.get("order_style")
+    order_quality_raw = data.get("order_quality")
+    if not isinstance(order_style_raw, str) or not order_style_raw.strip():
+        raise ValueError("recipes.yaml: 'order_style' must be a non-empty string")
+    if not isinstance(order_quality_raw, str) or not order_quality_raw.strip():
+        raise ValueError("recipes.yaml: 'order_quality' must be a non-empty string")
+    order_style = _clean(order_style_raw)
+    order_quality = _clean(order_quality_raw)
 
     # Optional: only required if a recipe actually uses an OBJECT_ARCHETYPES
     # archetype (checked per-recipe below, not here, so the 34 original
@@ -230,6 +308,40 @@ def load_recipes(path: str | Path) -> RecipeSet:
     if object_elements and not isinstance(object_elements, dict):
         raise ValueError("recipes.yaml: 'object_elements' must be a mapping")
     rarities = _require_mapping(data.get("rarities", {}), "rarities")
+
+    # These tables are also the source for server-authored generation orders.
+    # Validate all entries up front, rather than making an otherwise valid
+    # order depend on whether a matching batch recipe happens to exist.
+    archetype_fragments: dict[str, str] = {}
+    element_fragments: dict[str, str] = {}
+    object_element_fragments: dict[str, str] = {}
+    rarity_profiles: dict[str, RarityProfile] = {}
+    for archetype_name in ARCHETYPES:
+        fragment = archetypes.get(archetype_name)
+        if not isinstance(fragment, str) or not fragment.strip():
+            raise ValueError(f"recipes.yaml: archetypes missing entry for '{archetype_name}'")
+        archetype_fragments[archetype_name] = _clean(fragment)
+    for element_name in ELEMENTS:
+        fragment = elements.get(element_name)
+        if not isinstance(fragment, str) or not fragment.strip():
+            raise ValueError(f"recipes.yaml: elements missing entry for '{element_name}'")
+        element_fragments[element_name] = _clean(fragment)
+        object_fragment = object_elements.get(element_name)
+        if not isinstance(object_fragment, str) or not object_fragment.strip():
+            raise ValueError(f"recipes.yaml: object_elements missing entry for '{element_name}'")
+        object_element_fragments[element_name] = _clean(object_fragment)
+    for rarity_name in RARITIES:
+        rarity_entry = rarities.get(rarity_name)
+        if not isinstance(rarity_entry, dict):
+            raise ValueError(f"recipes.yaml: rarities table missing entry for '{rarity_name}'")
+        fragment = rarity_entry.get("fragment")
+        cfg_scale = rarity_entry.get("cfg_scale")
+        steps = rarity_entry.get("steps")
+        if not isinstance(fragment, str) or not fragment.strip():
+            raise ValueError(f"recipes.yaml: rarities['{rarity_name}'] missing 'fragment'")
+        if cfg_scale is None or steps is None:
+            raise ValueError(f"recipes.yaml: rarities['{rarity_name}'] needs cfg_scale and steps")
+        rarity_profiles[rarity_name] = RarityProfile(_clean(fragment), float(cfg_scale), int(steps))
 
     raw_recipes = data.get("recipes")
     if not isinstance(raw_recipes, list) or not raw_recipes:
@@ -386,4 +498,16 @@ def load_recipes(path: str | Path) -> RecipeSet:
                 f"[{prev_start}, {prev_end}] and '{cur_id}' [{cur_start}, {cur_end}]"
             )
 
-    return RecipeSet(style=style, quality=quality, negative=negative, recipes=recipes, object_style=object_style)
+    return RecipeSet(
+        style=style,
+        quality=quality,
+        negative=negative,
+        recipes=recipes,
+        order_style=order_style,
+        order_quality=order_quality,
+        object_style=object_style,
+        archetype_fragments=archetype_fragments,
+        element_fragments=element_fragments,
+        object_element_fragments=object_element_fragments,
+        rarity_profiles=rarity_profiles,
+    )

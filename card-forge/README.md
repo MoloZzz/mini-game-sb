@@ -47,7 +47,19 @@ py -3.11 -m venv .venv
 - `forge.py doctor` — environment diagnostic, exits non-zero if CUDA is missing or device 0 is unusable.
 - `forge.py batch [--config recipes.yaml] [--limit N] [--recipe ID] [--dry-run] [--attention-slicing] [--cpu-offload]`
 - `forge.py ingest [--manifest manifest.json] [--api-url URL] [--chunk-size N]`
+- `forge.py order run --id <uuid>` — manually lease and process one specific ready admin order.
+- `forge.py order worker [--poll-interval 5]` — continuously lease the oldest ready order, generate it, and submit candidates. It keeps one SD pipeline resident between orders and is the command started by `npm run dev`.
 - `mock_api.py [--port 3000]` — stdlib mock of the ingest endpoint, for testing idempotency without game-api.
+
+## Admin-order worker
+
+Set the same `FORGE_SERVICE_TOKEN` for the API and Forge, start the API, then run:
+
+```
+.venv/Scripts/python.exe forge.py order worker
+```
+
+The worker polls `POST /admin/generation-orders/claim-next`. An empty queue returns `null`; it waits and tries again. A claimed order is passed directly to generation, so it is never claimed twice. Orders use compact technical tags so the visual brief is the primary prompt content. If a very long brief still exceeds CLIP's 77-token limit, Forge deterministically removes words from its end and logs that it trimmed it. `--once` is available for one-order diagnostics.
 
 ## Before any real batch — checklist
 
@@ -166,6 +178,6 @@ Keep a running note of `recipe id -> what actually came out`. After 20 batches n
 
 ## Environment variables
 
-Read from `.env` at repo root or `card-forge/.env` if present; real environment variables win over both. `FORGE_API_URL`, `FORGE_SERVICE_TOKEN`, `FORGE_STORAGE_DIR`, `FORGE_MODEL_ID`, `HF_HOME`.
+Read from `.env` at repo root or `card-forge/.env` if present; real environment variables win over both. `FORGE_API_URL`, `FORGE_SERVICE_TOKEN`, `FORGE_STORAGE_DIR`, `FORGE_MODEL_ID`, `FORGE_ORDER_POLL_INTERVAL`, `HF_HOME`.
 
 `FORGE_SERVICE_TOKEN` is required by `forge.py ingest`: game-api's `POST /admin/cards/ingest` is protected by a `ServiceTokenGuard` that checks an `X-Service-Token` header against its own `FORGE_SERVICE_TOKEN` environment variable. Set both to the same value. There is no default — `ingest` fails fast with a clear message if it is unset, instead of sending a request game-api will reject with 401/403.

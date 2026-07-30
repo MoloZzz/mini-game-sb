@@ -7,40 +7,46 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+from time import sleep
 
 from recipes import load_recipes
 
 
-def _request(method: str, url: str, token: str, payload: dict | None = None, timeout: float = 30.0) -> dict:
+def _request(method: str, url: str, token: str, payload: dict | None = None, timeout: float = 30.0) -> dict | None:
     import requests
     response = requests.request(method, url, json=payload, headers={"X-Service-Token": token}, timeout=timeout)
     if not response.ok:
         raise RuntimeError(f"API {method} {url} returned {response.status_code}: {response.text[:300]}")
+    # Nest serializes a `null` controller result as an empty 200 response.
+    # For claim-next that means the queue is idle, not that the worker failed.
+    if not response.content or not response.content.strip():
+        return None
     return response.json()
 
 
 def _profile(order: dict, recipes_path: Path) -> tuple[str, str, int, float]:
-    """Build a bounded prompt and reuse the calibrated rarity settings.
-
-    A brief is deliberately capped before composition: SD 1.5 silently drops
-    tokens after CLIP's limit, which is worse than a visible, deterministic
-    truncation in an admin pipeline.
-    """
+    """Build an order profile from the reusable YAML profile tables."""
     recipe_set = load_recipes(recipes_path)
-    matching = [r for r in recipe_set.recipes if r.archetype == order["archetype"] and r.rarity == order["suggestedRarity"] and r.element == order["element"]]
-    if not matching:
-        matching = [r for r in recipe_set.recipes if r.archetype == order["archetype"] and r.rarity == order["suggestedRarity"]]
-    if not matching:
-        raise ValueError("No calibrated recipe matches this archetype and rarity")
-    recipe = matching[0]
-    brief = " ".join(str(order["brief"]).split())[:180]
-    element = f", {order['element']} magic" if order["element"] else ""
-    prompt = f"dark fantasy card illustration, centered subject, {brief}, {order['archetype']}{element}, {order['suggestedRarity']} rarity, painterly, dramatic lighting, highly detailed"
-    return prompt, recipe_set.negative, recipe.steps, recipe.cfg_scale
+    return recipe_set.order_profile(
+        archetype=order["archetype"],
+        element=order["element"],
+        rarity=order["suggestedRarity"],
+        brief=str(order["brief"]),
+    )
 
 
-def run_order(
-    order_id: str,
+def _fail_order(api_url: str, service_token: str, order: dict, error: Exception) -> None:
+    try:
+        _request(
+            "POST", f"{api_url}/admin/generation-orders/{order['id']}/fail", service_token,
+            {"runId": order["runId"], "code": "FORGE_RUN_FAILED", "detail": str(error)[:500]},
+        )
+    except Exception as fail_exc:
+        print(f"ERROR: could not report failure for order={order['id']}: {fail_exc}")
+
+
+def run_claimed_order(
+    order: dict,
     api_url: str,
     service_token: str,
     storage_dir: Path,
@@ -49,33 +55,34 @@ def run_order(
     attention_slicing: bool = False,
     cpu_offload: bool = False,
     dry_run: bool = False,
-) -> int:
-    api_url = api_url.rstrip("/")
-    claim_url = f"{api_url}/admin/generation-orders/{order_id}/claim"
+    pipe=None,
+    device=None,
+) -> tuple[int, object | None, object | None]:
+    """Generate a previously leased order without attempting another claim.
+
+    The worker passes its resident pipeline back into this function for each
+    order. A manual `order run` simply calls the same path with no pipeline.
+    """
+    order_id = order["id"]
     try:
-        order = _request("POST", claim_url, service_token)
         prompt, negative, steps, cfg_scale = _profile(order, recipes_path)
-    except Exception as exc:
-        print(f"ERROR: could not claim generation order: {exc}")
-        return 1
+        if dry_run:
+            print(f"order={order_id} candidates={len(order['candidates'])} steps={steps} cfg={cfg_scale:.1f}")
+            print(f"prompt={prompt}")
+            return 0, pipe, device
 
-    if dry_run:
-        print(f"order={order_id} candidates={len(order['candidates'])} steps={steps} cfg={cfg_scale:.1f}")
-        print(f"prompt={prompt}")
-        return 0
+        import torch
+        from PIL import Image
+        import pipeline as pipeline_mod
 
-    import torch
-    from PIL import Image
-    import pipeline as pipeline_mod
+        if pipe is None:
+            pipe, device, _dtype = pipeline_mod.load_pipeline(model_id, attention_slicing, cpu_offload)
 
-    cards_dir = Path(storage_dir) / "cards"
-    thumbs_dir = Path(storage_dir) / "thumbs"
-    cards_dir.mkdir(parents=True, exist_ok=True)
-    thumbs_dir.mkdir(parents=True, exist_ok=True)
-    completed: list[dict] = []
-    pipe = None
-    try:
-        pipe, device, _dtype = pipeline_mod.load_pipeline(model_id, attention_slicing, cpu_offload)
+        cards_dir = Path(storage_dir) / "cards"
+        thumbs_dir = Path(storage_dir) / "thumbs"
+        cards_dir.mkdir(parents=True, exist_ok=True)
+        thumbs_dir.mkdir(parents=True, exist_ok=True)
+        completed: list[dict] = []
         for candidate in order["candidates"]:
             seed = int(candidate["seed"])
             generator = torch.Generator(device=device).manual_seed(seed)
@@ -101,15 +108,93 @@ def run_order(
         _request("POST", f"{api_url}/admin/generation-orders/{order_id}/complete", service_token,
                  {"runId": order["runId"], "candidates": completed})
         print(f"completed order={order_id} candidates={len(completed)}")
-        return 0
+        return 0, pipe, device
     except Exception as exc:
-        print(f"ERROR: generation order failed: {exc}")
-        try:
-            _request("POST", f"{api_url}/admin/generation-orders/{order_id}/fail", service_token,
-                     {"runId": order["runId"], "code": "FORGE_RUN_FAILED", "detail": str(exc)[:500]})
-        except Exception as fail_exc:
-            print(f"ERROR: could not report failure: {fail_exc}")
+        print(f"ERROR: generation order={order_id} failed: {exc}")
+        _fail_order(api_url, service_token, order, exc)
+        return 1, pipe, device
+
+
+def run_order(
+    order_id: str,
+    api_url: str,
+    service_token: str,
+    storage_dir: Path,
+    model_id: str,
+    recipes_path: Path,
+    attention_slicing: bool = False,
+    cpu_offload: bool = False,
+    dry_run: bool = False,
+) -> int:
+    api_url = api_url.rstrip("/")
+    claim_url = f"{api_url}/admin/generation-orders/{order_id}/claim"
+    try:
+        order = _request("POST", claim_url, service_token)
+    except Exception as exc:
+        print(f"ERROR: could not claim generation order: {exc}")
         return 1
+    pipe = None
+    try:
+        result, pipe, _device = run_claimed_order(
+            order, api_url, service_token, storage_dir, model_id, recipes_path,
+            attention_slicing, cpu_offload, dry_run,
+        )
+        return result
     finally:
         if pipe is not None:
+            import pipeline as pipeline_mod
+            pipeline_mod.free_pipeline(pipe)
+
+
+def run_worker(
+    api_url: str,
+    service_token: str,
+    storage_dir: Path,
+    model_id: str,
+    recipes_path: Path,
+    poll_interval: float = 5.0,
+    attention_slicing: bool = False,
+    cpu_offload: bool = False,
+    dry_run: bool = False,
+    once: bool = False,
+) -> int:
+    """Continuously lease and process ready orders with one resident pipeline."""
+    if poll_interval <= 0:
+        print("ERROR: poll interval must be greater than zero.")
+        return 2
+
+    api_url = api_url.rstrip("/")
+    pipe = None
+    device = None
+    print(f"Forge worker started; polling {api_url}/admin/generation-orders/claim-next every {poll_interval:g}s")
+    try:
+        while True:
+            try:
+                order = _request("POST", f"{api_url}/admin/generation-orders/claim-next", service_token)
+            except Exception as exc:
+                print(f"ERROR: could not claim next generation order: {exc}")
+                if once:
+                    return 1
+                sleep(poll_interval)
+                continue
+
+            if order is None:
+                if once:
+                    return 0
+                sleep(poll_interval)
+                continue
+
+            _result, pipe, device = run_claimed_order(
+                order, api_url, service_token, storage_dir, model_id, recipes_path,
+                attention_slicing=attention_slicing,
+                cpu_offload=cpu_offload,
+                dry_run=dry_run,
+                pipe=pipe,
+                device=device,
+            )
+            if once:
+                return _result
+    finally:
+        if pipe is not None:
+            import pipeline as pipeline_mod
             pipeline_mod.free_pipeline(pipe)

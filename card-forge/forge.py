@@ -67,6 +67,16 @@ def _default_service_token() -> str | None:
     return os.environ.get("FORGE_SERVICE_TOKEN")
 
 
+def _default_order_poll_interval() -> float:
+    raw = os.environ.get("FORGE_ORDER_POLL_INTERVAL", "5")
+    try:
+        return float(raw)
+    except ValueError:
+        # argparse still accepts an explicit valid --poll-interval; the worker
+        # itself rejects non-positive values with a clear error.
+        return 5.0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="forge.py",
@@ -172,6 +182,22 @@ def _build_parser() -> argparse.ArgumentParser:
     order_run.add_argument("--attention-slicing", action="store_true")
     order_run.add_argument("--cpu-offload", action="store_true")
     order_run.add_argument("--dry-run", action="store_true")
+    order_worker = order_sub.add_parser("worker", help="Continuously lease and generate ready orders")
+    order_worker.add_argument("--api-url", default=_default_api_url())
+    order_worker.add_argument("--storage-dir", type=Path, default=_default_storage_dir())
+    order_worker.add_argument("--model-id", default=_default_model_id())
+    order_worker.add_argument("--config", type=Path, default=CARD_FORGE_DIR / "recipes.yaml")
+    order_worker.add_argument(
+        "--poll-interval", type=float,
+        default=_default_order_poll_interval(),
+        help="Seconds to wait after an empty queue or transient API error (default: FORGE_ORDER_POLL_INTERVAL or 5)",
+    )
+    order_worker.add_argument("--attention-slicing", action="store_true")
+    order_worker.add_argument("--cpu-offload", action="store_true")
+    order_worker.add_argument(
+        "--once", action="store_true",
+        help="Claim and process at most one order, then exit (useful for diagnostics)",
+    )
     ingest_parser.add_argument(
         "--api-url",
         type=str,
@@ -262,18 +288,28 @@ def _run_ingest(args: argparse.Namespace) -> int:
 
 
 def _run_order(args: argparse.Namespace) -> int:
-    if args.order_action != "run":
-        print("ERROR: specify 'run'")
+    if args.order_action not in ("run", "worker"):
+        print("ERROR: specify 'run' or 'worker'")
         return 2
     service_token = _default_service_token()
     if not service_token:
         print("ERROR: FORGE_SERVICE_TOKEN is not set.")
         return 1
     import orders
+    if args.order_action == "worker":
+        return orders.run_worker(
+            api_url=args.api_url, service_token=service_token,
+            storage_dir=args.storage_dir, model_id=args.model_id, recipes_path=args.config,
+            poll_interval=args.poll_interval, attention_slicing=args.attention_slicing,
+            cpu_offload=args.cpu_offload, once=args.once,
+        )
+    if args.dry_run:
+        print("ERROR: order run --dry-run is not supported because claiming an order changes its durable state.")
+        return 2
     return orders.run_order(
         order_id=args.id, api_url=args.api_url, service_token=service_token,
         storage_dir=args.storage_dir, model_id=args.model_id, recipes_path=args.config,
-        attention_slicing=args.attention_slicing, cpu_offload=args.cpu_offload, dry_run=args.dry_run,
+        attention_slicing=args.attention_slicing, cpu_offload=args.cpu_offload, dry_run=False,
     )
 
 

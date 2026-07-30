@@ -19,6 +19,11 @@ style: &style >-
 # rarity readable from a thumbnail, so it is the last thing that should lose tokens.
 quality: &quality "highly detailed, sharp focus, 8k"
 
+# Orders need room for the admin's visual brief. They use this compact,
+# consistency-preserving scaffold instead of the longer batch-only STYLE/QUALITY.
+order_style: "fantasy card illustration, centered subject"
+order_quality: "painterly, dramatic lighting"
+
 # OBJECT_STYLE - for the three OBJECT archetypes (sword, potion, crystal), not
 # creatures. Swapping "creature concept art"/"centered character portrait" for
 # object-appropriate wording is required: A/B tested 8 style candidates x 3
@@ -83,7 +88,7 @@ archetypes:
   # "no humanoid features" plus "simple dot eyes" (the classic slime-mob look,
   # not a face) fixed it: 3/3 clean round blobs, re-confirmed after trimming
   # "bouncing"/"cute" for token budget.
-  slime: "a round slime monster blob, glossy translucent jelly body, simple dot eyes, no humanoid features"
+  slime: "round slime blob, glossy jelly body, dot eyes, no humanoid features"
   # OBJECT archetype - pairs with object_style, not style. See object_style's
   # comment above for the A/B test that settled the framing; this fragment
   # itself needed no rework, it already read as an object once "concept art"
@@ -424,14 +429,15 @@ recipes:
   # New archetypes: dragon, slime, sword, potion, crystal.
   # Rarity per recipe is constrained by ARCHETYPE_RARITIES in
   # packages/shared-types/src/card.ts (also enforced at load time by
-  # recipes.py) - dragon is legendary/mythic only, slime and potion are
-  # common only, sword is common/uncommon, crystal is uncommon/rare.
+  # recipes.py) - dragon is legendary/mythic only, potion is common only,
+  # sword is common/uncommon, crystal is uncommon/rare. Slimes can occur at
+  # every rarity.
   # `count` follows the same rarity-based convention as the original 34
   # recipes above (common 10, uncommon 9, rare 8, legendary 6, mythic 5 -
   # ~2.5x the intended review-approved pool per recipe). Seeds use the
   # 500000-543999 block, disjoint from every range already in use above
   # (100000s/200000s/300000s/400000s/700000s/800000s).
-  # 17 recipes, 149 images total: dragon 17, slime 30, sword 38, potion 30,
+  # 22 recipes, 184 images total: dragon 17, slime 65, sword 38, potion 30,
   # crystal 34.
   # ============================================================
 
@@ -457,7 +463,7 @@ recipes:
     count: 5
     base_seed: 502000
 
-  # --- slime (common only - classic lowest-tier mob, elemental color variety) ---
+  # --- slime (one elemental variant per rarity, so orders have a calibrated profile) ---
   - id: slime_fire_common
     archetype: slime
     element: fire
@@ -478,6 +484,41 @@ recipes:
     rarity: common
     count: 10
     base_seed: 512000
+
+  - id: slime_water_uncommon
+    archetype: slime
+    element: water
+    rarity: uncommon
+    count: 9
+    base_seed: 513000
+
+  - id: slime_earth_rare
+    archetype: slime
+    element: earth
+    rarity: rare
+    count: 8
+    base_seed: 514000
+
+  - id: slime_air_epic
+    archetype: slime
+    element: air
+    rarity: epic
+    count: 7
+    base_seed: 515000
+
+  - id: slime_shadow_legendary
+    archetype: slime
+    element: shadow
+    rarity: legendary
+    count: 6
+    base_seed: 516000
+
+  - id: slime_light_mythic
+    archetype: slime
+    element: light
+    rarity: mythic
+    count: 5
+    base_seed: 517000
 
   # --- sword (common, uncommon) - `extra` varies blade form so the pool
   # isn't ten near-identical longswords ---

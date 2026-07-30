@@ -9,6 +9,7 @@ import { PlayersModule } from '../players/players.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ForgeServiceTokenGuard } from './guards/forge-service-token.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { ServiceTokenGuard } from './guards/service-token.guard';
 
@@ -45,11 +46,11 @@ import { ServiceTokenGuard } from './guards/service-token.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, RolesGuard, ServiceTokenGuard],
+  providers: [AuthService, JwtAuthGuard, RolesGuard, ServiceTokenGuard, ForgeServiceTokenGuard],
   // JwtModule is re-exported (not just imported) so any module that imports
   // AuthModule — AppModule for the global APP_GUARD registration, AdminModule
   // for ServiceTokenGuard's @UseGuards() — can fully resolve these guards'
   // constructor dependencies, not just see the guard classes themselves.
-  exports: [JwtAuthGuard, RolesGuard, ServiceTokenGuard, JwtModule],
+  exports: [JwtAuthGuard, RolesGuard, ServiceTokenGuard, ForgeServiceTokenGuard, JwtModule],
 })
 export class AuthModule {}

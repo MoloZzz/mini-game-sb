@@ -97,10 +97,34 @@ export class GenerationOrdersService {
       order.status = 'generating'; order.runId = randomUUID();
       await manager.save(order);
       const candidates = await manager.find(GenerationOrderCandidateEntity, { where: { orderId: order.id }, order: { index: 'ASC' } });
-      return { id: order.id, runId: order.runId, brief: order.brief, archetype: order.archetype, element: order.element,
-        suggestedRarity: order.suggestedRarity, recipeProfile: order.recipeProfile,
-        candidates: candidates.map((candidate) => ({ id: candidate.id, index: candidate.index, slug: candidate.slug, seed: String(candidate.seed) })),
-      };
+      return this.toForgeDto(order, candidates);
+    });
+  }
+
+  /**
+   * Atomically lease the oldest ready order. SKIP LOCKED lets several local
+   * workers poll concurrently without waiting for, or double-claiming, one
+   * another's selected row.
+   */
+  async claimNext(): Promise<ForgeGenerationOrderDto | null> {
+    return this.dataSource.transaction(async (manager) => {
+      const order = await manager.getRepository(GenerationOrderEntity)
+        .createQueryBuilder('order')
+        .setLock('pessimistic_write')
+        .setOnLocked('skip_locked')
+        .where('order.status = :status', { status: 'ready' })
+        .orderBy('order.ready_at', 'ASC')
+        .addOrderBy('order.created_at', 'ASC')
+        .getOne();
+      if (!order) return null;
+
+      order.status = 'generating';
+      order.runId = randomUUID();
+      await manager.save(order);
+      const candidates = await manager.find(GenerationOrderCandidateEntity, {
+        where: { orderId: order.id }, order: { index: 'ASC' },
+      });
+      return this.toForgeDto(order, candidates);
     });
   }
 
@@ -199,6 +223,12 @@ export class GenerationOrdersService {
       orderId, index: index + 1, slug: `order-${orderId}-${index + 1}`,
       seed: String(randomInt(1, 2_147_483_647)), status: 'planned', cardId: null,
     }));
+  }
+  private toForgeDto(order: GenerationOrderEntity, candidates: GenerationOrderCandidateEntity[]): ForgeGenerationOrderDto {
+    return { id: order.id, runId: order.runId!, brief: order.brief, archetype: order.archetype, element: order.element,
+      suggestedRarity: order.suggestedRarity, recipeProfile: order.recipeProfile,
+      candidates: candidates.map((candidate) => ({ id: candidate.id, index: candidate.index, slug: candidate.slug, seed: String(candidate.seed) })),
+    };
   }
   private toDto(order: GenerationOrderEntity): GenerationOrderDto {
     return { id: order.id, status: order.status, title: order.title, brief: order.brief, archetype: order.archetype,

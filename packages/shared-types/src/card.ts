@@ -44,7 +44,7 @@ export const ARCHETYPE_RARITIES: Readonly<Record<Archetype, readonly Rarity[]>> 
   construct: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'],
   spirit: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'],
   dragon: ['legendary', 'mythic'],
-  slime: ['common'],
+  slime: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'],
   sword: ['common', 'uncommon'],
   potion: ['common'],
   crystal: ['uncommon', 'rare'],

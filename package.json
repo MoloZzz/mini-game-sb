@@ -23,6 +23,7 @@
     "build:types": "npm run build --workspace @card-game/shared-types",
     "dev:api": "npm run start:dev --workspace game-api",
     "dev:ui": "npm run dev --workspace game-ui",
+    "dev": "node scripts/dev.mjs",
     "sync:brain": "node scripts/check-agent-context.mjs --write-generated",
     "test": "npm run check:brain && npm run test --workspaces --if-present"
   }

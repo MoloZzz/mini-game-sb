@@ -21,5 +21,10 @@ For implementation and review tasks, agents must end their handoff with a one-li
 ## start command
 
 ```
-cd game-ui && npm run dev
+npm run dev
 ```
+
+This starts the API, UI and the local Card Forge worker. The worker stays idle
+until an admin queues a generation order; it then claims and processes work in
+the background. Run the one-time Python 3.11/Card Forge setup in
+[`card-forge/README.md`](card-forge/README.md) before the first start.

@@ -12,7 +12,7 @@ const packs = new Map([
   ['docs/agent/03-ui-and-tests.md', 480],
   ['docs/agent/04-card-forge.md', 380],
   ['docs/agent/05-change-playbook.md', 480],
-  ['docs/agent/06-generated-surface.md', 720],
+  ['docs/agent/06-generated-surface.md', 740],
   ['docs/agent/07-product-intelligence.md', 520],
 ]);
 const instructionShims = [

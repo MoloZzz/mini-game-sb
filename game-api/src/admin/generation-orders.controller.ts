@@ -4,6 +4,7 @@ import { CurrentPlayer } from '../auth/decorators/current-player.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ServiceTokenGuard } from '../auth/guards/service-token.guard';
+import { ForgeServiceTokenGuard } from '../auth/guards/forge-service-token.guard';
 import type { CurrentPlayerPayload } from '../auth/types';
 import { CompleteGenerationOrderDto, CreateGenerationOrderDto, FailGenerationOrderDto, SelectGenerationOrderCandidateDto, UpdateGenerationOrderDto } from './dto/generation-order.dto';
 import { GenerationOrdersService } from './generation-orders.service';
@@ -35,6 +36,12 @@ export class GenerationOrdersController {
   @Post(':id/select')
   select(@Param('id', ParseUUIDPipe) id: string, @Body() body: SelectGenerationOrderCandidateDto): Promise<GenerationOrderDto> {
     return this.generationOrdersService.select(id, body);
+  }
+
+  /** Leases the oldest queued order to the local Forge worker, if one exists. */
+  @Public() @Roles() @UseGuards(ForgeServiceTokenGuard) @Post('claim-next') @HttpCode(200)
+  claimNext(): Promise<ForgeGenerationOrderDto | null> {
+    return this.generationOrdersService.claimNext();
   }
 
   @Public() @Roles() @UseGuards(ServiceTokenGuard) @Post(':id/claim')

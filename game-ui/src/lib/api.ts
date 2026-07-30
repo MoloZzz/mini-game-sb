@@ -220,6 +220,10 @@ export function queueGenerationOrder(id: string): Promise<GenerationOrderDto> {
   return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/queue`, { method: 'POST' });
 }
 
+export function retryGenerationOrder(id: string): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/retry`, { method: 'POST' });
+}
+
 export function selectGenerationOrderCandidate(
   orderId: string,
   body: SelectGenerationOrderCandidateRequest,
