@@ -39,7 +39,7 @@ export function CollectionPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8 text-neutral-100">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 text-neutral-100 sm:px-6 sm:py-8">
       <h1 className="text-2xl font-bold">Collection</h1>
 
       {progress ? (

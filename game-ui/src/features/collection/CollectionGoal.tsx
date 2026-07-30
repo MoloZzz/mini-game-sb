@@ -11,7 +11,7 @@ export function CollectionGoal({ goal }: { goal: CollectionGoalDto }) {
 
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-amber-400/30 bg-amber-400/5 p-4" aria-label="Next collection goal">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Next goal</p>
           <h2 className="mt-1 text-lg font-bold text-neutral-100">{goal.title}</h2>
@@ -22,7 +22,7 @@ export function CollectionGoal({ goal }: { goal: CollectionGoalDto }) {
       <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
         <div className="h-full rounded-full bg-amber-400 transition-[width]" style={{ width: `${Math.min(100, percent)}%` }} />
       </div>
-      <div className="flex items-center justify-between gap-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm sm:gap-3">
         <span className="text-neutral-300">{goal.progress.current} / {goal.progress.target}</span>
         {reward && <span className="text-amber-200">Reward: {reward}</span>}
       </div>

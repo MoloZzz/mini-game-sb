@@ -16,9 +16,9 @@ export function ErrorBanner({ children, action, className }: ErrorBannerProps) {
   return (
     <div
       role="alert"
-      className={`flex items-center justify-between gap-4 rounded-md border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300 ${className ?? ''}`}
+      className={`flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm text-red-300 sm:gap-4 ${className ?? ''}`}
     >
-      <span>{children}</span>
+      <span className="min-w-0">{children}</span>
       {action && (
         <button type="button" onClick={action.onClick} className="shrink-0 font-semibold underline">
           {action.label}

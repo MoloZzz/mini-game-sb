@@ -375,8 +375,8 @@ export function AdminReview() {
   const reviewedCount = counts.approved + counts.rejected;
 
   return (
-    <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 px-6 py-4">
+    <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100 lg:h-[calc(100vh-3rem)] lg:min-h-0">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <div>
           <h1 className="text-xl font-bold">Card Review</h1>
           <p data-testid="review-progress" className="text-sm text-neutral-400">
@@ -388,7 +388,7 @@ export function AdminReview() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {STATUS_FILTERS.map((f) => (
             <button
               key={f}
@@ -413,11 +413,11 @@ export function AdminReview() {
         </div>
       </header>
 
-      {actionError && <ErrorBanner className="mx-6">{actionError}</ErrorBanner>}
-      {listError && <ErrorBanner className="mx-6">{listError}</ErrorBanner>}
+      {actionError && <ErrorBanner className="mx-4 sm:mx-6">{actionError}</ErrorBanner>}
+      {listError && <ErrorBanner className="mx-4 sm:mx-6">{listError}</ErrorBanner>}
 
-      <div className="flex flex-1 gap-4 overflow-hidden p-4">
-        <div className="grid flex-1 auto-rows-max grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3 overflow-y-auto pr-2">
+      <div className="flex flex-col gap-4 overflow-visible p-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:overflow-hidden lg:p-4">
+        <div className="grid w-full auto-rows-max grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
           {cards.map((card) => {
             const isFocused = card.id === focusedId;
             const isPending = pendingIds.has(card.id);
@@ -479,7 +479,7 @@ export function AdminReview() {
           )}
         </div>
 
-        <div className="w-96 shrink-0">
+        <div className="w-full lg:w-96 lg:shrink-0">
           <CardReviewPanel
             card={focusedCard}
             edits={edits}

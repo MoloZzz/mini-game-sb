@@ -16,6 +16,18 @@ describe('Modal', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
 
+  it('uses narrow viewport insets before the desktop dialog padding', () => {
+    const { container } = render(
+      <Modal label="Card preview" onClose={() => {}}>
+        content
+      </Modal>,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Card preview' });
+    expect(container.firstElementChild).toHaveClass('p-3', 'sm:p-6');
+    expect(dialog).toHaveClass('p-4', 'sm:p-5');
+  });
+
   it('closes on the close button, on Escape, and on a backdrop click', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();

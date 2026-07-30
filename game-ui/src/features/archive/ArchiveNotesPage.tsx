@@ -80,7 +80,7 @@ export function ArchiveNotesPage({ onOpenPass }: ArchiveNotesPageProps) {
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8 text-neutral-100">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 text-neutral-100 sm:px-6 sm:py-8">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">Tasks</p>
         <h1 className="mt-1 text-2xl font-bold">Archive Notes</h1>
@@ -132,9 +132,9 @@ export function ArchiveNotesPage({ onOpenPass }: ArchiveNotesPageProps) {
             ) : (
               <div className="mt-3 flex flex-wrap gap-3">
                 {archive.passes.map((pass) => (
-                  <Panel key={pass.id} padding="sm" className="flex items-center gap-3 border-amber-400/30">
+                  <Panel key={pass.id} padding="sm" className="flex flex-wrap items-center gap-3 border-amber-400/30">
                     <span className="text-sm font-semibold text-amber-200">Archive Pass</span>
-                    <Button size="sm" onClick={() => onOpenPass(pass.id)}>Open Archive Cache</Button>
+                    <Button className="w-full sm:w-auto" size="sm" onClick={() => onOpenPass(pass.id)}>Open Archive Cache</Button>
                   </Panel>
                 ))}
               </div>

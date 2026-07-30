@@ -58,21 +58,21 @@ export function OpenArchivePassScreen({ passId, onBackToArchive, onToInventory }
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-neutral-950 px-6 py-10 text-neutral-100">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-neutral-950 px-4 py-8 text-neutral-100 sm:px-6 sm:py-10">
       <div className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">Archive Pass</p>
         <h1 className="mt-1 text-2xl font-bold">Archive Cache</h1>
         <p className="mt-2 max-w-md text-sm text-neutral-400">Open this pass to reveal one card. It does not cost coins or keys.</p>
       </div>
 
-      {phase.kind === 'spinning' && <Reel reel={phase.result.reel} spinId={phase.result.dropId} onLanded={handleLanded} />}
+      {phase.kind === 'spinning' && <Reel className="w-full" reel={phase.result.reel} spinId={phase.result.dropId} onLanded={handleLanded} />}
       {phase.kind === 'requesting' && <p className="text-sm text-neutral-500">Opening…</p>}
       {phase.kind === 'failed' && <p role="alert" className="text-sm text-red-300">{phase.message}</p>}
 
       {phase.kind !== 'spinning' && phase.kind !== 'requesting' && (
-        <div className="flex gap-3">
-          <Button onClick={() => void openPass()}>{phase.kind === 'failed' ? 'Try again' : 'Open Archive Cache'}</Button>
-          <Button variant="secondary" onClick={onBackToArchive}>Back to Archive Notes</Button>
+        <div className="flex w-full max-w-xs flex-col gap-3 sm:w-auto sm:max-w-none sm:flex-row">
+          <Button className="w-full sm:w-auto" onClick={() => void openPass()}>{phase.kind === 'failed' ? 'Try again' : 'Open Archive Cache'}</Button>
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={onBackToArchive}>Back to Archive Notes</Button>
         </div>
       )}
     </main>

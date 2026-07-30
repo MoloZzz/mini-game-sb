@@ -28,7 +28,7 @@ export function CardDetailModal({ card, onClose, footer }: CardDetailModalProps)
         label={`${card.name} preview`}
         closeButtonLabel="Close preview"
         onClose={onClose}
-        contentClassName="w-auto items-center rounded-lg border border-neutral-800 bg-neutral-900 p-5"
+        contentClassName="w-full max-w-md items-center rounded-lg border border-neutral-800 bg-neutral-900 p-3 sm:w-auto sm:p-5"
       >
         <div className="flex flex-col items-center gap-4">
           <CardPreview card={card} size="md" onArtClick={() => setZoomed(true)} />

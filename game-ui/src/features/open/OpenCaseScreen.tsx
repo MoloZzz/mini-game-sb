@@ -159,13 +159,13 @@ export function OpenCaseScreen({
       )}
 
       {phase.kind === 'failed' && (
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex w-full max-w-xs flex-col items-center gap-4">
           <p className="text-sm text-red-300">{phase.message}</p>
-          <div className="flex gap-3">
-            <Button variant="primary" size="md" onClick={handleAgain}>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Button className="w-full sm:w-auto" variant="primary" size="md" onClick={handleAgain}>
               Try again
             </Button>
-            <Button variant="secondary" size="md" onClick={onBackToLobby}>
+            <Button className="w-full sm:w-auto" variant="secondary" size="md" onClick={onBackToLobby}>
               Back to lobby
             </Button>
           </div>

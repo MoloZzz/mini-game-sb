@@ -89,4 +89,14 @@ describe('AppShell', () => {
     await waitFor(() => expect(screen.getByText('Molo')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
   });
+
+  it('keeps mobile navigation links in a dedicated horizontally scrollable strip', async () => {
+    const { container } = renderShellAs('admin');
+
+    await waitFor(() => expect(screen.getByText('Admin')).toBeInTheDocument());
+
+    const nav = container.querySelector('nav');
+    expect(nav).toHaveClass('flex-wrap');
+    expect(nav?.querySelector('.overflow-x-auto')).toHaveClass('w-full', 'sm:w-auto');
+  });
 });

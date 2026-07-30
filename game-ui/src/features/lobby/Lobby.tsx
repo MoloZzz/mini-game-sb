@@ -67,11 +67,11 @@ export function Lobby({
   const balance = player?.balance ?? EMPTY_BALANCE;
 
   return (
-    <div className="flex min-h-screen flex-col gap-8 bg-neutral-950 px-6 py-8 text-neutral-100">
+    <div className="flex min-h-screen flex-col gap-8 bg-neutral-950 px-4 py-6 text-neutral-100 sm:px-6 sm:py-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Card Game</h1>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
           <BalanceDisplay balance={balance} />
           {player && isDailyBonusAvailable(player.dailyBonusAvailableAt) && (
             <Button

@@ -30,12 +30,12 @@ const WIDTH_BY_SIZE: Readonly<Record<CardPreviewSize, number>> = {
   xl: 480,
 };
 
-/** `xl` is the zoom size and must still fit a narrow viewport. */
-const MAX_WIDTH_BY_SIZE: Readonly<Record<CardPreviewSize, string | undefined>> = {
-  sm: undefined,
-  md: undefined,
-  lg: undefined,
-  xl: '90vw',
+/** Every named frame scale still needs room for its surrounding page or modal padding. */
+const MAX_WIDTH_BY_SIZE: Readonly<Record<CardPreviewSize, string>> = {
+  sm: 'min(100%, calc(100vw - 3rem))',
+  md: 'min(100%, calc(100vw - 3rem))',
+  lg: 'min(100%, calc(100vw - 3rem))',
+  xl: 'min(90vw, 100%, calc(100vw - 3rem))',
 };
 
 const GLOW_BY_SIZE = { sm: 'frame', md: 'detail', lg: 'frame', xl: 'zoom' } as const;
@@ -72,7 +72,7 @@ export function CardPreview({
 
   return (
     <div
-      className={`flex flex-col overflow-hidden rounded-lg border-[3px] bg-neutral-900 ${className ?? ''}`}
+      className={`flex max-w-full flex-col overflow-hidden rounded-lg border-[3px] bg-neutral-900 ${className ?? ''}`}
       style={{
         width,
         maxWidth: MAX_WIDTH_BY_SIZE[size],

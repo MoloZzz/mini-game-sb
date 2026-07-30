@@ -80,6 +80,19 @@ describe('CardPreview', () => {
     expect(inventoryWidth).toBe(`${CARD_PREVIEW_WIDTHS.md}px`);
   });
 
+  it('keeps every named size within the available mobile container width', () => {
+    const card = cardsByRarity.rare[0]!;
+
+    (['sm', 'md', 'lg', 'xl'] as const).forEach((size) => {
+      const { container, unmount } = render(<CardPreview card={card} size={size} />);
+      const frame = container.firstElementChild as HTMLElement;
+
+      expect(frame).toHaveClass('max-w-full');
+      expect(frame.style.maxWidth).toContain('100%');
+      unmount();
+    });
+  });
+
   it('only turns the art window into a zoom trigger when a handler is supplied', () => {
     const card = cardsByRarity.rare[0]!;
 

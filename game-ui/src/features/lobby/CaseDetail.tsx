@@ -31,7 +31,7 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
     <div
       data-testid="case-detail"
       data-case-slug={caseDto.slug}
-      className="flex flex-col gap-4 rounded-lg border bg-neutral-900 p-6"
+      className="flex flex-col gap-4 rounded-lg border bg-neutral-900 p-4 sm:p-6"
       style={{ borderColor: `${theme.color}66` }}
     >
       <Button variant="ghost" size="sm" onClick={onBack} className="self-start px-0">
@@ -42,12 +42,12 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
         <ImgWithFallback
           src={caseDto.imageUrl}
           alt=""
-          className="h-48 w-48 self-center rounded-lg border-2 object-cover sm:self-start"
+          className="h-40 w-40 self-center rounded-lg border-2 object-cover sm:h-48 sm:w-48 sm:self-start"
           style={{ borderColor: theme.color }}
         />
 
         <div className="flex flex-1 flex-col gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold text-neutral-100">{caseDto.name}</h2>
             <span
               className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-neutral-950"
@@ -73,7 +73,7 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
             ))}
           </div>
 
-          <div className="mt-auto flex items-center justify-between gap-4">
+          <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <span
               className={`flex items-center gap-1 text-lg font-semibold ${
                 canAfford ? 'text-neutral-200' : 'text-red-400'
@@ -83,7 +83,7 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
               {amount.toLocaleString()}
             </span>
 
-            <Button disabled={!canAfford} onClick={() => onOpen(caseDto.slug)}>
+            <Button className="w-full sm:w-auto" disabled={!canAfford} onClick={() => onOpen(caseDto.slug)}>
               Open case
             </Button>
           </div>

@@ -103,7 +103,7 @@ export function Modal({
 
   return (
     <div
-      className={`fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-6 ${className ?? ''}`}
+      className={`fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-3 sm:p-6 ${className ?? ''}`}
       onClick={onClose}
     >
       <div
@@ -112,7 +112,7 @@ export function Modal({
         aria-modal="true"
         aria-label={label}
         className={`relative flex max-h-full w-full flex-col overflow-y-auto ${SIZE_CLASSES[size]} ${
-          contentClassName ?? 'rounded-lg border border-neutral-800 bg-neutral-900 p-5'
+          contentClassName ?? 'rounded-lg border border-neutral-800 bg-neutral-900 p-4 sm:p-5'
         }`}
         onClick={(event) => event.stopPropagation()}
       >
