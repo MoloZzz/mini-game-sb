@@ -16,6 +16,7 @@ import { Login } from '@/features/auth/Login';
 import { Register } from '@/features/auth/Register';
 import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
 import { Lobby } from '@/features/lobby/Lobby';
+import { loadOpenCaseScreen } from '@/features/open/openCaseRoute';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 
 // These screens are not needed for the initial sign-in/lobby path. Keeping
@@ -39,12 +40,22 @@ const OpenArchivePassScreen = lazy(async () => ({
 const Inventory = lazy(async () => ({
   default: (await import('@/features/inventory/Inventory')).Inventory,
 }));
-const OpenCaseScreen = lazy(async () => ({
-  default: (await import('@/features/open/OpenCaseScreen')).OpenCaseScreen,
-}));
+const OpenCaseScreen = lazy(loadOpenCaseScreen);
 
 function RouteLoading() {
-  return <div className="min-h-screen bg-neutral-950" aria-busy="true" aria-label="Loading screen" />;
+  const openingCase = useLocation().pathname.startsWith('/open/');
+
+  return (
+    <div
+      className="flex min-h-screen flex-col items-center justify-center gap-3 bg-neutral-950 px-4 text-center text-neutral-100"
+      aria-busy="true"
+      aria-label={openingCase ? 'Preparing case opening' : 'Loading screen'}
+    >
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-amber-400" aria-hidden="true" />
+      <p className="text-sm font-medium">{openingCase ? 'Preparing your case…' : 'Loading…'}</p>
+      {openingCase && <p className="text-xs text-neutral-500">The reel is almost ready.</p>}
+    </div>
+  );
 }
 
 /**

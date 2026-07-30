@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 
 import { POST_STOP_PAUSE_MS, REEL_LENGTH, WINNING_INDEX } from '@card-game/shared-types';
 import { cardsByRarity } from '@/mocks/fixtures/cards';
@@ -121,6 +121,28 @@ describe('Reel', () => {
 
     const winnerEl = container.querySelector(`[data-reel-index="${WINNING_INDEX}"]`);
     expect(winnerEl).toHaveAttribute('data-card-id', wonCard.id);
+  });
+
+  it('uses the strip native transform transition to schedule landing', async () => {
+    const wonCard = cardsByRarity.rare[0]!;
+    const reel = buildReel(wonCard, () => 0.5);
+    const onLanded = vi.fn();
+
+    const { getByTestId } = render(<Reel reel={reel} spinId="spin-native-transition" onLanded={onLanded} />);
+    const strip = getByTestId('reel-strip');
+    await waitFor(() => {
+      expect(strip.style.transition).toContain('transform');
+    });
+
+    const transitionEnd = new Event('transitionend', { bubbles: true });
+    Object.defineProperty(transitionEnd, 'propertyName', { value: 'transform' });
+    vi.useFakeTimers();
+    fireEvent(strip, transitionEnd);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POST_STOP_PAUSE_MS);
+    });
+
+    expect(onLanded).toHaveBeenCalledTimes(1);
   });
 
   it('only one element in the tree carries a transform, and no ReelTile has its own', async () => {

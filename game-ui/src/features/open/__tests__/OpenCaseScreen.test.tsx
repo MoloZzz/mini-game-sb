@@ -10,11 +10,51 @@ import { resetDb } from '@/mocks/db';
 
 import { OpenCaseScreen } from '../OpenCaseScreen';
 
+const revealRouteMocks = vi.hoisted(() => ({
+  preloadReveal: vi.fn(),
+}));
+const OPEN_CASE_RESPONSE_TIMEOUT_MS = 3_000;
+
+type RevealStubProps = {
+  onAgain: () => void;
+  expeditionComplete?: boolean;
+  expeditionCollectionLabel?: string;
+  onToExpeditionCollection?: () => void;
+};
+
+vi.mock('@/features/reveal/Reveal', () => ({
+  Reveal: ({ onAgain, expeditionComplete, expeditionCollectionLabel, onToExpeditionCollection }: RevealStubProps) => (
+    <section>
+      {expeditionComplete && <p>Expedition complete</p>}
+      {onToExpeditionCollection && (
+        <button type="button" onClick={onToExpeditionCollection}>
+          View {expeditionCollectionLabel} collection
+        </button>
+      )}
+      <button type="button" autoFocus onClick={onAgain}>
+        Again
+      </button>
+    </section>
+  ),
+}));
+
+vi.mock('@/features/reveal/revealRoute', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/reveal/revealRoute')>();
+  return {
+    ...actual,
+    preloadReveal: () => {
+      revealRouteMocks.preloadReveal();
+      actual.preloadReveal();
+    },
+  };
+});
+
 /**
  * matchMedia is stubbed with `matches: true` so `usePrefersReducedMotion`
  * reports the accessibility preference and the whole flow takes the skip
  * path — that keeps this integration test off the 5.5s wall clock while
- * still exercising the real reel, the real preload and the real reveal.
+ * still exercising the real reel, the real preload and the lazy boundary.
+ * Reveal's visual implementation has its own focused test suite.
  */
 function stubMatchMedia(reduced: boolean) {
   Object.defineProperty(window, 'matchMedia', {
@@ -45,6 +85,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => {
   server.resetHandlers();
   resetDb();
+  revealRouteMocks.preloadReveal.mockClear();
 });
 afterAll(() => server.close());
 
@@ -73,20 +114,33 @@ function renderScreen() {
 }
 
 describe('OpenCaseScreen — the full open → reel → reveal loop against MSW', () => {
+  it('preloads Reveal before the reel lands', async () => {
+    const { container } = renderScreen();
+
+    await waitFor(
+      () => expect(container.querySelectorAll('[data-reel-index]').length).toBe(REEL_LENGTH),
+      { timeout: OPEN_CASE_RESPONSE_TIMEOUT_MS },
+    );
+
+    expect(revealRouteMocks.preloadReveal).toHaveBeenCalledTimes(1);
+  });
+
   it('renders exactly REEL_LENGTH tiles from the real mock response', async () => {
     const { container } = renderScreen();
 
-    await waitFor(() =>
-      expect(container.querySelectorAll('[data-reel-index]').length).toBe(REEL_LENGTH),
+    await waitFor(
+      () => expect(container.querySelectorAll('[data-reel-index]').length).toBe(REEL_LENGTH),
+      { timeout: OPEN_CASE_RESPONSE_TIMEOUT_MS },
     );
   });
 
   it('reveals the card the server chose, and it is the tile at WINNING_INDEX', async () => {
     const { container } = renderScreen();
 
-    await waitFor(() => {
-      expect(container.querySelector(`[data-reel-index="${WINNING_INDEX}"]`)).not.toBeNull();
-    });
+    await waitFor(
+      () => expect(container.querySelector(`[data-reel-index="${WINNING_INDEX}"]`)).not.toBeNull(),
+      { timeout: OPEN_CASE_RESPONSE_TIMEOUT_MS },
+    );
 
     const winnerId = container
       .querySelector(`[data-reel-index="${WINNING_INDEX}"]`)
@@ -146,8 +200,9 @@ describe('OpenCaseScreen — the full open → reel → reveal loop against MSW'
     });
 
     const { container } = renderScreen();
-    await waitFor(() =>
-      expect(container.querySelectorAll('[data-reel-index]').length).toBe(REEL_LENGTH),
+    await waitFor(
+      () => expect(container.querySelectorAll('[data-reel-index]').length).toBe(REEL_LENGTH),
+      { timeout: OPEN_CASE_RESPONSE_TIMEOUT_MS },
     );
 
     expect(openCalls).toBe(1);

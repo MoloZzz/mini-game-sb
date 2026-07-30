@@ -31,6 +31,8 @@ function errorMessage(err: unknown): string {
 export interface UseCollectionCardsResult {
   items: CollectionCardDto[];
   total: number;
+  /** The page currently represented by `items`, updated only after a successful response. */
+  displayedPage: number;
   page: number;
   limit: number;
   filters: CollectionFilterState;
@@ -38,6 +40,8 @@ export interface UseCollectionCardsResult {
   setPage: (page: number) => void;
   /** Bypasses the short route-transition cache for a user-initiated retry. */
   refresh: () => void;
+  /** A new query is loading while the last resolved grid remains usable. */
+  refreshing: boolean;
   loading: boolean;
   error: string | null;
   progress: CollectionProgressDto | null;
@@ -73,10 +77,15 @@ export function useCollectionCards(): UseCollectionCardsResult {
   const cachedPage = getCachedData<CollectionCardsResponse>(cardsCacheKey);
   const cachedProgress = getCachedData<CollectionProgressDto>(progressCacheKey);
   const cachedGoal = getCachedData<CollectionGoalDto | null>(goalCacheKey);
-  const hasCachedData = cachedPage !== undefined && cachedProgress !== undefined && cachedGoal !== undefined;
   const [items, setItems] = useState<CollectionCardDto[]>(() => cachedPage?.items ?? []);
   const [total, setTotal] = useState(() => cachedPage?.total ?? 0);
-  const [loading, setLoading] = useState(() => !hasCachedData);
+  const [displayedPage, setDisplayedPage] = useState(() => cachedPage?.page ?? page);
+  // A collection page can legitimately be empty, so this cannot be inferred
+  // from `items.length`. It distinguishes a first visit from a transition
+  // where keeping the previous (possibly empty) response is the right UX.
+  const [hasResolvedPage, setHasResolvedPage] = useState(() => cachedPage !== undefined);
+  const [loading, setLoading] = useState(() => cachedPage === undefined);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<CollectionProgressDto | null>(() => cachedProgress ?? null);
   const [goal, setGoal] = useState<CollectionGoalDto | null>(() => cachedGoal ?? null);
@@ -88,46 +97,84 @@ export function useCollectionCards(): UseCollectionCardsResult {
     const force = reloadToken !== processedRefreshToken.current;
     processedRefreshToken.current = reloadToken;
     const cachedPage = force ? undefined : getCachedData<CollectionCardsResponse>(cardsCacheKey);
-    const cachedProgress = force ? undefined : getCachedData<CollectionProgressDto>(progressCacheKey);
-    const cachedGoal = force ? undefined : getCachedData<CollectionGoalDto | null>(goalCacheKey);
-
-    if (cachedPage !== undefined && cachedProgress !== undefined && cachedGoal !== undefined) {
-      setItems(cachedPage.items);
-      setTotal(cachedPage.total);
-      setProgress(cachedProgress);
-      setGoal(cachedGoal);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
     setError(null);
 
+    const prefetchNextPage = (pageResult: CollectionCardsResponse) => {
+      const totalPages = Math.ceil(pageResult.total / PAGE_SIZE);
+      if (pageResult.page >= totalPages) return;
+
+      const nextPageQuery: ListCollectionCardsQuery = {
+        ...filters,
+        page: pageResult.page + 1,
+        limit: PAGE_SIZE,
+      };
+      const nextPageCacheKey = createDataCacheKey(
+        scope,
+        DATA_CACHE_RESOURCES.collectionCards,
+        JSON.stringify(nextPageQuery),
+      );
+
+      // This is intentionally detached from visible state: the cache shares
+      // the request with a later navigation, and neither a prefetch failure
+      // nor an old response can replace the grid the player is viewing.
+      void loadCachedData(nextPageCacheKey, () => getCollectionCards(nextPageQuery)).catch(() => undefined);
+    };
+
+    const applyPage = (pageResult: CollectionCardsResponse) => {
+      if (cancelled) return;
+      // The page, its cards and its total always move together. This avoids a
+      // transient state where the controls claim the new page while showing a
+      // half-updated grid.
+      setItems(pageResult.items);
+      setTotal(pageResult.total);
+      setDisplayedPage(pageResult.page);
+      setHasResolvedPage(true);
+      setLoading(false);
+      setRefreshing(false);
+      prefetchNextPage(pageResult);
+    };
+
+    const showError = (err: unknown) => {
+      if (cancelled) return;
+      setError(errorMessage(err));
+      setLoading(false);
+      setRefreshing(false);
+    };
+
+    // Progress and goal are independent of pagination. Keeping their cached
+    // values means a page switch waits only for the page itself, not for three
+    // unrelated requests to finish together.
     Promise.all([
-      loadCachedData(cardsCacheKey, () => getCollectionCards(pageQuery), { force }),
       loadCachedData(progressCacheKey, getCollectionProgress, { force }),
       loadCachedData(goalCacheKey, getCollectionGoal, { force }),
     ])
-      .then(([pageResult, progressResult, goalResult]) => {
+      .then(([progressResult, goalResult]) => {
         if (cancelled) return;
-        setItems(pageResult.items);
-        setTotal(pageResult.total);
         setProgress(progressResult);
         setGoal(goalResult);
       })
       .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(errorMessage(err));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        // A progress-panel failure must not make the card grid look settled
+        // before its own page request has completed.
+        if (!cancelled) setError(errorMessage(err));
       });
+
+    if (cachedPage !== undefined) {
+      applyPage(cachedPage);
+    } else {
+      // Do not replace a resolved grid with skeletons during filter/page
+      // changes. Only the first visit needs a blocking placeholder.
+      setLoading(!hasResolvedPage);
+      setRefreshing(hasResolvedPage);
+      loadCachedData(cardsCacheKey, () => getCollectionCards(pageQuery), { force })
+        .then(applyPage)
+        .catch(showError);
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [cardsCacheKey, goalCacheKey, pageQuery, progressCacheKey, reloadToken]);
+  }, [cardsCacheKey, filters, goalCacheKey, hasResolvedPage, pageQuery, progressCacheKey, reloadToken, scope]);
 
   const setFilters = useCallback((next: CollectionFilterState) => {
     setFiltersState(next);
@@ -145,12 +192,14 @@ export function useCollectionCards(): UseCollectionCardsResult {
   return {
     items,
     total,
+    displayedPage,
     page,
     limit: PAGE_SIZE,
     filters,
     setFilters,
     setPage,
     refresh,
+    refreshing,
     loading,
     error,
     progress,

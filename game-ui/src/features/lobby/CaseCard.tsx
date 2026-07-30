@@ -3,6 +3,7 @@ import type { Balance, CaseDto } from '@card-game/shared-types';
 import { rarityTint } from '@/lib/rarityStyle';
 
 import { Button } from '@/components/Button';
+import { preloadOpenCaseScreen } from '@/features/open/openCaseRoute';
 import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
 
 import { caseThemeFor } from './caseTheme';
@@ -33,6 +34,8 @@ export function CaseCard({ case: caseDto, onOpen, disabled, balance }: CaseCardP
     <div
       data-testid="case-card"
       data-case-slug={caseDto.slug}
+      onPointerEnter={preloadOpenCaseScreen}
+      onFocusCapture={preloadOpenCaseScreen}
       className="flex flex-col overflow-hidden rounded-lg border bg-neutral-900 transition-transform duration-150 will-change-transform hover:-translate-y-1"
       style={{ borderColor: `${theme.color}66`, boxShadow: `0 0 0 1px transparent, 0 4px 16px -6px ${theme.color}4d` }}
     >

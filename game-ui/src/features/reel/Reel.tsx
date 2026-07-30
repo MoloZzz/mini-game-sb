@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { TILE_GAP, type ReelTileDto } from '@card-game/shared-types';
 
 import { ReelTile } from './ReelTile';
@@ -43,10 +42,9 @@ export function Reel({ reel, spinId, onLanded, className, forceReducedMotion, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, debug]);
 
-  const transition = useMemo(() => {
-    return animate.type === 'animated'
-      ? { duration: animate.durationMs / 1000, ease: animate.easing }
-      : { duration: 0 };
+  const stripTransition = useMemo(() => {
+    if (animate.type !== 'animated') return 'none';
+    return `transform ${animate.durationMs}ms cubic-bezier(${animate.easing.join(', ')})`;
   }, [animate]);
 
   return (
@@ -62,18 +60,25 @@ export function Reel({ reel, spinId, onLanded, className, forceReducedMotion, on
       {reel && (
         // ONE transform, on the strip container — never animate 60 tiles
         // individually, that's 60 composite layers and guaranteed jank.
-        <motion.div
+        <div
           data-testid="reel-strip"
-          style={{ display: 'flex', gap: TILE_GAP, willChange: 'transform' }}
-          initial={{ x: 0 }}
-          animate={{ x: targetX }}
-          transition={transition}
-          onAnimationComplete={onAnimationComplete}
+          style={{
+            display: 'flex',
+            gap: TILE_GAP,
+            willChange: 'transform',
+            transform: `translate3d(${targetX}px, 0, 0)`,
+            transition: stripTransition,
+          }}
+          onTransitionEnd={(event) => {
+            if (event.target === event.currentTarget && event.propertyName === 'transform') {
+              onAnimationComplete();
+            }
+          }}
         >
           {reel.map((tile, index) => (
             <ReelTile key={`${index}-${tile.id}`} tile={tile} index={index} />
           ))}
-        </motion.div>
+        </div>
       )}
 
       <Marker />

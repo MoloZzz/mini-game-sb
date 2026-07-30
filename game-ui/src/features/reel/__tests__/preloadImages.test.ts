@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { preloadImages, splitReelThumbs } from '../preloadImages';
+import {
+  preloadImages,
+  scheduleImageWarmup,
+  splitReelThumbs,
+} from '../preloadImages';
 
 type Mode = 'load' | 'error' | 'never';
 
@@ -104,7 +108,7 @@ describe('preloadImages', () => {
     } as unknown as typeof Image;
 
     let resolved = false;
-    void preloadImages(['stuck.png'], 5000).then(() => {
+    void preloadImages(['stuck.png'], { timeoutMs: 5000 }).then(() => {
       resolved = true;
     });
 
@@ -113,6 +117,77 @@ describe('preloadImages', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     expect(resolved).toBe(true);
+  });
+
+  it('requests async decoding and forwards the requested network priority', async () => {
+    let image!: StubImage & { decoding: string; fetchPriority: string };
+    globalThis.Image = class extends StubImage {
+      decoding = 'auto';
+      fetchPriority = 'auto';
+
+      constructor() {
+        super(() => 'load');
+        image = this;
+      }
+    } as unknown as typeof Image;
+
+    await preloadImages(['thumb.png'], { fetchPriority: 'high' });
+
+    expect(image.decoding).toBe('async');
+    expect(image.fetchPriority).toBe('high');
+  });
+});
+
+describe('scheduleImageWarmup', () => {
+  it('defers and processes unique thumbnails in bounded sequential batches', async () => {
+    vi.useFakeTimers();
+    const requested: string[] = [];
+    globalThis.Image = class extends StubImage {
+      constructor() {
+        super(() => 'load');
+      }
+
+      set src(value: string) {
+        requested.push(value);
+        super.src = value;
+      }
+    } as unknown as typeof Image;
+
+    const cancel = scheduleImageWarmup(['a.png', 'b.png', 'b.png', 'c.png', 'd.png', 'e.png'], {
+      batchSize: 2,
+      batchDelayMs: 50,
+    });
+
+    expect(requested).toEqual([]);
+    await vi.advanceTimersByTimeAsync(49);
+    expect(requested).toEqual([]);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(requested).toEqual(['a.png', 'b.png']);
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(requested).toEqual(['a.png', 'b.png', 'c.png', 'd.png']);
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(requested).toEqual(['a.png', 'b.png', 'c.png', 'd.png', 'e.png']);
+    cancel();
+  });
+
+  it('cancels queued work when the spin is replaced', async () => {
+    vi.useFakeTimers();
+    const ctor = vi.fn();
+    globalThis.Image = class extends StubImage {
+      constructor() {
+        super(() => 'load');
+        ctor();
+      }
+    } as unknown as typeof Image;
+
+    const cancel = scheduleImageWarmup(['a.png', 'b.png'], { batchDelayMs: 50 });
+    cancel();
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(ctor).not.toHaveBeenCalled();
   });
 });
 

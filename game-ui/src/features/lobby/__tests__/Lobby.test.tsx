@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { CASE_SEEDS } from '@card-game/shared-types';
@@ -7,8 +7,13 @@ import { CASE_SEEDS } from '@card-game/shared-types';
 import { db, resetDb } from '@/mocks/db';
 import { server } from '@/mocks/server';
 import { clearDataCache } from '@/lib/dataCache';
+import { preloadOpenCaseScreen } from '@/features/open/openCaseRoute';
 
 import { Lobby } from '../Lobby';
+
+vi.mock('@/features/open/openCaseRoute', () => ({
+  preloadOpenCaseScreen: vi.fn(),
+}));
 
 function stubMatchMedia() {
   Object.defineProperty(window, 'matchMedia', {
@@ -32,6 +37,7 @@ afterEach(() => {
   server.resetHandlers();
   resetDb();
   clearDataCache();
+  vi.mocked(preloadOpenCaseScreen).mockClear();
 });
 afterAll(() => server.close());
 
@@ -76,6 +82,22 @@ describe('Lobby', () => {
     await user.click(openButtons[STARTER_INDEX]!);
 
     expect(onOpenCase).toHaveBeenCalledWith('starter-chest');
+  });
+
+  it('prefetches the opening route on case intent and when its detail is opened', async () => {
+    render(<Lobby onOpenCase={() => {}} />);
+
+    await waitFor(() => expect(screen.getAllByTestId('case-card')).toHaveLength(CASE_SEEDS.length));
+    const starter = CASE_SEEDS[STARTER_INDEX]!;
+    const starterCard = screen.getAllByTestId('case-card')[STARTER_INDEX]!;
+
+    fireEvent.pointerEnter(starterCard);
+    expect(preloadOpenCaseScreen).toHaveBeenCalledTimes(1);
+
+    vi.mocked(preloadOpenCaseScreen).mockClear();
+    fireEvent.click(screen.getByText(starter.name));
+
+    await waitFor(() => expect(preloadOpenCaseScreen).toHaveBeenCalledTimes(1));
   });
 
   it('disables the Open button for a case the player cannot afford', async () => {

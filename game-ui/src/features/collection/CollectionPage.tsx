@@ -15,8 +15,22 @@ import { CollectionGoal } from './CollectionGoal';
 import { useCollectionCards } from './useCollectionCards';
 
 export function CollectionPage() {
-  const { items, total, page, limit, filters, setFilters, setPage, refresh, loading, error, progress, goal } =
-    useCollectionCards();
+  const {
+    items,
+    total,
+    displayedPage,
+    page,
+    limit,
+    filters,
+    setFilters,
+    setPage,
+    refresh,
+    refreshing,
+    loading,
+    error,
+    progress,
+    goal,
+  } = useCollectionCards();
 
   const [selected, setSelected] = useState<CollectionCardDto | null>(null);
 
@@ -39,6 +53,11 @@ export function CollectionPage() {
   const handleSelect = useCallback((entry: CollectionCardDto) => {
     setSelected(entry);
   }, []);
+
+  const handlePageChange = useCallback((nextPage: number) => {
+    setPage(nextPage);
+    setSelected(null);
+  }, [setPage]);
 
   // Preserve tile prop identities across detail-modal state changes. The
   // memoized tile can then skip every unaffected slot in this grid.
@@ -71,10 +90,23 @@ export function CollectionPage() {
 
       {error && <ErrorBanner action={{ label: 'Retry', onClick: refresh }}>{error}</ErrorBanner>}
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4" aria-busy={loading || refreshing}>
+        {refreshing && (
+          <p
+            role="status"
+            aria-live="polite"
+            data-testid="collection-refreshing"
+            className="self-center rounded-full border border-neutral-700 bg-neutral-900 px-3 py-1 text-xs text-neutral-400"
+          >
+            {page === displayedPage
+              ? 'Refreshing collection…'
+              : `Loading page ${page}… Showing page ${displayedPage} until it is ready.`}
+          </p>
+        )}
+
         {loading ? (
           <CardGrid>
-            <TileSkeleton />
+            <TileSkeleton count={30} />
           </CardGrid>
         ) : items.length === 0 ? (
           <EmptyState>No cards match these filters.</EmptyState>
@@ -100,7 +132,7 @@ export function CollectionPage() {
         )}
 
         {!loading && total > limit && (
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         )}
       </div>
 

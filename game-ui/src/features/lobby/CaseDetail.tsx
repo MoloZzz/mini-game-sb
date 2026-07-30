@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import type { Balance, CaseDto } from '@card-game/shared-types';
 
 import { Button } from '@/components/Button';
 import { OddsTable } from '@/components/OddsTable';
+import { preloadOpenCaseScreen } from '@/features/open/openCaseRoute';
 import { ImgWithFallback } from '@/components/ui/ImgWithFallback';
 import { rarityTint } from '@/lib/rarityStyle';
 
@@ -26,6 +28,12 @@ export function CaseDetail({ case: caseDto, balance, onOpen, onBack }: CaseDetai
   const { amount, currency } = casePrice(caseDto);
   const canAfford = canAffordCase(caseDto, balance);
   const theme = caseThemeFor(caseDto.slug);
+
+  // Touch and keyboard users do not hover the grid. Reaching the informed
+  // decision screen is therefore the non-hover prefetch point.
+  useEffect(() => {
+    preloadOpenCaseScreen();
+  }, []);
 
   return (
     <div

@@ -13,8 +13,26 @@ interface ReelTileProps {
 const TILE_HEIGHT = 176;
 const NAME_STRIP_HEIGHT = 36;
 
+/**
+ * Enough for a desktop viewport and several moving frames. The actual
+ * critical subset is calculated from the measured reel width in useReelSpin;
+ * this browser hint prevents all 60 mounted <img> nodes from competing with
+ * that subset before it resolves.
+ */
+export const EAGER_REEL_TILE_COUNT = 12;
+
+export function reelTileImagePriority(index: number): {
+  loading: 'lazy' | 'eager';
+  fetchPriority: 'high' | 'low';
+} {
+  return index < EAGER_REEL_TILE_COUNT
+    ? { loading: 'eager', fetchPriority: 'high' }
+    : { loading: 'lazy', fetchPriority: 'low' };
+}
+
 function ReelTileImpl({ tile, index }: ReelTileProps) {
   const color = rarityColor(tile.rarity);
+  const imagePriority = reelTileImagePriority(index);
 
   return (
     <div
@@ -40,7 +58,8 @@ function ReelTileImpl({ tile, index }: ReelTileProps) {
         <ImgWithFallback
           src={tile.thumbUrl}
           alt=""
-          loading="eager"
+          {...imagePriority}
+          decoding="async"
           className="flex h-full w-full items-center justify-center object-cover text-2xl font-bold"
           style={{ color }}
           fallbackColor={rarityTint(tile.rarity, 'fallback')}

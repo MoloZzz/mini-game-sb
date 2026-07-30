@@ -14,6 +14,10 @@ export interface ImgWithFallbackProps {
   style?: CSSProperties;
   /** The reel loads its strip eagerly; grids and panels stay lazy. */
   loading?: 'lazy' | 'eager';
+  /** Hint the browser to decode without blocking the current paint. */
+  decoding?: 'sync' | 'async' | 'auto';
+  /** Hint the browser how this image should share its request bandwidth. */
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 const DEFAULT_FALLBACK_COLOR = '#404040';
@@ -40,8 +44,14 @@ export function ImgWithFallback({
   fallbackContent,
   style,
   loading = 'lazy',
+  decoding,
+  fetchPriority,
 }: ImgWithFallbackProps) {
   const [broken, setBroken] = useState(false);
+  // Keep this as a spread instead of a direct JSX prop: this React 18 runtime
+  // wants the lowercase DOM spelling, while its TypeScript JSX declarations
+  // expose only the camel-case React 19 spelling.
+  const fetchPriorityAttribute = fetchPriority === undefined ? {} : { fetchpriority: fetchPriority };
 
   if (broken) {
     return (
@@ -65,6 +75,8 @@ export function ImgWithFallback({
       title={title}
       draggable={false}
       loading={loading}
+      decoding={decoding}
+      {...fetchPriorityAttribute}
       className={className}
       style={style}
       onError={() => setBroken(true)}

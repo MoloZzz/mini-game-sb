@@ -3,7 +3,12 @@ import { POST_STOP_PAUSE_MS, SPIN_DURATION_MS, SPIN_EASING, type ReelTileDto } f
 
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion';
 
-import { CRITICAL_PRELOAD_TIMEOUT_MS, preloadImages, splitReelThumbs } from './preloadImages';
+import {
+  CRITICAL_PRELOAD_TIMEOUT_MS,
+  preloadImages,
+  scheduleImageWarmup,
+  splitReelThumbs,
+} from './preloadImages';
 import { randomJitter, targetOffset } from './reelMath';
 
 export type ReelPhase = 'idle' | 'preloading' | 'spinning' | 'landing' | 'done';
@@ -123,9 +128,14 @@ export function useReelSpin({
       reel.map((tile) => tile.thumbUrl),
       containerW,
     );
-    if (rest.length > 0) void preloadImages(rest);
+    const criticalUrls = new Set(critical);
+    const warmupUrls = rest.filter((url) => !criticalUrls.has(url));
+    let cancelWarmup = () => {};
 
-    preloadImages(critical, CRITICAL_PRELOAD_TIMEOUT_MS).then(() => {
+    preloadImages(critical, {
+      timeoutMs: CRITICAL_PRELOAD_TIMEOUT_MS,
+      fetchPriority: 'high',
+    }).then(() => {
       if (!isCurrent()) return;
 
       setTargetX(target);
@@ -144,6 +154,10 @@ export function useReelSpin({
       setAnimate({ type: 'animated', durationMs: SPIN_DURATION_MS, easing: SPIN_EASING });
       setPhase('spinning');
       document.addEventListener('visibilitychange', onVisibilityChange);
+
+      // The rest must not compete with the first spin frame. It is warmed in
+      // small batches while the marker is still far from those tiles.
+      cancelWarmup = scheduleImageWarmup(warmupUrls);
     });
 
     return () => {
@@ -153,6 +167,7 @@ export function useReelSpin({
         clearTimeout(landingTimerRef.current);
         landingTimerRef.current = null;
       }
+      cancelWarmup();
     };
     // containerRef/onLanded/reducedMotion are read through refs on purpose —
     // only a genuinely new spinId (with its reel) should restart this cycle.

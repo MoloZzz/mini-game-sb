@@ -7,17 +7,35 @@ import { PITCH } from '@card-game/shared-types';
  */
 export const CRITICAL_PRELOAD_TIMEOUT_MS = 400;
 
+/**
+ * The queue adds only a small group of thumbnails at a time after the reel
+ * begins moving. This keeps the network and image decoder available for the
+ * first painted frames while still warming the whole, fixed 60-tile strip
+ * well before it reaches the winning card.
+ */
+export const WARMUP_BATCH_SIZE = 6;
+export const WARMUP_BATCH_DELAY_MS = 80;
+export const WARMUP_BATCH_TIMEOUT_MS = 750;
+
 /** A couple of tiles past the right edge, so the first frames of scroll are covered. */
 const CRITICAL_BUFFER_TILES = 2;
 
+export interface ImagePreloadOptions {
+  /** Resolves even if the request or decode stalls, so the UI never wedges. */
+  timeoutMs?: number;
+  /** Lets the browser reserve bandwidth for the currently visible strip. */
+  fetchPriority?: 'high' | 'low' | 'auto';
+}
+
+export interface ImageWarmupOptions {
+  batchSize?: number;
+  batchDelayMs?: number;
+  batchTimeoutMs?: number;
+}
+
 /**
- * Splits the strip into what must be on screen *now* and what the spin has
+ * Splits the strip into what must be on screen now and what the spin has
  * seconds to fetch.
- *
- * Waiting on all 60 thumbs before starting is what made the reel sit under a
- * spinner for half a second on every open. Only the tiles visible at x = 0 are
- * actually urgent; everything past the right edge is at least a second of
- * scrolling away and loads comfortably in the background.
  */
 export function splitReelThumbs(
   urls: readonly string[],
@@ -29,14 +47,13 @@ export function splitReelThumbs(
 }
 
 /**
- * Preloads a batch of image URLs, resolving once every one has settled
- * (loaded or failed) or the timeout elapses — whichever comes first.
- *
- * Runs between the API response and the animation start. Skipping this and
- * starting the spin immediately means half the tiles render blank and pop in
- * one by one during the scroll — the worst possible look for this component.
+ * Preloads one bounded group of thumbnails. The request priority and async
+ * decoder hint prevent a background card from delaying a visible frame.
  */
-export function preloadImages(urls: readonly string[], timeoutMs = 5000): Promise<void> {
+export function preloadImages(
+  urls: readonly string[],
+  { timeoutMs = 5000, fetchPriority = 'auto' }: ImagePreloadOptions = {},
+): Promise<void> {
   const unique = Array.from(new Set(urls));
   if (unique.length === 0) return Promise.resolve();
 
@@ -51,10 +68,7 @@ export function preloadImages(urls: readonly string[], timeoutMs = 5000): Promis
       resolve();
     };
 
-    // Safety net: a stalled request must not wedge the UI. Cleared on
-    // success above so it never fires after the batch already resolved.
     const timer = setTimeout(finish, timeoutMs);
-
     const onOneSettled = () => {
       remaining -= 1;
       if (remaining <= 0) finish();
@@ -62,11 +76,60 @@ export function preloadImages(urls: readonly string[], timeoutMs = 5000): Promis
 
     for (const url of unique) {
       const img = new Image();
-      // onerror MUST also resolve its slot — one broken thumb otherwise
-      // hangs the entire game.
-      img.onload = onOneSettled;
+      // Decode off the render path. Browsers without `decode` still settle
+      // through the native image load event.
+      img.decoding = 'async';
+      img.fetchPriority = fetchPriority;
+      img.onload = () => {
+        if (typeof img.decode !== 'function') {
+          onOneSettled();
+          return;
+        }
+
+        void img.decode().catch(() => undefined).then(onOneSettled);
+      };
+      // A broken thumbnail must never hold back the reel.
       img.onerror = onOneSettled;
       img.src = url;
     }
   });
+}
+
+/**
+ * Starts background thumbnail work in bounded, sequential batches. Call this
+ * only after the critical batch has started the spin and cancel it when that
+ * spin is unmounted or replaced.
+ */
+export function scheduleImageWarmup(
+  urls: readonly string[],
+  {
+    batchSize = WARMUP_BATCH_SIZE,
+    batchDelayMs = WARMUP_BATCH_DELAY_MS,
+    batchTimeoutMs = WARMUP_BATCH_TIMEOUT_MS,
+  }: ImageWarmupOptions = {},
+): () => void {
+  const queue = Array.from(new Set(urls));
+  let nextIndex = 0;
+  let cancelled = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const runNextBatch = () => {
+    if (cancelled || nextIndex >= queue.length) return;
+
+    const batch = queue.slice(nextIndex, nextIndex + batchSize);
+    nextIndex += batch.length;
+
+    void preloadImages(batch, { timeoutMs: batchTimeoutMs, fetchPriority: 'low' }).then(() => {
+      if (cancelled || nextIndex >= queue.length) return;
+      timer = setTimeout(runNextBatch, batchDelayMs);
+    });
+  };
+
+  // Give the first animated frame a paint opportunity before background work.
+  timer = setTimeout(runNextBatch, batchDelayMs);
+
+  return () => {
+    cancelled = true;
+    if (timer !== null) clearTimeout(timer);
+  };
 }

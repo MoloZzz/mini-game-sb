@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { OpenCaseResponse } from '@card-game/shared-types';
 
 import { Button } from '@/components/Button';
@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast';
 import { newIdempotencyKey, openCase } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 import { Reel } from '@/features/reel/Reel';
-import { Reveal } from '@/features/reveal/Reveal';
+import { loadReveal, preloadReveal } from '@/features/reveal/revealRoute';
 import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
 import { expeditionCollectionLabel } from '@/features/expeditions/sessionExpedition';
 
@@ -28,6 +28,8 @@ type Phase =
   | { kind: 'spinning'; result: OpenCaseResponse }
   | { kind: 'revealed'; result: OpenCaseResponse }
   | { kind: 'failed'; message: string };
+
+const Reveal = lazy(loadReveal);
 
 function errorMessage(err: unknown): string {
   if (err instanceof ApiClientError) {
@@ -85,6 +87,10 @@ export function OpenCaseScreen({
     currentKeyRef.current = attemptKey;
     if (startedRef.current === attemptKey) return;
     startedRef.current = attemptKey;
+
+    // Load the FX/reveal chunk alongside the request and the following 5.5s
+    // reel, rather than making the winning-card transition wait on parsing it.
+    preloadReveal();
 
     const isCurrent = () => mountedRef.current && currentKeyRef.current === attemptKey;
     setPhase({ kind: 'requesting' });
@@ -146,16 +152,25 @@ export function OpenCaseScreen({
       )}
 
       {phase.kind === 'revealed' && result && (
-        <Reveal
-          result={result}
-          caseName={caseName}
-          onAgain={handleAgain}
-          onToInventory={onToInventory}
-          againDisabled={busy}
-          expeditionComplete={Boolean(expedition)}
-          expeditionCollectionLabel={expedition ? expeditionCollectionLabel(expedition) : undefined}
-          onToExpeditionCollection={expedition ? onToExpeditionCollection : undefined}
-        />
+        <Suspense
+          fallback={
+            <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center" role="status">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-amber-400" aria-hidden="true" />
+              <p className="text-sm text-neutral-300">Preparing your reveal…</p>
+            </div>
+          }
+        >
+          <Reveal
+            result={result}
+            caseName={caseName}
+            onAgain={handleAgain}
+            onToInventory={onToInventory}
+            againDisabled={busy}
+            expeditionComplete={Boolean(expedition)}
+            expeditionCollectionLabel={expedition ? expeditionCollectionLabel(expedition) : undefined}
+            onToExpeditionCollection={expedition ? onToExpeditionCollection : undefined}
+          />
+        </Suspense>
       )}
 
       {phase.kind === 'failed' && (
