@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   CollectionCardDto,
   CollectionGoalDto,
   CollectionProgressDto,
+  CollectionCardsResponse,
   ListCollectionCardsQuery,
 } from '@card-game/shared-types';
 
 import { getCollectionCards, getCollectionGoal, getCollectionProgress } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
+import { getToken } from '@/lib/auth';
+import {
+  createDataCacheKey,
+  DATA_CACHE_RESOURCES,
+  getCachedData,
+  loadCachedData,
+} from '@/lib/dataCache';
 
 /** Grid page size — matches Inventory's own PAGE_SIZE (24) closely enough,
  * kept as its own constant since the two screens' data shapes are unrelated. */
@@ -28,6 +36,8 @@ export interface UseCollectionCardsResult {
   filters: CollectionFilterState;
   setFilters: (next: CollectionFilterState) => void;
   setPage: (page: number) => void;
+  /** Bypasses the short route-transition cache for a user-initiated retry. */
+  refresh: () => void;
   loading: boolean;
   error: string | null;
   progress: CollectionProgressDto | null;
@@ -43,22 +53,61 @@ export interface UseCollectionCardsResult {
 export function useCollectionCards(): UseCollectionCardsResult {
   const [filters, setFiltersState] = useState<CollectionFilterState>({});
   const [page, setPageState] = useState(1);
-  const [items, setItems] = useState<CollectionCardDto[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const scope = getToken();
+  const pageQuery = useMemo<ListCollectionCardsQuery>(
+    () => ({ ...filters, page, limit: PAGE_SIZE }),
+    [filters, page],
+  );
+  const cardsCacheKey = useMemo(
+    () => createDataCacheKey(scope, DATA_CACHE_RESOURCES.collectionCards, JSON.stringify(pageQuery)),
+    [pageQuery, scope],
+  );
+  const progressCacheKey = useMemo(
+    () => createDataCacheKey(scope, DATA_CACHE_RESOURCES.collectionProgress),
+    [scope],
+  );
+  const goalCacheKey = useMemo(
+    () => createDataCacheKey(scope, DATA_CACHE_RESOURCES.collectionGoal),
+    [scope],
+  );
+  const cachedPage = getCachedData<CollectionCardsResponse>(cardsCacheKey);
+  const cachedProgress = getCachedData<CollectionProgressDto>(progressCacheKey);
+  const cachedGoal = getCachedData<CollectionGoalDto | null>(goalCacheKey);
+  const hasCachedData = cachedPage !== undefined && cachedProgress !== undefined && cachedGoal !== undefined;
+  const [items, setItems] = useState<CollectionCardDto[]>(() => cachedPage?.items ?? []);
+  const [total, setTotal] = useState(() => cachedPage?.total ?? 0);
+  const [loading, setLoading] = useState(() => !hasCachedData);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<CollectionProgressDto | null>(null);
-  const [goal, setGoal] = useState<CollectionGoalDto | null>(null);
+  const [progress, setProgress] = useState<CollectionProgressDto | null>(() => cachedProgress ?? null);
+  const [goal, setGoal] = useState<CollectionGoalDto | null>(() => cachedGoal ?? null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const processedRefreshToken = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const force = reloadToken !== processedRefreshToken.current;
+    processedRefreshToken.current = reloadToken;
+    const cachedPage = force ? undefined : getCachedData<CollectionCardsResponse>(cardsCacheKey);
+    const cachedProgress = force ? undefined : getCachedData<CollectionProgressDto>(progressCacheKey);
+    const cachedGoal = force ? undefined : getCachedData<CollectionGoalDto | null>(goalCacheKey);
+
+    if (cachedPage !== undefined && cachedProgress !== undefined && cachedGoal !== undefined) {
+      setItems(cachedPage.items);
+      setTotal(cachedPage.total);
+      setProgress(cachedProgress);
+      setGoal(cachedGoal);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     Promise.all([
-      getCollectionCards({ ...filters, page, limit: PAGE_SIZE }),
-      getCollectionProgress(),
-      getCollectionGoal(),
+      loadCachedData(cardsCacheKey, () => getCollectionCards(pageQuery), { force }),
+      loadCachedData(progressCacheKey, getCollectionProgress, { force }),
+      loadCachedData(goalCacheKey, getCollectionGoal, { force }),
     ])
       .then(([pageResult, progressResult, goalResult]) => {
         if (cancelled) return;
@@ -78,7 +127,7 @@ export function useCollectionCards(): UseCollectionCardsResult {
     return () => {
       cancelled = true;
     };
-  }, [filters, page]);
+  }, [cardsCacheKey, goalCacheKey, pageQuery, progressCacheKey, reloadToken]);
 
   const setFilters = useCallback((next: CollectionFilterState) => {
     setFiltersState(next);
@@ -91,6 +140,8 @@ export function useCollectionCards(): UseCollectionCardsResult {
     setPageState(next);
   }, []);
 
+  const refresh = useCallback(() => setReloadToken((token) => token + 1), []);
+
   return {
     items,
     total,
@@ -99,6 +150,7 @@ export function useCollectionCards(): UseCollectionCardsResult {
     filters,
     setFilters,
     setPage,
+    refresh,
     loading,
     error,
     progress,

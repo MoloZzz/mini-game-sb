@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { CardDto, Rarity } from '@card-game/shared-types';
 
 import { rarityColor, rarityTint } from '@/lib/rarityStyle';
@@ -28,7 +28,7 @@ function MetaLine({ card }: { card: CardDto }) {
  * collection's `UnlockedTile` were forty near-identical lines apiece; the only
  * real difference — the copies badge — is now a prop.
  */
-export function CardTile({ card, selected = false, onSelect, disabled = false, badge }: CardTileProps) {
+export const CardTile = memo(function CardTile({ card, selected = false, onSelect, disabled = false, badge }: CardTileProps) {
   return (
     <button
       type="button"
@@ -56,14 +56,14 @@ export function CardTile({ card, selected = false, onSelect, disabled = false, b
       </div>
     </button>
   );
-}
+});
 
 /**
  * A card the player hasn't pulled yet — a rarity-tinted "?" so the shape of
  * the collection is visible without leaking art or a name the server never
  * even sent.
  */
-export function LockedCardTile({ rarity }: { rarity: Rarity }) {
+export const LockedCardTile = memo(function LockedCardTile({ rarity }: { rarity: Rarity }) {
   return (
     <div
       className="flex flex-col overflow-hidden rounded-lg border-2 border-dashed bg-neutral-900"
@@ -80,4 +80,4 @@ export function LockedCardTile({ rarity }: { rarity: Rarity }) {
       </div>
     </div>
   );
-}
+});

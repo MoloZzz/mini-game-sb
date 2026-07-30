@@ -99,4 +99,21 @@ describe('AppShell', () => {
     expect(nav).toHaveClass('flex-wrap');
     expect(nav?.querySelector('.overflow-x-auto')).toHaveClass('w-full', 'sm:w-auto');
   });
+
+  it('keeps its content mounted while hiding navigation for a full-focus route', async () => {
+    window.localStorage.setItem('auth_token', makeToken('mock-player-1', 'player'));
+
+    render(
+      <MemoryRouter initialEntries={['/open/ember-chest']}>
+        <AuthProvider>
+          <AppShell showNavigation={false}>
+            <div>full-focus content</div>
+          </AppShell>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('full-focus content')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
 });

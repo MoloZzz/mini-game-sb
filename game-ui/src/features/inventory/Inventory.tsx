@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { InventoryItemDto } from '@card-game/shared-types';
 
 import { CardGrid } from '@/components/card/CardGrid';
@@ -23,6 +23,7 @@ export function Inventory() {
     filters,
     setFilters,
     setPage,
+    refresh,
     loading,
     error,
     progress,
@@ -49,22 +50,40 @@ export function Inventory() {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  function handleFiltersChange(next: InventoryFilterState) {
+  const handleFiltersChange = useCallback((next: InventoryFilterState) => {
     setFilters(next);
     // A filter change can drop the selected card out of view entirely —
     // clearing the selection avoids a detail view that no longer matches
     // what the grid is showing.
     setSelected(null);
-  }
+  }, [setFilters]);
 
-  function handleSelect(item: InventoryItemDto) {
+  const handleSelect = useCallback((item: InventoryItemDto) => {
     clearSellError();
     setSelected(item);
-  }
+  }, [clearSellError]);
 
-  function handleSell(instanceId: string) {
+  const handleSell = useCallback((instanceId: string) => {
     void sell(instanceId);
-  }
+  }, [sell]);
+
+  // `CardTile` is memoized. Keep its callback and badge-node props stable
+  // while selection changes, so opening or closing the detail modal only
+  // updates the tile whose selected state actually changed.
+  const tileItems = useMemo(
+    () =>
+      items.map((item) => ({
+        item,
+        onSelect: () => handleSelect(item),
+        badge:
+          item.copies > 1 ? (
+            <span className="absolute right-1 top-1 rounded-full bg-neutral-950/80 px-2 py-0.5 text-xs font-bold text-neutral-100">
+              ×{item.copies}
+            </span>
+          ) : undefined,
+      })),
+    [items, handleSelect],
+  );
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 text-neutral-100 sm:px-6 sm:py-8">
@@ -80,7 +99,7 @@ export function Inventory() {
 
       <CardFilters value={filters} onChange={handleFiltersChange} sortIdPrefix="inventory" />
 
-      {error && <ErrorBanner>{error}</ErrorBanner>}
+      {error && <ErrorBanner action={{ label: 'Retry', onClick: refresh }}>{error}</ErrorBanner>}
 
       <div className="flex flex-col gap-4">
         {loading ? (
@@ -91,22 +110,16 @@ export function Inventory() {
           <EmptyState>No cards yet — open a case to start your collection.</EmptyState>
         ) : (
           <CardGrid>
-            {items.map((item) => (
+            {tileItems.map(({ item, onSelect, badge }) => (
               <CardTile
                 key={item.instanceId}
                 card={item.card}
                 selected={item.instanceId === selected?.instanceId}
-                onSelect={() => handleSelect(item)}
+                onSelect={onSelect}
                 // One tile per distinct card, not per instance (ADR-012): the API
                 // already groups by card and hands back `copies`, so 3 identical
                 // drops read as one tile with a badge instead of 3 tiles.
-                badge={
-                  item.copies > 1 ? (
-                    <span className="absolute right-1 top-1 rounded-full bg-neutral-950/80 px-2 py-0.5 text-xs font-bold text-neutral-100">
-                      ×{item.copies}
-                    </span>
-                  ) : undefined
-                }
+                badge={badge}
               />
             ))}
           </CardGrid>

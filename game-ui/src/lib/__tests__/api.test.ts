@@ -4,13 +4,21 @@ import { http, HttpResponse } from 'msw';
 import { resetDb } from '@/mocks/db';
 import { server } from '@/mocks/server';
 
-import { getMe } from '../api';
+import { getMe, openCase } from '../api';
 import { getToken, onLogout, setToken } from '../auth';
+import {
+  clearDataCache,
+  createDataCacheKey,
+  DATA_CACHE_RESOURCES,
+  getCachedData,
+  loadCachedData,
+} from '../dataCache';
 
 beforeAll(() => server.listen());
 afterEach(() => {
   server.resetHandlers();
   resetDb();
+  clearDataCache();
   window.localStorage.clear();
 });
 afterAll(() => server.close());
@@ -96,5 +104,29 @@ describe('request()', () => {
 
     await expect(getMe()).rejects.toMatchObject({ status: 500 });
     expect(getToken()).toBe('still-good');
+  });
+});
+
+describe('openCase cache invalidation', () => {
+  it('drops all ownership-dependent reads only after a successful opening', async () => {
+    const token = 'cache-owner';
+    setToken(token);
+    const resources = [
+      DATA_CACHE_RESOURCES.authMe,
+      DATA_CACHE_RESOURCES.player,
+      DATA_CACHE_RESOURCES.drops,
+      DATA_CACHE_RESOURCES.inventory,
+      DATA_CACHE_RESOURCES.collectionProgress,
+      DATA_CACHE_RESOURCES.collectionCards,
+      DATA_CACHE_RESOURCES.collectionGoal,
+    ];
+    const keys = resources.map((resource) => createDataCacheKey(token, resource));
+
+    await Promise.all(keys.map((key, index) => loadCachedData(key, async () => index)));
+    expect(keys.map((key) => getCachedData(key))).toEqual([0, 1, 2, 3, 4, 5, 6]);
+
+    await openCase('starter-chest');
+
+    expect(keys.map((key) => getCachedData(key))).toEqual([undefined, undefined, undefined, undefined, undefined, undefined, undefined]);
   });
 });

@@ -6,6 +6,7 @@ import { CASE_SEEDS } from '@card-game/shared-types';
 
 import { db, resetDb } from '@/mocks/db';
 import { server } from '@/mocks/server';
+import { clearDataCache } from '@/lib/dataCache';
 
 import { Lobby } from '../Lobby';
 
@@ -30,6 +31,7 @@ beforeAll(() => server.listen());
 afterEach(() => {
   server.resetHandlers();
   resetDb();
+  clearDataCache();
 });
 afterAll(() => server.close());
 

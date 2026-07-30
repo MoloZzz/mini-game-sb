@@ -1,12 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   CollectionProgressDto,
+  InventoryPageDto,
   InventoryItemDto,
   ListInventoryQuery,
 } from "@card-game/shared-types";
 
 import { getCollectionProgress, getInventory, sellInstance } from "@/lib/api";
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from "@/lib/apiError";
+import { getToken } from "@/lib/auth";
+import {
+  createDataCacheKey,
+  DATA_CACHE_RESOURCES,
+  getCachedData,
+  invalidateCachedResources,
+  loadCachedData,
+} from "@/lib/dataCache";
 
 /** Grid page size. Small on purpose so pagination controls are actually exercised. */
 const PAGE_SIZE = 24;
@@ -31,6 +40,8 @@ export interface UseInventoryResult {
   filters: InventoryFilterState;
   setFilters: (next: InventoryFilterState) => void;
   setPage: (page: number) => void;
+  /** Bypasses the short route-transition cache for a user-initiated retry. */
+  refresh: () => void;
   loading: boolean;
   error: string | null;
   progress: CollectionProgressDto | null;
@@ -50,29 +61,57 @@ export interface UseInventoryResult {
 export function useInventory(): UseInventoryResult {
   const [filters, setFiltersState] = useState<InventoryFilterState>({});
   const [page, setPageState] = useState(1);
-  const [items, setItems] = useState<InventoryItemDto[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const scope = getToken();
+  const pageQuery = useMemo<ListInventoryQuery>(
+    () => ({ ...filters, page, limit: PAGE_SIZE }),
+    [filters, page],
+  );
+  const inventoryCacheKey = useMemo(
+    () => createDataCacheKey(scope, DATA_CACHE_RESOURCES.inventory, JSON.stringify(pageQuery)),
+    [pageQuery, scope],
+  );
+  const progressCacheKey = useMemo(
+    () => createDataCacheKey(scope, DATA_CACHE_RESOURCES.collectionProgress),
+    [scope],
+  );
+  const cachedPage = getCachedData<InventoryPageDto>(inventoryCacheKey);
+  const cachedProgress = getCachedData<CollectionProgressDto>(progressCacheKey);
+  const hasCachedData = cachedPage !== undefined && cachedProgress !== undefined;
+  const [items, setItems] = useState<InventoryItemDto[]>(() => cachedPage?.items ?? []);
+  const [total, setTotal] = useState(() => cachedPage?.total ?? 0);
+  const [loading, setLoading] = useState(() => !hasCachedData);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<CollectionProgressDto | null>(null);
+  const [progress, setProgress] = useState<CollectionProgressDto | null>(() => cachedProgress ?? null);
   const [selling, setSelling] = useState(false);
   const [sellError, setSellError] = useState<string | null>(null);
   // Bumped after a successful sell to force the effect below to refetch —
   // `filters`/`page` didn't change, but the data behind them did.
   const [reloadToken, setReloadToken] = useState(0);
+  const processedRefreshToken = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const force = reloadToken !== processedRefreshToken.current;
+    processedRefreshToken.current = reloadToken;
+    const cachedPage = force ? undefined : getCachedData<InventoryPageDto>(inventoryCacheKey);
+    const cachedProgress = force ? undefined : getCachedData<CollectionProgressDto>(progressCacheKey);
+
+    if (cachedPage !== undefined && cachedProgress !== undefined) {
+      setItems(cachedPage.items);
+      setTotal(cachedPage.total);
+      setProgress(cachedProgress);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    const pageQuery: ListInventoryQuery = {
-      ...filters,
-      page,
-      limit: PAGE_SIZE,
-    };
-
-    Promise.all([getInventory(pageQuery), getCollectionProgress()])
+    Promise.all([
+      loadCachedData(inventoryCacheKey, () => getInventory(pageQuery), { force }),
+      loadCachedData(progressCacheKey, getCollectionProgress, { force }),
+    ])
       .then(([pageResult, progressResult]) => {
         if (cancelled) return;
         setItems(pageResult.items);
@@ -90,7 +129,7 @@ export function useInventory(): UseInventoryResult {
     return () => {
       cancelled = true;
     };
-  }, [filters, page, reloadToken]);
+  }, [inventoryCacheKey, pageQuery, progressCacheKey, reloadToken]);
 
   const setFilters = useCallback((next: InventoryFilterState) => {
     setFiltersState(next);
@@ -103,11 +142,20 @@ export function useInventory(): UseInventoryResult {
     setPageState(next);
   }, []);
 
+  const refresh = useCallback(() => setReloadToken((token) => token + 1), []);
+
   const sell = useCallback(async (instanceId: string) => {
     setSelling(true);
     setSellError(null);
     try {
       await sellInstance(instanceId);
+      invalidateCachedResources(scope, [
+        DATA_CACHE_RESOURCES.authMe,
+        DATA_CACHE_RESOURCES.player,
+        DATA_CACHE_RESOURCES.inventory,
+        DATA_CACHE_RESOURCES.collectionProgress,
+        DATA_CACHE_RESOURCES.collectionCards,
+      ]);
       // `copies` and the progress bar both shift after a sell — a full
       // refetch is simpler and safer than hand-patching grouped counts
       // client-side and risking drift from the server's truth.
@@ -122,7 +170,7 @@ export function useInventory(): UseInventoryResult {
     } finally {
       setSelling(false);
     }
-  }, []);
+  }, [scope]);
 
   const clearSellError = useCallback(() => setSellError(null), []);
 
@@ -134,6 +182,7 @@ export function useInventory(): UseInventoryResult {
     filters,
     setFilters,
     setPage,
+    refresh,
     loading,
     error,
     progress,

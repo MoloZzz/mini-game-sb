@@ -1,5 +1,7 @@
 import type { PlayerRole } from '@card-game/shared-types';
 
+import { clearDataCache } from './dataCache';
+
 const TOKEN_KEY = 'auth_token';
 const LOGOUT_EVENT = 'auth:logout';
 
@@ -14,6 +16,10 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string): void {
+  // A new token can belong to another account. Drop all private data before
+  // exposing the session so a route remount can never paint the prior user's
+  // cached response.
+  clearDataCache();
   try {
     window.localStorage.setItem(TOKEN_KEY, token);
   } catch {
@@ -23,6 +29,9 @@ export function setToken(token: string): void {
 }
 
 export function clearToken(): void {
+  // Also invalidates pending reads. Their late resolutions are ignored by the
+  // cache, which prevents a rejected/ended session from repopulating it.
+  clearDataCache();
   try {
     window.localStorage.removeItem(TOKEN_KEY);
   } catch {

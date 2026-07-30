@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CollectionCardDto } from '@card-game/shared-types';
 
 import { CardDetailModal } from '@/components/card/CardDetailModal';
@@ -15,7 +15,7 @@ import { CollectionGoal } from './CollectionGoal';
 import { useCollectionCards } from './useCollectionCards';
 
 export function CollectionPage() {
-  const { items, total, page, limit, filters, setFilters, setPage, loading, error, progress, goal } =
+  const { items, total, page, limit, filters, setFilters, setPage, refresh, loading, error, progress, goal } =
     useCollectionCards();
 
   const [selected, setSelected] = useState<CollectionCardDto | null>(null);
@@ -31,10 +31,25 @@ export function CollectionPage() {
     });
   }, [items]);
 
-  function handleFiltersChange(next: typeof filters) {
+  const handleFiltersChange = useCallback((next: typeof filters) => {
     setFilters(next);
     setSelected(null);
-  }
+  }, [setFilters]);
+
+  const handleSelect = useCallback((entry: CollectionCardDto) => {
+    setSelected(entry);
+  }, []);
+
+  // Preserve tile prop identities across detail-modal state changes. The
+  // memoized tile can then skip every unaffected slot in this grid.
+  const tileEntries = useMemo(
+    () =>
+      items.map((entry) => ({
+        entry,
+        onSelect: entry.owned && entry.card ? () => handleSelect(entry) : undefined,
+      })),
+    [items, handleSelect],
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -54,7 +69,7 @@ export function CollectionPage() {
 
       <CardFilters value={filters} onChange={handleFiltersChange} />
 
-      {error && <ErrorBanner>{error}</ErrorBanner>}
+      {error && <ErrorBanner action={{ label: 'Retry', onClick: refresh }}>{error}</ErrorBanner>}
 
       <div className="flex flex-col gap-4">
         {loading ? (
@@ -69,13 +84,13 @@ export function CollectionPage() {
           // the masking happens server-side, so this screen never has real art
           // to accidentally render for a locked slot.
           <CardGrid>
-            {items.map((entry) =>
+            {tileEntries.map(({ entry, onSelect }) =>
               entry.owned && entry.card ? (
                 <CardTile
                   key={entry.id}
                   card={entry.card}
                   selected={entry.id === selected?.id}
-                  onSelect={() => setSelected(entry)}
+                  onSelect={onSelect}
                 />
               ) : (
                 <LockedCardTile key={entry.id} rarity={entry.rarity} />

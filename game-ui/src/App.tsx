@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -12,18 +12,40 @@ import { CASE_SEEDS, type PlayerRole } from '@card-game/shared-types';
 
 import { AppShell } from '@/components/AppShell';
 import { ToastProvider } from '@/components/Toast';
-import { AdminReview } from '@/features/admin/AdminReview';
-import { GenerationOrders } from '@/features/admin/GenerationOrders';
 import { Login } from '@/features/auth/Login';
 import { Register } from '@/features/auth/Register';
-import { CollectionPage } from '@/features/collection/CollectionPage';
-import { ArchiveNotesPage } from '@/features/archive/ArchiveNotesPage';
-import { OpenArchivePassScreen } from '@/features/archive/OpenArchivePassScreen';
 import type { SessionExpedition } from '@/features/expeditions/sessionExpedition';
-import { Inventory } from '@/features/inventory/Inventory';
 import { Lobby } from '@/features/lobby/Lobby';
-import { OpenCaseScreen } from '@/features/open/OpenCaseScreen';
 import { AuthProvider, useAuth } from '@/lib/authContext';
+
+// These screens are not needed for the initial sign-in/lobby path. Keeping
+// their feature code in route chunks avoids parsing the admin tooling, reel
+// animation and secondary collections before a player asks for them.
+const AdminReview = lazy(async () => ({
+  default: (await import('@/features/admin/AdminReview')).AdminReview,
+}));
+const GenerationOrders = lazy(async () => ({
+  default: (await import('@/features/admin/GenerationOrders')).GenerationOrders,
+}));
+const CollectionPage = lazy(async () => ({
+  default: (await import('@/features/collection/CollectionPage')).CollectionPage,
+}));
+const ArchiveNotesPage = lazy(async () => ({
+  default: (await import('@/features/archive/ArchiveNotesPage')).ArchiveNotesPage,
+}));
+const OpenArchivePassScreen = lazy(async () => ({
+  default: (await import('@/features/archive/OpenArchivePassScreen')).OpenArchivePassScreen,
+}));
+const Inventory = lazy(async () => ({
+  default: (await import('@/features/inventory/Inventory')).Inventory,
+}));
+const OpenCaseScreen = lazy(async () => ({
+  default: (await import('@/features/open/OpenCaseScreen')).OpenCaseScreen,
+}));
+
+function RouteLoading() {
+  return <div className="min-h-screen bg-neutral-950" aria-busy="true" aria-label="Loading screen" />;
+}
 
 /**
  * Gates a route behind an active session and, optionally, a specific role.
@@ -128,81 +150,92 @@ export function AppRoutes() {
   const fullFocus = pathname.startsWith('/open/') || pathname.startsWith('/archive/passes/') || pathname === '/login' || pathname === '/register';
 
   const routes = (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route
-        path="/"
-        element={
-          <RequireAuth>
-            <LobbyRoute
-              completedExpedition={completedExpedition}
-              onStartExpedition={(expedition) => {
-                setActiveExpedition(expedition);
-                setCompletedExpedition(null);
-              }}
-            />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/open/:slug"
-        element={
-          <RequireAuth>
-            <OpenRoute
-              activeExpedition={activeExpedition}
-              onExpeditionComplete={setCompletedExpedition}
-            />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/inventory"
-        element={
-          <RequireAuth>
-            <Inventory />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/collection"
-        element={
-          <RequireAuth>
-            <CollectionPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/archive"
-        element={
-          <RequireAuth>
-            <ArchiveRoute />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/archive/passes/:passId/open"
-        element={
-          <RequireAuth>
-            <ArchivePassRoute />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <RequireAuth role="admin">
-            <AdminReview />
-          </RequireAuth>
-        }
-      />
-      <Route path="/admin/orders" element={<RequireAuth role="admin"><GenerationOrders /></RequireAuth>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<RouteLoading />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <LobbyRoute
+                completedExpedition={completedExpedition}
+                onStartExpedition={(expedition) => {
+                  setActiveExpedition(expedition);
+                  setCompletedExpedition(null);
+                }}
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/open/:slug"
+          element={
+            <RequireAuth>
+              <OpenRoute
+                activeExpedition={activeExpedition}
+                onExpeditionComplete={setCompletedExpedition}
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/inventory"
+          element={
+            <RequireAuth>
+              <Inventory />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/collection"
+          element={
+            <RequireAuth>
+              <CollectionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/archive"
+          element={
+            <RequireAuth>
+              <ArchiveRoute />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/archive/passes/:passId/open"
+          element={
+            <RequireAuth>
+              <ArchivePassRoute />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth role="admin">
+              <AdminReview />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <RequireAuth role="admin">
+              <GenerationOrders />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 
-  if (fullFocus) return <div className="min-h-screen bg-neutral-950">{routes}</div>;
-  return <AppShell>{routes}</AppShell>;
+  // Keep the routing subtree mounted while crossing the full-focus boundary.
+  // Switching wrapper element types here previously remounted Routes in
+  // addition to the ordinary route transition.
+  return <AppShell showNavigation={!fullFocus}>{routes}</AppShell>;
 }
 
 export default function App() {

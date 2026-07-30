@@ -26,6 +26,7 @@ import type {
 
 import { ApiClientError } from './apiError';
 import { clearToken, dispatchLogout, getToken } from './auth';
+import { DATA_CACHE_RESOURCES, invalidateCachedResources } from './dataCache';
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api';
 
@@ -98,6 +99,22 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return parsed as T;
 }
 
+/** Every successful card opening changes these player-scoped read models. */
+function invalidateAfterCardOpening(): void {
+  // Remove both settled and in-flight reads before the route changes, so
+  // Inventory or Collection cannot reuse a pre-open value during the short
+  // cache TTL.
+  invalidateCachedResources(getToken(), [
+    DATA_CACHE_RESOURCES.authMe,
+    DATA_CACHE_RESOURCES.player,
+    DATA_CACHE_RESOURCES.drops,
+    DATA_CACHE_RESOURCES.inventory,
+    DATA_CACHE_RESOURCES.collectionProgress,
+    DATA_CACHE_RESOURCES.collectionCards,
+    DATA_CACHE_RESOURCES.collectionGoal,
+  ]);
+}
+
 function safeJsonParse(text: string): unknown {
   try {
     return JSON.parse(text);
@@ -119,6 +136,9 @@ export function openCase(
     method: 'POST',
     body: body ? JSON.stringify(body) : undefined,
     headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+  }).then((response) => {
+    invalidateAfterCardOpening();
+    return response;
   });
 }
 
@@ -174,6 +194,9 @@ export function openArchivePass(passId: string, idempotencyKey?: string): Promis
   return request<OpenArchivePassResponse>(`/me/archive/passes/${encodeURIComponent(passId)}/open`, {
     method: 'POST',
     headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+  }).then((response) => {
+    invalidateAfterCardOpening();
+    return response;
   });
 }
 

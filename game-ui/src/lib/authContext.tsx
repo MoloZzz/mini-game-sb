@@ -11,6 +11,7 @@ import type { PlayerDto, PlayerRole } from '@card-game/shared-types';
 
 import { getAuthMe, login as apiLogin, register as apiRegister } from './api';
 import { clearToken, decodeClaims, getToken, onLogout, setToken } from './auth';
+import { createDataCacheKey, DATA_CACHE_RESOURCES, getCachedData, loadCachedData } from './dataCache';
 
 export interface AuthApi {
   player: PlayerDto | null;
@@ -61,27 +62,44 @@ function roleFromStoredToken(): PlayerRole | null {
  * turning into a retry loop.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [player, setPlayer] = useState<PlayerDto | null>(null);
+  const storedToken = getToken();
+  const authCacheKey = storedToken
+    ? createDataCacheKey(storedToken, DATA_CACHE_RESOURCES.authMe)
+    : null;
+  const cachedPlayer = authCacheKey ? getCachedData<PlayerDto>(authCacheKey) : undefined;
+  const [player, setPlayer] = useState<PlayerDto | null>(() => cachedPlayer ?? null);
   const [role, setRole] = useState<PlayerRole | null>(() => roleFromStoredToken());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(storedToken) && cachedPlayer === undefined);
 
   const logout = useCallback(() => {
     clearToken();
     setPlayer(null);
     setRole(null);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!getToken()) {
+    const token = getToken();
+    if (!token) {
       setLoading(false);
       return;
     }
 
-    getAuthMe()
+    const cacheKey = createDataCacheKey(token, DATA_CACHE_RESOURCES.authMe);
+    const isCurrentSession = () => getToken() === token;
+    const cached = getCachedData<PlayerDto>(cacheKey);
+    if (cached) {
+      setPlayer(cached);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    loadCachedData(cacheKey, getAuthMe)
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || !isCurrentSession()) return;
         setPlayer(res);
       })
       .catch(() => {
@@ -91,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // unrestored for this load — no retry loop either way.
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && isCurrentSession()) setLoading(false);
       });
 
     return () => {

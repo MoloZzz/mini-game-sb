@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { db, resetDb } from '@/mocks/db';
 import { server } from '@/mocks/server';
+import { clearDataCache } from '@/lib/dataCache';
 
 import { Inventory } from '../Inventory';
 
@@ -29,6 +30,7 @@ beforeAll(() => server.listen());
 afterEach(() => {
   server.resetHandlers();
   resetDb();
+  clearDataCache();
 });
 afterAll(() => server.close());
 

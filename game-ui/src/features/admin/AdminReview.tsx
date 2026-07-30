@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CARD_STATUSES,
   RARITIES,
@@ -80,6 +80,73 @@ interface StatusCounts {
 
 const ZERO_COUNTS: StatusCounts = { draft: 0, approved: 0, rejected: 0, all: 0 };
 
+interface AdminReviewTileProps {
+  card: AdminCardDto;
+  focused: boolean;
+  pending: boolean;
+  onFocus: (id: string) => void;
+  onRefChange: (id: string, element: HTMLDivElement | null) => void;
+}
+
+/**
+ * A review list can grow to hundreds of cards. The parent owns focus, edits
+ * and optimistic state, but a change to any of those must not re-render every
+ * tile. Unchanged card objects stay referentially stable in every update path,
+ * so memoization limits the work to the previous/current focus and the card
+ * being reviewed. content-visibility also lets the browser defer off-screen
+ * paint while preserving the real DOM required by keyboard navigation.
+ */
+const AdminReviewTile = memo(function AdminReviewTile({
+  card,
+  focused,
+  pending,
+  onFocus,
+  onRefChange,
+}: AdminReviewTileProps) {
+  const setRef = useCallback(
+    (element: HTMLDivElement | null) => onRefChange(card.id, element),
+    [card.id, onRefChange],
+  );
+  const focus = useCallback(() => onFocus(card.id), [card.id, onFocus]);
+
+  return (
+    <div
+      ref={setRef}
+      data-testid={`admin-tile-${card.id}`}
+      data-focused={focused ? 'true' : 'false'}
+      data-status={card.status}
+      onClick={focus}
+      className={`flex cursor-pointer flex-col gap-1 rounded-md border-2 bg-neutral-900 p-1.5 transition-opacity ${
+        focused ? 'ring-2 ring-amber-400' : ''
+      } ${pending ? 'opacity-50' : ''}`}
+      style={{
+        borderColor: rarityColor(card.rarity),
+        contentVisibility: 'auto',
+        containIntrinsicSize: '160px',
+      }}
+    >
+      <ImgWithFallback
+        src={card.thumbUrl}
+        alt={card.name}
+        fallbackColor={rarityTint(card.rarity, 'fallback')}
+        className="aspect-square w-full rounded object-cover"
+      />
+      <p className="truncate text-xs font-medium text-neutral-100">{card.name}</p>
+      <span
+        className={`w-fit rounded px-1 text-[10px] font-semibold uppercase ${
+          card.status === 'approved'
+            ? 'bg-emerald-500/20 text-emerald-400'
+            : card.status === 'rejected'
+              ? 'bg-red-500/20 text-red-400'
+              : 'bg-neutral-700 text-neutral-300'
+        }`}
+      >
+        {card.status}
+      </span>
+    </div>
+  );
+});
+
 /**
  * The admin contact sheet (B6). Generation is ~45 minutes for ~283 cards;
  * manual review measures out as *longer than generation itself* (ADR-013),
@@ -105,6 +172,13 @@ export function AdminReview() {
 
   const tileRefs = useRef(new Map<string, HTMLDivElement>());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const registerTileRef = useCallback((id: string, element: HTMLDivElement | null) => {
+    if (element) tileRefs.current.set(id, element);
+    else tileRefs.current.delete(id);
+  }, []);
+  const focusCard = useCallback((id: string) => {
+    setFocusedId(id);
+  }, []);
 
   // --- Loading the grid ----------------------------------------------------
 
@@ -418,46 +492,16 @@ export function AdminReview() {
 
       <div className="flex flex-col gap-4 overflow-visible p-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:overflow-hidden lg:p-4">
         <div className="grid w-full auto-rows-max grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
-          {cards.map((card) => {
-            const isFocused = card.id === focusedId;
-            const isPending = pendingIds.has(card.id);
-            return (
-              <div
-                key={card.id}
-                ref={(el) => {
-                  if (el) tileRefs.current.set(card.id, el);
-                  else tileRefs.current.delete(card.id);
-                }}
-                data-testid={`admin-tile-${card.id}`}
-                data-focused={isFocused ? 'true' : 'false'}
-                data-status={card.status}
-                onClick={() => setFocusedId(card.id)}
-                className={`flex cursor-pointer flex-col gap-1 rounded-md border-2 bg-neutral-900 p-1.5 transition-opacity ${
-                  isFocused ? 'ring-2 ring-amber-400' : ''
-                } ${isPending ? 'opacity-50' : ''}`}
-                style={{ borderColor: rarityColor(card.rarity) }}
-              >
-                <ImgWithFallback
-                  src={card.thumbUrl}
-                  alt={card.name}
-                  fallbackColor={rarityTint(card.rarity, 'fallback')}
-                  className="aspect-square w-full rounded object-cover"
-                />
-                <p className="truncate text-xs font-medium text-neutral-100">{card.name}</p>
-                <span
-                  className={`w-fit rounded px-1 text-[10px] font-semibold uppercase ${
-                    card.status === 'approved'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : card.status === 'rejected'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-neutral-700 text-neutral-300'
-                  }`}
-                >
-                  {card.status}
-                </span>
-              </div>
-            );
-          })}
+          {cards.map((card) => (
+            <AdminReviewTile
+              key={card.id}
+              card={card}
+              focused={card.id === focusedId}
+              pending={pendingIds.has(card.id)}
+              onFocus={focusCard}
+              onRefChange={registerTileRef}
+            />
+          ))}
 
           <div ref={sentinelRef} className="col-span-full h-1" />
 
