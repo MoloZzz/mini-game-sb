@@ -150,6 +150,11 @@ export const GENERATION_ORDER_STATUSES = [
 ] as const;
 export type GenerationOrderStatus = (typeof GENERATION_ORDER_STATUSES)[number];
 
+/**
+ * Candidates are decided independently: `selected` means "this card was
+ * approved", not "this one won". Several candidates of one order may be
+ * `selected`, and the order only closes once none are left undecided.
+ */
 export const GENERATION_CANDIDATE_STATUSES = ['planned', 'generated', 'selected', 'discarded'] as const;
 export type GenerationCandidateStatus = (typeof GENERATION_CANDIDATE_STATUSES)[number];
 
@@ -229,15 +234,6 @@ export interface CompleteGenerationOrderRequest {
     thumbPath: string;
     genMeta: Record<string, unknown>;
   }>;
-}
-
-export interface SelectGenerationOrderCandidateRequest {
-  candidateId: string;
-  name: string;
-  rarity?: Rarity;
-  attack?: number;
-  defense?: number;
-  flavorText?: string | null;
 }
 
 export type AdminListCardsResponse = Paginated<AdminCardDto>;

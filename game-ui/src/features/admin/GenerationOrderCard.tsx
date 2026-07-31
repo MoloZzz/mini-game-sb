@@ -16,8 +16,8 @@ const STATUS_META: Readonly<Record<GenerationOrderStatus, { label: string; tone:
   draft: { label: 'Draft', tone: 'border-neutral-600 text-neutral-300', hint: 'Not queued yet — edit freely.' },
   ready: { label: 'Queued', tone: 'border-amber-500/60 text-amber-300', hint: 'Waiting for the local Forge worker to claim it.' },
   generating: { label: 'Generating', tone: 'border-sky-500/60 text-sky-300', hint: 'Forge is rendering the candidates.' },
-  review: { label: 'Awaiting review', tone: 'border-emerald-500/60 text-emerald-300', hint: 'Pick a winner in Review, or regenerate the whole crop.' },
-  completed: { label: 'Completed', tone: 'border-emerald-600/60 text-emerald-400', hint: 'A candidate was approved and the rest were rejected.' },
+  review: { label: 'Awaiting review', tone: 'border-emerald-500/60 text-emerald-300', hint: 'Approve or reject each candidate in Review — they are independent, so keep as many as you like.' },
+  completed: { label: 'Completed', tone: 'border-emerald-600/60 text-emerald-400', hint: 'Every candidate was decided and at least one was approved.' },
   failed: { label: 'Failed', tone: 'border-red-500/60 text-red-300', hint: 'Retry replays the same seeds; regenerate rolls new ones.' },
   cancelled: { label: 'Cancelled', tone: 'border-neutral-700 text-neutral-500', hint: 'Closed without producing a card.' },
 };
@@ -41,9 +41,22 @@ export interface GenerationOrderCardProps {
 }
 
 function CandidateStrip({ order }: { order: GenerationOrderDto }) {
+  const decided = order.candidates.filter(
+    (candidate) => candidate.status === 'selected' || candidate.status === 'discarded',
+  ).length;
+  const approved = order.candidates.filter((candidate) => candidate.status === 'selected').length;
+  const showTally = order.status === 'review' || order.status === 'completed';
+
   return (
     <div className="mt-4 border-t border-neutral-800 pt-3">
-      <p className="text-xs uppercase tracking-wide text-neutral-500">Candidates</p>
+      <p className="text-xs uppercase tracking-wide text-neutral-500">
+        Candidates
+        {showTally && (
+          <span className="ml-2 normal-case tracking-normal text-neutral-600">
+            {decided}/{order.candidates.length} decided &middot; {approved} approved
+          </span>
+        )}
+      </p>
       <ul className="mt-2 flex flex-wrap gap-3">
         {order.candidates.map((candidate) => (
           <li key={candidate.id} className="w-20 text-center">
@@ -78,8 +91,9 @@ export const GenerationOrderCard = memo(function GenerationOrderCard({
   onCancel,
   onEdit,
 }: GenerationOrderCardProps) {
-  // Cancelling from `review` rejects every generated card, which no button
-  // undoes — so the first click only arms the second.
+  // Cancelling from `review` rejects every card of the crop still sitting in
+  // draft, which no button undoes — so the first click only arms the second.
+  // Candidates already approved are left alone.
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const meta = STATUS_META[order.status];
   const cancellable = order.status === 'draft' || order.status === 'ready' || order.status === 'review';

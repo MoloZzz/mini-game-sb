@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { ARCHETYPE_RARITIES } from '@card-game/shared-types';
-import type { CompleteGenerationOrderRequest, CreateGenerationOrderRequest, ForgeGenerationOrderDto, GenerationOrderDto, GenerationOrderProvenance, GenerationOrdersListResponse, SelectGenerationOrderCandidateRequest, UpdateGenerationOrderRequest } from '@card-game/shared-types';
+import type { CardStatus, CompleteGenerationOrderRequest, CreateGenerationOrderRequest, ForgeGenerationOrderDto, GenerationCandidateStatus, GenerationOrderDto, GenerationOrderProvenance, GenerationOrdersListResponse, UpdateGenerationOrderRequest } from '@card-game/shared-types';
 import { randomBytes, randomInt, randomUUID } from 'crypto';
 import { In } from 'typeorm';
 import type { DataSource, EntityManager } from 'typeorm';
@@ -9,8 +9,15 @@ import { apiError } from '../common/api-error';
 import { CardMapper } from '../cards/card.mapper';
 import { CardEntity, GenerationOrderCandidateEntity, GenerationOrderEntity } from '../entities';
 import { PoolService } from '../collection/pool.service';
-import { autofillStats, slugToName } from './stat-autofill';
+import { slugToName } from './stat-autofill';
 import type { ListGenerationOrdersQueryDto } from './dto/list-generation-orders.query';
+
+/** A card's review verdict, expressed on its candidate row. */
+const CANDIDATE_STATUS_BY_CARD_STATUS: Readonly<Record<CardStatus, GenerationCandidateStatus>> = {
+  draft: 'generated',
+  approved: 'selected',
+  rejected: 'discarded',
+};
 
 @Injectable()
 export class GenerationOrdersService {
@@ -243,33 +250,44 @@ export class GenerationOrdersService {
     return this.get(id);
   }
 
-  async select(id: string, input: SelectGenerationOrderCandidateRequest): Promise<GenerationOrderDto> {
-    await this.dataSource.transaction(async (manager) => {
-      const order = await this.lockOrder(manager, id);
-      this.assertState(order, ['review']);
-      const candidates = await manager.find(GenerationOrderCandidateEntity, { where: { orderId: id } });
-      const selected = candidates.find((candidate) => candidate.id === input.candidateId && candidate.cardId);
-      if (!selected?.cardId) apiError(400, 'GENERATION_CANDIDATE_MISMATCH', 'Selected candidate is not generated for this order');
-      const card = await manager.findOneBy(CardEntity, { id: selected.cardId });
-      if (!card || card.status !== 'draft') apiError(409, 'INVALID_GENERATION_ORDER_STATE', 'Selected card is no longer a draft');
-      const rarity = input.rarity ?? card.rarity;
-      this.assertArchetypeRarity(card.archetype, rarity);
-      card.name = input.name.trim(); card.rarity = rarity; card.flavorText = input.flavorText ?? null;
-      if (input.attack !== undefined) card.attack = input.attack;
-      if (input.defense !== undefined) card.defense = input.defense;
-      if (input.attack === undefined && input.defense === undefined && card.attack === 0 && card.defense === 0) {
-        Object.assign(card, autofillStats(card.rarity));
-      }
-      card.status = 'approved'; await manager.save(card);
-      for (const candidate of candidates) {
-        candidate.status = candidate.id === selected.id ? 'selected' : 'discarded';
-      }
-      await manager.save(candidates);
-      await this.rejectDraftCards(manager, candidates, selected.cardId);
-      order.status = 'completed'; order.completedAt = new Date(); await manager.save(order);
-    });
-    this.poolService.invalidate();
-    return this.get(id);
+  /**
+   * Mirrors an admin's verdict on one generated card onto its candidate row,
+   * inside the caller's transaction so the card and the candidate can never
+   * disagree.
+   *
+   * Candidates are independent. Approving one says nothing about its siblings:
+   * they stay `generated` and reviewable, so an operator who likes three of
+   * four crops keeps all three. The order closes only once every candidate has
+   * been decided and at least one was approved; an order whose crop was
+   * rejected outright stays in `review`, where Regenerate and Cancel live.
+   */
+  async applyCardDecision(manager: EntityManager, card: CardEntity): Promise<void> {
+    // Cards from a plain `forge.py batch` ingest carry no provenance and have
+    // no candidate row — skip the lookup entirely for the common case.
+    if (!card.genMeta?.generationOrder) return;
+    const candidate = await manager.findOneBy(GenerationOrderCandidateEntity, { cardId: card.id });
+    if (!candidate) return;
+
+    candidate.status = CANDIDATE_STATUS_BY_CARD_STATUS[card.status];
+    await manager.save(candidate);
+
+    const order = await this.lockOrder(manager, candidate.orderId);
+    if (order.status !== 'review' && order.status !== 'completed') return;
+    const siblings = await manager.find(GenerationOrderCandidateEntity, { where: { orderId: order.id } });
+    const undecided = siblings.some((row) => row.status === 'planned' || row.status === 'generated');
+    const anyApproved = siblings.some((row) => row.status === 'selected');
+
+    if (!undecided && anyApproved) {
+      order.status = 'completed';
+      order.completedAt ??= new Date();
+    } else {
+      // Also the path back out of `completed`: sending an approved card back to
+      // draft re-opens its order rather than leaving it closed over a candidate
+      // that is undecided again.
+      order.status = 'review';
+      order.completedAt = null;
+    }
+    await manager.save(order);
   }
 
   /**

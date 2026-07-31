@@ -7,6 +7,7 @@ import { throwCardNotFound } from '../common/api-error';
 import { PoolService } from '../collection/pool.service';
 import { CardEntity } from '../entities';
 import type { AdminListCardsQueryDto } from './dto/list-admin-cards.query';
+import { GenerationOrdersService } from './generation-orders.service';
 import { autofillStats, slugToName } from './stat-autofill';
 
 export interface FindAdminCardsResult {
@@ -21,6 +22,7 @@ export class AdminService {
     @InjectRepository(CardEntity)
     private readonly cardsRepository: Repository<CardEntity>,
     private readonly poolService: PoolService,
+    private readonly generationOrdersService: GenerationOrdersService,
   ) {}
 
   /**
@@ -162,6 +164,10 @@ export class AdminService {
       }
 
       await manager.save(CardEntity, card);
+      // A verdict on a card the order workflow produced is also a verdict on
+      // its candidate, and the two must move together or the queue screen
+      // shows a decided card as still awaiting review.
+      if (has('status')) await this.generationOrdersService.applyCardDecision(manager, card);
       return card;
     });
 

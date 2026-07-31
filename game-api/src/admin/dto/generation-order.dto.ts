@@ -1,5 +1,5 @@
 import { ARCHETYPES, ELEMENTS, RARITIES } from '@card-game/shared-types';
-import type { Archetype, CompleteGenerationOrderRequest, CreateGenerationOrderRequest, Element, Rarity, SelectGenerationOrderCandidateRequest, UpdateGenerationOrderRequest } from '@card-game/shared-types';
+import type { Archetype, CompleteGenerationOrderRequest, CreateGenerationOrderRequest, Element, Rarity, UpdateGenerationOrderRequest } from '@card-game/shared-types';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateIf, ValidateNested } from 'class-validator';
 
@@ -40,13 +40,4 @@ export class FailGenerationOrderDto {
   @IsUUID() runId!: string;
   @IsString() @IsNotEmpty() @MaxLength(64) code!: string;
   @IsOptional() @IsString() @MaxLength(500) detail?: string;
-}
-
-export class SelectGenerationOrderCandidateDto implements SelectGenerationOrderCandidateRequest {
-  @IsUUID() candidateId!: string;
-  @IsString() @IsNotEmpty() @MaxLength(120) name!: string;
-  @IsOptional() @IsIn(RARITIES) rarity?: Rarity;
-  @IsOptional() @IsInt() @Min(0) @Max(99) attack?: number;
-  @IsOptional() @IsInt() @Min(0) @Max(99) defense?: number;
-  @IsOptional() @IsString() @MaxLength(2000) flavorText?: string | null;
 }

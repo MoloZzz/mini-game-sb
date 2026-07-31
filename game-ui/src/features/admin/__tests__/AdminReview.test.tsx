@@ -118,6 +118,59 @@ describe('AdminReview', () => {
     expect(screen.getByTestId('admin-tile-draft-1')).toHaveAttribute('data-status', 'draft');
   });
 
+  // Approving a candidate used to POST /select, which rejected every sibling
+  // server-side and swept the whole order out of the grid — so a crop of four
+  // could only ever yield one card.
+  it('approves one candidate of a generation order and leaves its siblings reviewable', async () => {
+    const seeded = db.generationOrders.find((order) => order.id === 'mock-order-review')!;
+    const [firstCardId, ...siblingCardIds] = seeded.candidates.map((candidate) => candidate.cardId!);
+
+    render(<AdminReview />);
+    await screen.findByTestId(`admin-tile-${firstCardId}`);
+    await userEvent.click(screen.getByTestId(`admin-tile-${firstCardId}`));
+    await waitFor(() => {
+      expect(screen.getByTestId(`admin-tile-${firstCardId}`)).toHaveAttribute('data-focused', 'true');
+    });
+
+    await userEvent.keyboard('a');
+
+    await waitFor(() => {
+      expect(screen.getByTestId(`admin-tile-${firstCardId}`)).toHaveAttribute('data-status', 'approved');
+    });
+    for (const cardId of siblingCardIds) {
+      expect(screen.getByTestId(`admin-tile-${cardId}`)).toHaveAttribute('data-status', 'draft');
+    }
+    await waitFor(() => {
+      const order = db.generationOrders.find((row) => row.id === 'mock-order-review')!;
+      expect(order.candidates.map((candidate) => candidate.status)).toEqual([
+        'selected', 'generated', 'generated', 'generated',
+      ]);
+      // Still open — three candidates are undecided.
+      expect(order.status).toBe('review');
+    });
+  });
+
+  it('approves two candidates of the same generation order', async () => {
+    const seeded = db.generationOrders.find((order) => order.id === 'mock-order-review')!;
+    const [firstCardId, secondCardId] = seeded.candidates.map((candidate) => candidate.cardId!);
+
+    render(<AdminReview />);
+    await screen.findByTestId(`admin-tile-${firstCardId}`);
+    await userEvent.click(screen.getByTestId(`admin-tile-${firstCardId}`));
+    await waitFor(() => {
+      expect(screen.getByTestId(`admin-tile-${firstCardId}`)).toHaveAttribute('data-focused', 'true');
+    });
+
+    // `a` approves and advances, so the second press lands on the next crop.
+    await userEvent.keyboard('aa');
+
+    await waitFor(() => {
+      const order = db.generationOrders.find((row) => row.id === 'mock-order-review')!;
+      expect(order.candidates.slice(0, 2).map((candidate) => candidate.status)).toEqual(['selected', 'selected']);
+    });
+    expect(screen.getByTestId(`admin-tile-${secondCardId}`)).toHaveAttribute('data-status', 'approved');
+  });
+
   it('rolls back the optimistic update and surfaces an error when the PATCH fails', async () => {
     server.use(
       // The optimistic update and its rollback are both asserted below; a

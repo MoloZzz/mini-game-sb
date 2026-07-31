@@ -7,7 +7,7 @@ import {
   type ReviewCardRequest,
 } from '@card-game/shared-types';
 
-import { getAdminCards, reviewCard, selectGenerationOrderCandidate } from '@/lib/api';
+import { getAdminCards, reviewCard } from '@/lib/api';
 import { ApiClientError, isApiErrorCode, USER_MESSAGES } from '@/lib/apiError';
 
 import { CardReviewPanel } from './CardReviewPanel';
@@ -44,11 +44,6 @@ function editsFromCard(card: AdminCardDto): ReviewCardRequest {
     defense: card.defense,
     flavorText: card.flavorText,
   };
-}
-
-/** Null for a plain `forge.py batch` ingest; set only on cards an order produced. */
-function generationOrderId(card: AdminCardDto): string | null {
-  return card.genMeta.generationOrder?.orderId ?? null;
 }
 
 function hasSeenCheatSheet(): boolean {
@@ -350,23 +345,12 @@ export function AdminReview() {
       goNext();
 
       try {
-        const provenance = original.genMeta.generationOrder;
-        const orderId = status === 'approved' ? generationOrderId(original) : null;
-        if (orderId && provenance) {
-          await selectGenerationOrderCandidate(orderId, {
-            candidateId: provenance.candidateId,
-            name: body.name ?? original.name,
-            rarity: body.rarity,
-            attack: body.attack,
-            defense: body.defense,
-            flavorText: body.flavorText,
-          });
-          // Choosing one candidate atomically rejects its siblings server-side.
-          setCards((prev) => prev.filter((card) => generationOrderId(card) !== orderId));
-        } else {
-          const updated = await reviewCard(original.id, body);
-          setCards((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        }
+        // One card, one verdict — including cards a generation order produced.
+        // Approving one of those used to close the whole order and sweep its
+        // siblings out of the grid, so a crop with three good candidates could
+        // only ever yield one card.
+        const updated = await reviewCard(original.id, body);
+        setCards((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
         void refreshCounts();
       } catch (err) {
         // Roll back exactly this card, not the whole list — other

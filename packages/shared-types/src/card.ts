@@ -73,9 +73,9 @@ export interface CardDto {
 
 /**
  * Which generation order a card came out of. Present only on cards produced by
- * the admin order workflow, never on a plain `forge.py batch` ingest — that is
- * exactly what `AdminReview` keys off to decide between `reviewCard` and
- * `selectGenerationOrderCandidate`.
+ * the admin order workflow, never on a plain `forge.py batch` ingest. Reviewing
+ * such a card mirrors the verdict onto its candidate row, which is how an order
+ * learns that one of its candidates has been decided.
  */
 export interface GenerationOrderProvenance {
   orderId: string;

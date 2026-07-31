@@ -218,12 +218,24 @@ function buildDataSource(store: FakeStore) {
 function buildService() {
   const store = new FakeStore();
   const invalidate = jest.fn();
-  const service = new GenerationOrdersService(
-    buildDataSource(store) as never,
-    { invalidate } as never,
-    cardMapper as never,
-  );
-  return { service, store, invalidate };
+  const dataSource = buildDataSource(store);
+  const service = new GenerationOrdersService(dataSource as never, { invalidate } as never, cardMapper as never);
+  return { service, store, invalidate, manager: dataSource.manager };
+}
+
+/**
+ * Stands in for `AdminService.update`: write the card's new status, then hand
+ * the card to the order service inside the same manager, exactly as the review
+ * transaction does.
+ */
+async function decide(
+  service: GenerationOrdersService,
+  manager: ReturnType<typeof buildManager>,
+  card: Row,
+  status: 'draft' | 'approved' | 'rejected',
+): Promise<void> {
+  card.status = status;
+  await service.applyCardDecision(manager as never, card as never);
 }
 
 /** Walks an order through claim + complete so it lands in `review` with real cards. */
@@ -328,20 +340,83 @@ describe('GenerationOrdersService state machine', () => {
     })).rejects.toMatchObject({ status: 400 });
   });
 
-  it('approves the selected candidate and rejects its siblings', async () => {
-    const { service, store } = buildService();
+  it('approves one candidate without deciding anything about its siblings', async () => {
+    const { service, store, manager } = buildService();
     const { orderId } = await seedReviewOrder(service, store);
-    const review = await service.get(orderId);
 
-    const completed = await service.select(orderId, {
-      candidateId: review.candidates[0]!.id, name: 'Ember Drake', rarity: 'legendary',
-    });
+    await decide(service, manager, store.cards[0]!, 'approved');
 
-    expect(completed.status).toBe('completed');
-    expect(completed.candidates.map((candidate) => candidate.status)).toEqual(['selected', 'discarded']);
-    const cards = store.cards.map((card) => card.status);
-    expect(cards.filter((status) => status === 'approved')).toHaveLength(1);
-    expect(cards.filter((status) => status === 'rejected')).toHaveLength(1);
+    const order = await service.get(orderId);
+    expect(order.status).toBe('review');
+    expect(order.candidates.map((candidate) => candidate.status)).toEqual(['selected', 'generated']);
+    // The whole point: the second crop is still a reviewable draft, so an
+    // operator who likes both can approve both.
+    expect(store.cards[1]!.status).toBe('draft');
+  });
+
+  it('approves several candidates of the same order', async () => {
+    const { service, store, manager } = buildService();
+    const { orderId } = await seedReviewOrder(service, store);
+
+    await decide(service, manager, store.cards[0]!, 'approved');
+    await decide(service, manager, store.cards[1]!, 'approved');
+
+    const order = await service.get(orderId);
+    expect(order.candidates.map((candidate) => candidate.status)).toEqual(['selected', 'selected']);
+    expect(store.cards.every((card) => card.status === 'approved')).toBe(true);
+    expect(order.status).toBe('completed');
+  });
+
+  it('closes the order only once every candidate has been decided', async () => {
+    const { service, store, manager } = buildService();
+    const { orderId } = await seedReviewOrder(service, store);
+
+    await decide(service, manager, store.cards[0]!, 'approved');
+    expect((await service.get(orderId)).status).toBe('review');
+
+    await decide(service, manager, store.cards[1]!, 'rejected');
+
+    const order = await service.get(orderId);
+    expect(order.status).toBe('completed');
+    expect(order.completedAt).not.toBeNull();
+    expect(order.candidates.map((candidate) => candidate.status)).toEqual(['selected', 'discarded']);
+  });
+
+  it('leaves an order whose whole crop was rejected in review', async () => {
+    const { service, store, manager } = buildService();
+    const { orderId } = await seedReviewOrder(service, store);
+
+    await decide(service, manager, store.cards[0]!, 'rejected');
+    await decide(service, manager, store.cards[1]!, 'rejected');
+
+    // Not `completed` — nothing was produced, and regenerate/cancel both
+    // require `review`, so closing it here would strand the order.
+    const order = await service.get(orderId);
+    expect(order.status).toBe('review');
+    expect(order.completedAt).toBeNull();
+    await expect(service.regenerate(orderId)).resolves.toMatchObject({ status: 'ready' });
+  });
+
+  it('re-opens a completed order when an approved card is sent back to draft', async () => {
+    const { service, store, manager } = buildService();
+    const { orderId } = await seedReviewOrder(service, store);
+    await decide(service, manager, store.cards[0]!, 'approved');
+    await decide(service, manager, store.cards[1]!, 'rejected');
+
+    await decide(service, manager, store.cards[0]!, 'draft');
+
+    const order = await service.get(orderId);
+    expect(order.status).toBe('review');
+    expect(order.completedAt).toBeNull();
+    expect(order.candidates[0]!.status).toBe('generated');
+  });
+
+  it('ignores a card that no generation order produced', async () => {
+    const { service, manager } = buildService();
+
+    await expect(
+      service.applyCardDecision(manager as never, { id: 'card-x', status: 'approved', genMeta: {} } as never),
+    ).resolves.toBeUndefined();
   });
 
   it('cancels from review and rejects every card the crop produced', async () => {

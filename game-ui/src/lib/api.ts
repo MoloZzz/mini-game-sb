@@ -22,7 +22,6 @@ import type {
   GenerationOrderDto,
   GenerationOrderStatus,
   GenerationOrdersListResponse,
-  SelectGenerationOrderCandidateRequest,
   SellCardResponse,
   UpdateGenerationOrderRequest,
 } from '@card-game/shared-types';
@@ -274,14 +273,9 @@ export function cancelGenerationOrder(id: string): Promise<GenerationOrderDto> {
   return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
 }
 
-export function selectGenerationOrderCandidate(
-  orderId: string,
-  body: SelectGenerationOrderCandidateRequest,
-): Promise<GenerationOrderDto> {
-  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(orderId)}/select`, {
-    method: 'POST', body: JSON.stringify(body),
-  });
-}
+// Approving or rejecting a candidate is a plain `reviewCard` call: the API
+// mirrors the verdict onto the candidate row, so candidates of one order are
+// reviewed independently rather than one of them winning and closing the rest.
 
 // --- Auth ---
 //

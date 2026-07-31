@@ -6,7 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { ServiceTokenGuard } from '../auth/guards/service-token.guard';
 import { ForgeServiceTokenGuard } from '../auth/guards/forge-service-token.guard';
 import type { CurrentPlayerPayload } from '../auth/types';
-import { CompleteGenerationOrderDto, CreateGenerationOrderDto, FailGenerationOrderDto, SelectGenerationOrderCandidateDto, UpdateGenerationOrderDto } from './dto/generation-order.dto';
+import { CompleteGenerationOrderDto, CreateGenerationOrderDto, FailGenerationOrderDto, UpdateGenerationOrderDto } from './dto/generation-order.dto';
 import { ListGenerationOrdersQueryDto } from './dto/list-generation-orders.query';
 import { GenerationOrdersService } from './generation-orders.service';
 
@@ -39,10 +39,10 @@ export class GenerationOrdersController {
   /** Throws the current candidate crop away and queues a fresh one with new seeds. */
   @Post(':id/regenerate')
   regenerate(@Param('id', ParseUUIDPipe) id: string): Promise<GenerationOrderDto> { return this.generationOrdersService.regenerate(id); }
-  @Post(':id/select')
-  select(@Param('id', ParseUUIDPipe) id: string, @Body() body: SelectGenerationOrderCandidateDto): Promise<GenerationOrderDto> {
-    return this.generationOrdersService.select(id, body);
-  }
+  // No `select` route: candidates are approved and rejected one at a time
+  // through `PATCH /admin/cards/:id`, which mirrors the verdict onto the
+  // candidate row. A single endpoint that picked one winner and rejected the
+  // rest is what made approving two crops of the same order impossible.
 
   /** Leases the oldest queued order to the local Forge worker, if one exists. */
   @Public() @Roles() @UseGuards(ForgeServiceTokenGuard) @Post('claim-next') @HttpCode(200)

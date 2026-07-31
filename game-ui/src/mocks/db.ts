@@ -200,15 +200,13 @@ const ADMIN_PLAYER_ID = 'mock-admin-1';
  * Forge worker that mock mode does not have.
  *
  * The `review` order's candidates point at real seeded draft cards and stamp
- * provenance into their `genMeta`, which is what makes `AdminReview` route
- * their approval through `selectGenerationOrderCandidate` exactly as it does
- * against the live API.
+ * provenance into their `genMeta`, so reviewing one of them moves its candidate
+ * row exactly as it does against the live API — and leaves its siblings alone.
  */
 function seedGenerationOrders(adminCards: AdminCardDto[]): GenerationOrderDto[] {
-  // Taken from the middle of the draft pool, not the front: approving a card
-  // with order provenance routes through `selectGenerationOrderCandidate`
-  // instead of `reviewCard`, and the review screen's own specs drive the
-  // first couple of tiles.
+  // Taken from the middle of the draft pool, not the front: reviewing a card
+  // with order provenance also mutates its order, and the review screen's own
+  // specs drive the first couple of tiles.
   const reviewCards = adminCards.slice(10, 14);
 
   function candidates(

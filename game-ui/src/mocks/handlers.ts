@@ -36,6 +36,7 @@ import {
   type DropHistoryItemDto,
   type Element,
   type EmptyPoolError,
+  type GenerationCandidateStatus,
   type GenerationOrderCandidateDto,
   type GenerationOrderDto,
   type GenerationOrderStatus,
@@ -52,7 +53,6 @@ import {
   type Rarity,
   type RarityWeights,
   type ReviewCardRequest,
-  type SelectGenerationOrderCandidateRequest,
   type SellCardResponse,
   type UpdateGenerationOrderRequest,
 } from '@card-game/shared-types';
@@ -684,6 +684,12 @@ const getAdminCardsHandlers = mirror('/admin/cards', (url) =>
 
 // --- PATCH /admin/cards/:id ---------------------------------------------------------
 
+const CANDIDATE_STATUS_BY_CARD_STATUS: Readonly<Record<CardStatus, GenerationCandidateStatus>> = {
+  draft: 'generated',
+  approved: 'selected',
+  rejected: 'discarded',
+};
+
 const reviewCardHandlers = mirror('/admin/cards/:id', (url) =>
   http.patch(url, async ({ params, request }) => {
     const id = requirePathParam(params.id, 'id');
@@ -701,10 +707,37 @@ const reviewCardHandlers = mirror('/admin/cards/:id', (url) =>
     if (body.attack !== undefined) card.attack = body.attack;
     if (body.defense !== undefined) card.defense = body.defense;
     if (body.flavorText !== undefined) card.flavorText = body.flavorText;
+    if (body.status !== undefined) applyCardDecision(card);
 
     return HttpResponse.json(card);
   }),
 );
+
+/**
+ * Mirrors `GenerationOrdersService.applyCardDecision`. Candidates are decided
+ * one at a time and never touch each other; the order closes only once none
+ * are left undecided and at least one was approved.
+ */
+function applyCardDecision(card: AdminCardDto): void {
+  if (!card.genMeta.generationOrder) return;
+  const order = db.generationOrders.find((row) => row.id === card.genMeta.generationOrder!.orderId);
+  const candidate = order?.candidates.find((row) => row.cardId === card.id);
+  if (!order || !candidate) return;
+
+  candidate.status = CANDIDATE_STATUS_BY_CARD_STATUS[card.status];
+  candidate.cardName = card.name;
+  if (order.status !== 'review' && order.status !== 'completed') return;
+
+  const undecided = order.candidates.some((row) => row.status === 'planned' || row.status === 'generated');
+  const anyApproved = order.candidates.some((row) => row.status === 'selected');
+  if (!undecided && anyApproved) {
+    order.status = 'completed';
+    order.completedAt ??= new Date().toISOString();
+  } else {
+    order.status = 'review';
+    order.completedAt = null;
+  }
+}
 
 // --- /admin/generation-orders -------------------------------------------------
 //
@@ -755,9 +788,9 @@ function slugifyTitle(title: string): string {
 }
 
 /** Mirrors `rejectDraftCards`: only a card still in `draft` may be flipped. */
-function rejectOrderDraftCards(order: GenerationOrderDto, keepCardId?: string | null): void {
+function rejectOrderDraftCards(order: GenerationOrderDto): void {
   for (const candidate of order.candidates) {
-    if (!candidate.cardId || candidate.cardId === keepCardId) continue;
+    if (!candidate.cardId) continue;
     const card = db.adminCards.find((c) => c.id === candidate.cardId);
     if (card?.status === 'draft') card.status = 'rejected';
   }
@@ -900,42 +933,6 @@ const regenerateGenerationOrderHandlers = mirror('/admin/generation-orders/:id/r
   }),
 );
 
-const selectGenerationOrderCandidateHandlers = mirror('/admin/generation-orders/:id/select', (url) =>
-  http.post(url, async ({ params, request }) => {
-    const id = requirePathParam(params.id, 'id');
-    const order = findOrder(id);
-    if (!order) return orderNotFound(id);
-    if (order.status !== 'review') return wrongOrderState(order, ['review']);
-
-    const body = (await request.json()) as SelectGenerationOrderCandidateRequest;
-    const selected = order.candidates.find((candidate) => candidate.id === body.candidateId);
-    if (!selected?.cardId) {
-      return HttpResponse.json(
-        apiError('GENERATION_CANDIDATE_MISMATCH', 'Selected candidate is not generated for this order'),
-        { status: 400 },
-      );
-    }
-
-    const card = db.adminCards.find((c) => c.id === selected.cardId);
-    if (card) {
-      card.name = body.name.trim();
-      if (body.rarity !== undefined) card.rarity = body.rarity;
-      if (body.attack !== undefined) card.attack = body.attack;
-      if (body.defense !== undefined) card.defense = body.defense;
-      card.flavorText = body.flavorText ?? null;
-      card.status = 'approved';
-    }
-    rejectOrderDraftCards(order, selected.cardId);
-    order.candidates = order.candidates.map((candidate) => ({
-      ...candidate,
-      status: candidate.id === selected.id ? 'selected' : 'discarded',
-      cardName: candidate.id === selected.id ? body.name.trim() : candidate.cardName,
-    }));
-    order.status = 'completed';
-    order.completedAt = new Date().toISOString();
-    return HttpResponse.json(order);
-  }),
-);
 
 // --- Auth: POST /auth/register, POST /auth/login, GET /auth/me -----------------
 //
@@ -1097,7 +1094,6 @@ export const handlers: HttpHandler[] = [
   ...retryGenerationOrderHandlers,
   ...cancelGenerationOrderHandlers,
   ...regenerateGenerationOrderHandlers,
-  ...selectGenerationOrderCandidateHandlers,
   ...registerHandlers,
   ...loginHandlers,
   ...authMeHandlers,

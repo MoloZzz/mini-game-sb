@@ -32,7 +32,6 @@
 | POST | `/api/admin/generation-orders/:id/queue` | `game-api/src/admin/generation-orders.controller.ts` → `queue` |
 | POST | `/api/admin/generation-orders/:id/regenerate` | `game-api/src/admin/generation-orders.controller.ts` → `regenerate` |
 | POST | `/api/admin/generation-orders/:id/retry` | `game-api/src/admin/generation-orders.controller.ts` → `retry` |
-| POST | `/api/admin/generation-orders/:id/select` | `game-api/src/admin/generation-orders.controller.ts` → `select` |
 | POST | `/api/admin/generation-orders/claim-next` | `game-api/src/admin/generation-orders.controller.ts` → `claimNext` |
 | POST | `/api/admin/generation-orders` | `game-api/src/admin/generation-orders.controller.ts` → `create` |
 | POST | `/api/auth/login` | `game-api/src/auth/auth.controller.ts` → `login` |
