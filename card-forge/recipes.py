@@ -19,7 +19,7 @@ ARCHETYPES = (
     "beast", "humanoid", "undead", "construct", "spirit",
     "dragon", "slime", "sword", "potion", "crystal",
 )
-ELEMENTS = ("fire", "water", "earth", "air", "shadow", "light")
+ELEMENTS = ("fire", "water", "earth", "air", "shadow", "light", "luna")
 RARITIES = ("common", "uncommon", "rare", "epic", "legendary", "mythic")
 
 # `sword`, `potion`, `crystal` are OBJECTS, not creatures - they get a second

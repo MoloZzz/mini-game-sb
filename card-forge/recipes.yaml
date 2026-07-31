@@ -108,6 +108,7 @@ elements:
   air: "swirling wind and storm clouds, crackling lightning"
   shadow: "shrouded in dark purple void mist, sinister glow"
   light: "radiant golden holy light, halo, divine glow"
+  luna: "bathed in ethereal moonlight, silver and pale blue glow, celestial shimmer"
 
 # Element fragments for the OBJECT archetypes (sword/potion/crystal) ONLY.
 # `elements` above stays untouched for the creature archetypes - those 283
@@ -143,6 +144,7 @@ object_elements:
   air: "engraved with cloud and feather motifs, silvery shimmer, blue-white sheen"
   shadow: "dark purple void mist clinging to the surface, sinister glow"
   light: "engraved with radiant sunburst patterns, golden holy glow, divine shimmer"
+  luna: "surface bathed in ethereal moonlight, engraved with lunar crescents, silvery pale glow"
 
 rarities:
   common:

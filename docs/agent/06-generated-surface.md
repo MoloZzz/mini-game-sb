@@ -71,6 +71,7 @@
 - `game-api/src/migrations/1785300000000-AddCaseSetScope.ts`
 - `game-api/src/migrations/1785400000000-AddArchiveDossiers.ts`
 - `game-api/src/migrations/1785500000000-AddGenerationOrders.ts`
+- `game-api/src/migrations/1785600000000-AddLunaElement.ts`
 
 ## Shared-type source modules
 

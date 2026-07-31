@@ -1,7 +1,7 @@
 import type { Rarity } from './rarity.js';
 
 
-export const ELEMENTS = ['fire', 'water', 'earth', 'air', 'shadow', 'light'] as const;
+export const ELEMENTS = ['fire', 'water', 'earth', 'air', 'shadow', 'light', 'luna'] as const;
 export type Element = (typeof ELEMENTS)[number];
 
 /**
