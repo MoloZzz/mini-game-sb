@@ -14,7 +14,7 @@
 | `POST /me/daily-bonus`, `GET /me/drops`, `GET /me/collection`, `GET /me/milestones` | authenticated | inventory/collection/milestones |
 | `GET/PATCH /admin/cards` | admin JWT | admin |
 | `POST /admin/cards/ingest` | admin JWT or `X-Service-Token` | admin/forge |
-| `GET/POST /admin/generation-orders`, queue/retry/select | admin JWT | generation-order workflow |
+| `GET/POST /admin/generation-orders`, queue/retry/regenerate/cancel/select | admin JWT | generation-order workflow |
 | `POST /admin/generation-orders/:id/claim|complete|fail` | admin JWT or `X-Service-Token` | offline forge |
 
 Request validation is global (`whitelist`, transformed DTOs). Controllers must return shared DTOs through `CardMapper`; asset paths become static URLs there. Keep error codes in `packages/shared-types/src/api.ts` in sync with throw sites and UI handling. `LoggingInterceptor` (`game-api/src/common/logging.interceptor.ts`, registered as a global `APP_INTERCEPTOR` in `app.module.ts`) logs one line per request — method, path, status, duration, player id when authenticated — via the Nest `Logger` under the `HTTP` context.

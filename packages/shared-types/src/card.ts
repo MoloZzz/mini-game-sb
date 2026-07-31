@@ -71,6 +71,18 @@ export interface CardDto {
   thumbUrl: string;
 }
 
+/**
+ * Which generation order a card came out of. Present only on cards produced by
+ * the admin order workflow, never on a plain `forge.py batch` ingest — that is
+ * exactly what `AdminReview` keys off to decide between `reviewCard` and
+ * `selectGenerationOrderCandidate`.
+ */
+export interface GenerationOrderProvenance {
+  orderId: string;
+  candidateId: string;
+  promptTemplateVersion: 'card-v1';
+}
+
 /** Everything about how a card was generated. Stored as jsonb, dev-only in the API. */
 export interface GenMeta {
   model: string;
@@ -84,6 +96,7 @@ export interface GenMeta {
   height: number;
   recipeId: string;
   generatedAt: string;
+  generationOrder?: GenerationOrderProvenance;
   [key: string]: unknown;
 }
 

@@ -160,6 +160,10 @@ export interface GenerationOrderCandidateDto {
   seed: string;
   status: GenerationCandidateStatus;
   cardId: string | null;
+  /** Absolute thumbnail URL of the generated card, or null while still `planned`. */
+  thumbUrl: string | null;
+  /** Name of the generated card, or null while still `planned`. */
+  cardName: string | null;
 }
 
 export interface GenerationOrderDto {
@@ -179,8 +183,11 @@ export interface GenerationOrderDto {
   generatedAt: string | null;
   completedAt: string | null;
   failureCode: string | null;
+  failureDetail: string | null;
   candidates: GenerationOrderCandidateDto[];
 }
+
+export type GenerationOrdersListResponse = Paginated<GenerationOrderDto>;
 
 export interface CreateGenerationOrderRequest {
   title: string;

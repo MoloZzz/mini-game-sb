@@ -1,39 +1,56 @@
-import { memo, useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ARCHETYPES,
-  ARCHETYPE_RARITIES,
-  ELEMENTS,
-  type Archetype,
-  type CreateGenerationOrderRequest,
-  type Element,
+  GENERATION_ORDER_STATUSES,
   type GenerationOrderDto,
-  type Rarity,
+  type GenerationOrderStatus,
 } from '@card-game/shared-types';
 
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/ui/Chip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { Modal } from '@/components/ui/Modal';
+import { Pagination } from '@/components/ui/Pagination';
 import { Panel } from '@/components/ui/Panel';
 import {
+  cancelGenerationOrder,
   createGenerationOrder,
   getGenerationOrders,
   queueGenerationOrder,
+  regenerateGenerationOrder,
   retryGenerationOrder,
+  updateGenerationOrder,
 } from '@/lib/api';
 import { ApiClientError } from '@/lib/apiError';
 
-const NONE = '__none__';
-const initial: CreateGenerationOrderRequest = {
-  title: '',
-  brief: '',
-  archetype: 'beast',
-  element: null,
-  suggestedRarity: 'common',
-  candidateCount: 4,
-  setId: null,
-};
+import { GenerationOrderCard } from './GenerationOrderCard';
+import {
+  EMPTY_ORDER_FORM,
+  GenerationOrderForm,
+  orderToFormValue,
+  type GenerationOrderFormValue,
+} from './GenerationOrderForm';
+
+const PAGE_SIZE = 20;
+const ALL = 'all';
+type StatusFilter = GenerationOrderStatus | typeof ALL;
 
 function messageFor(error: unknown, fallback: string): string {
   return error instanceof ApiClientError ? error.message : fallback;
+}
+
+function sameCandidates(left: GenerationOrderDto, right: GenerationOrderDto): boolean {
+  return left.candidates.every((candidate, index) => {
+    const other = right.candidates[index]!;
+    return candidate.id === other.id &&
+      candidate.index === other.index &&
+      candidate.slug === other.slug &&
+      candidate.seed === other.seed &&
+      candidate.status === other.status &&
+      candidate.cardId === other.cardId &&
+      candidate.thumbUrl === other.thumbUrl &&
+      candidate.cardName === other.cardName;
+  });
 }
 
 function sameOrder(left: GenerationOrderDto, right: GenerationOrderDto): boolean {
@@ -54,22 +71,20 @@ function sameOrder(left: GenerationOrderDto, right: GenerationOrderDto): boolean
     left.generatedAt !== right.generatedAt ||
     left.completedAt !== right.completedAt ||
     left.failureCode !== right.failureCode ||
+    left.failureDetail !== right.failureDetail ||
     left.candidates.length !== right.candidates.length
   ) {
     return false;
   }
 
-  return left.candidates.every((candidate, index) => {
-    const other = right.candidates[index]!;
-    return candidate.id === other.id &&
-      candidate.index === other.index &&
-      candidate.slug === other.slug &&
-      candidate.seed === other.seed &&
-      candidate.status === other.status &&
-      candidate.cardId === other.cardId;
-  });
+  return sameCandidates(left, right);
 }
 
+/**
+ * A poll every five seconds must not re-render every row. Returns the previous
+ * array when nothing changed, and otherwise reuses the previous object for each
+ * order that is individually unchanged, so `GenerationOrderCard`'s memo holds.
+ */
 export function reconcileGenerationOrders(
   previous: GenerationOrderDto[],
   next: GenerationOrderDto[],
@@ -85,50 +100,19 @@ export function reconcileGenerationOrders(
   });
 }
 
-interface GenerationOrderRowProps {
-  order: GenerationOrderDto;
-  onQueue: (id: string) => Promise<void>;
-  onRetry: (id: string) => Promise<void>;
-}
-
-const GenerationOrderRow = memo(function GenerationOrderRow({
-  order,
-  onQueue,
-  onRetry,
-}: GenerationOrderRowProps) {
-  return (
-    <Panel className="flex w-full flex-wrap items-start gap-4 overflow-hidden p-4">
-      <div className="min-w-0 flex-1">
-        <p className="break-words font-medium">{order.title}</p>
-        <p className="break-words text-sm text-neutral-400">{order.brief}</p>
-        <p className="mt-1 break-words text-xs text-neutral-500">
-          {order.status} &middot; {order.candidateCount} candidates &middot; {order.suggestedRarity}{' '}
-          {order.archetype}
-        </p>
-      </div>
-      {order.status === 'draft' && (
-        <Button size="sm" onClick={() => void onQueue(order.id)}>
-          Queue for Forge
-        </Button>
-      )}
-      {order.status === 'failed' && (
-        <Button size="sm" onClick={() => void onRetry(order.id)}>
-          Retry with Forge
-        </Button>
-      )}
-      {order.status === 'ready' && <span className="text-sm text-amber-300">Waiting for local Forge worker</span>}
-      {order.status === 'generating' && <span className="text-sm text-sky-300">Generating candidates&hellip;</span>}
-      {order.status === 'review' && <span className="text-sm text-emerald-300">Review candidates in Review</span>}
-    </Panel>
-  );
-});
-
-/** Small operator-facing work queue; the local Forge worker processes ready orders. */
+/** Operator-facing work queue; the local Forge worker processes queued orders. */
 export function GenerationOrders() {
-  const [form, setForm] = useState<CreateGenerationOrderRequest>(initial);
+  const [form, setForm] = useState<GenerationOrderFormValue>(EMPTY_ORDER_FORM);
   const [orders, setOrders] = useState<GenerationOrderDto[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<StatusFilter>(ALL);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [editing, setEditing] = useState<GenerationOrderDto | null>(null);
+  const [editForm, setEditForm] = useState<GenerationOrderFormValue>(EMPTY_ORDER_FORM);
   const latestLoadRef = useRef(0);
 
   const invalidatePendingLoads = useCallback(() => {
@@ -139,13 +123,20 @@ export function GenerationOrders() {
     const loadId = latestLoadRef.current + 1;
     latestLoadRef.current = loadId;
     try {
-      const next = await getGenerationOrders();
+      const next = await getGenerationOrders({
+        status: status === ALL ? undefined : status,
+        page,
+        limit: PAGE_SIZE,
+      });
       if (latestLoadRef.current !== loadId) return;
-      setOrders((previous) => reconcileGenerationOrders(previous, next));
+      setOrders((previous) => reconcileGenerationOrders(previous, next.items));
+      setTotal(next.total);
     } catch {
       if (latestLoadRef.current === loadId) setError('Could not load generation orders.');
+    } finally {
+      if (latestLoadRef.current === loadId) setLoading(false);
     }
-  }, []);
+  }, [page, status]);
 
   useEffect(() => {
     let refreshId: number | undefined;
@@ -165,15 +156,21 @@ export function GenerationOrders() {
     };
     const startPolling = () => {
       if (document.hidden || refreshId !== undefined) return;
-      poll();
       refreshId = window.setInterval(poll, 5_000);
     };
     const onVisibilityChange = () => {
       if (document.hidden) stopPolling();
-      else startPolling();
+      else {
+        poll();
+        startPolling();
+      }
     };
 
     document.addEventListener('visibilitychange', onVisibilityChange);
+    // The FIRST load is unconditional; only the repeat poll waits on
+    // visibility. Mounting in a background tab used to skip the fetch
+    // entirely, leaving the queue on its skeletons until the tab was focused.
+    void load();
     startPolling();
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -181,46 +178,83 @@ export function GenerationOrders() {
     };
   }, [invalidatePendingLoads, load]);
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  /** One in-flight action per order, so a second click cannot fire a second request. */
+  const runAction = useCallback(
+    async (id: string, action: (id: string) => Promise<unknown>, fallback: string) => {
+      setPendingIds((previous) => new Set(previous).add(id));
+      setError(null);
+      try {
+        await action(id);
+        await load();
+      } catch (actionError) {
+        setError(messageFor(actionError, fallback));
+      } finally {
+        setPendingIds((previous) => {
+          const next = new Set(previous);
+          next.delete(id);
+          return next;
+        });
+      }
+    },
+    [load],
+  );
+
+  const create = useCallback(async () => {
     setSaving(true);
     setError(null);
     try {
-      await createGenerationOrder(form);
-      setForm(initial);
+      await createGenerationOrder({ ...form, setId: null });
+      setForm(EMPTY_ORDER_FORM);
       await load();
-    } catch (error) {
-      setError(messageFor(error, 'Could not create the generation order.'));
+    } catch (createError) {
+      setError(messageFor(createError, 'Could not create the generation order.'));
     } finally {
       setSaving(false);
     }
-  };
-  const queue = useCallback(async (id: string) => {
+  }, [form, load]);
+
+  const saveEdit = useCallback(async () => {
+    if (!editing) return;
+    setSaving(true);
+    setError(null);
     try {
-      await queueGenerationOrder(id);
+      await updateGenerationOrder(editing.id, { ...editForm, setId: null });
+      setEditing(null);
       await load();
-    } catch (error) {
-      setError(messageFor(error, 'Could not queue the generation order.'));
+    } catch (editError) {
+      setError(messageFor(editError, 'Could not update the generation order.'));
+    } finally {
+      setSaving(false);
     }
-  }, [load]);
-  const retry = useCallback(async (id: string) => {
-    try {
-      await retryGenerationOrder(id);
-      await load();
-    } catch (error) {
-      setError(messageFor(error, 'Could not retry the generation order.'));
-    }
-  }, [load]);
-  const changeArchetype = (archetype: Archetype) => {
-    const allowedRarities = ARCHETYPE_RARITIES[archetype];
-    setForm((current) => ({
-      ...current,
-      archetype,
-      suggestedRarity: allowedRarities.includes(current.suggestedRarity)
-        ? current.suggestedRarity
-        : allowedRarities[0]!,
-    }));
+  }, [editForm, editing, load]);
+
+  const queue = useCallback(
+    (id: string) => void runAction(id, queueGenerationOrder, 'Could not queue the generation order.'),
+    [runAction],
+  );
+  const retry = useCallback(
+    (id: string) => void runAction(id, retryGenerationOrder, 'Could not retry the generation order.'),
+    [runAction],
+  );
+  const regenerate = useCallback(
+    (id: string) => void runAction(id, regenerateGenerationOrder, 'Could not regenerate the generation order.'),
+    [runAction],
+  );
+  const cancel = useCallback(
+    (id: string) => void runAction(id, cancelGenerationOrder, 'Could not cancel the generation order.'),
+    [runAction],
+  );
+  const startEdit = useCallback((order: GenerationOrderDto) => {
+    setEditing(order);
+    setEditForm(orderToFormValue(order));
+  }, []);
+
+  const changeStatus = (next: StatusFilter) => {
+    setStatus(next);
+    setPage(1);
+    setLoading(true);
   };
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <main className="mx-auto max-w-5xl p-6">
@@ -228,51 +262,90 @@ export function GenerationOrders() {
       <p className="mt-1 text-sm text-neutral-400">
         Creates offline Forge work. The local worker processes queued orders; Stable Diffusion never runs in the game server.
       </p>
-      {error && <ErrorBanner className="mt-4">{error}</ErrorBanner>}
+      <div aria-live="polite">{error && <ErrorBanner className="mt-4">{error}</ErrorBanner>}</div>
+
       <Panel className="mt-6">
-        <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
-          <label className="text-sm">
-            Title
-            <input required maxLength={80} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1 w-full rounded border border-neutral-700 bg-neutral-950 p-2" />
-          </label>
-          <label className="text-sm">
-            Candidates
-            <select value={form.candidateCount ?? 4} onChange={(e) => setForm({ ...form, candidateCount: Number(e.target.value) })} className="mt-1 w-full rounded border border-neutral-700 bg-neutral-950 p-2">
-              {[2, 3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}
-            </select>
-          </label>
-          <label className="text-sm md:col-span-2">
-            Visual brief
-            <textarea required minLength={10} maxLength={360} value={form.brief} onChange={(e) => setForm({ ...form, brief: e.target.value })} rows={3} className="mt-1 w-full rounded border border-neutral-700 bg-neutral-950 p-2" />
-          </label>
-          <label className="text-sm">
-            Archetype
-            <select value={form.archetype} onChange={(e) => changeArchetype(e.target.value as Archetype)} className="mt-1 w-full rounded border border-neutral-700 bg-neutral-950 p-2">
-              {ARCHETYPES.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label className="text-sm">
-            Element
-            <select value={form.element ?? NONE} onChange={(e) => setForm({ ...form, element: e.target.value === NONE ? null : e.target.value as Element })} className="mt-1 w-full rounded border border-neutral-700 bg-neutral-950 p-2">
-              <option value={NONE}>none</option>
-              {ELEMENTS.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label className="text-sm">
-            Suggested rarity
-            <select value={form.suggestedRarity} onChange={(e) => setForm({ ...form, suggestedRarity: e.target.value as Rarity })} className="mt-1 w-full rounded border border-neutral-700 bg-neutral-950 p-2">
-              {ARCHETYPE_RARITIES[form.archetype].map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <div className="flex items-end"><Button disabled={saving} type="submit">Create draft order</Button></div>
-        </form>
+        <GenerationOrderForm
+          value={form}
+          onChange={setForm}
+          onSubmit={() => void create()}
+          submitting={saving}
+          submitLabel="Create draft order"
+        />
       </Panel>
-      <section className="mt-6 w-full">
-        <h2 className="text-lg font-semibold">Queue</h2>
-        <div className="mt-3 grid gap-3">
-          {orders.map((order) => <GenerationOrderRow key={order.id} order={order} onQueue={queue} onRetry={retry} />)}
+
+      <section className="mt-6 w-full" aria-busy={loading}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Queue</h2>
+          <p className="text-xs text-neutral-500">{total} total</p>
         </div>
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter orders by status">
+          <Chip active={status === ALL} onClick={() => changeStatus(ALL)}>
+            all
+          </Chip>
+          {GENERATION_ORDER_STATUSES.map((value) => (
+            <Chip key={value} active={status === value} onClick={() => changeStatus(value)}>
+              {value}
+            </Chip>
+          ))}
+        </div>
+
+        <div className="mt-3 grid gap-3">
+          {loading && orders.length === 0 ? (
+            Array.from({ length: 3 }, (_, index) => (
+              <Panel key={index} muted className="h-28 animate-pulse" />
+            ))
+          ) : orders.length === 0 ? (
+            <EmptyState>
+              <p>No orders {status === ALL ? 'yet' : `with status “${status}”`}.</p>
+              <p className="text-neutral-500">Describe the art you want above and create a draft order.</p>
+            </EmptyState>
+          ) : (
+            orders.map((order) => (
+              <GenerationOrderCard
+                key={order.id}
+                order={order}
+                pending={pendingIds.has(order.id)}
+                onQueue={queue}
+                onRetry={retry}
+                onRegenerate={regenerate}
+                onCancel={cancel}
+                onEdit={startEdit}
+              />
+            ))
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination
+            className="mt-4"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(next) => {
+              setPage(next);
+              setLoading(true);
+            }}
+          />
+        )}
       </section>
+
+      {editing && (
+        <Modal label={`Edit generation order ${editing.title}`} size="lg" onClose={() => setEditing(null)}>
+          <h2 className="mb-4 text-lg font-semibold">Edit draft order</h2>
+          <GenerationOrderForm
+            value={editForm}
+            onChange={setEditForm}
+            onSubmit={() => void saveEdit()}
+            submitting={saving}
+            submitLabel="Save changes"
+            secondaryAction={
+              <Button type="button" variant="secondary" onClick={() => setEditing(null)}>
+                Discard changes
+              </Button>
+            }
+          />
+        </Modal>
+      )}
     </main>
   );
 }

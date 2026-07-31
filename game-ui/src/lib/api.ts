@@ -20,8 +20,11 @@ import type {
   PlayerDto,
   ReviewCardRequest,
   GenerationOrderDto,
+  GenerationOrderStatus,
+  GenerationOrdersListResponse,
   SelectGenerationOrderCandidateRequest,
   SellCardResponse,
+  UpdateGenerationOrderRequest,
 } from '@card-game/shared-types';
 
 import { ApiClientError } from './apiError';
@@ -231,20 +234,44 @@ export function reviewCard(id: string, body: ReviewCardRequest): Promise<AdminCa
   });
 }
 
-export function getGenerationOrders(): Promise<GenerationOrderDto[]> {
-  return request<GenerationOrderDto[]>('/admin/generation-orders');
+export function getGenerationOrders(q?: {
+  status?: GenerationOrderStatus;
+  page?: number;
+  limit?: number;
+}): Promise<GenerationOrdersListResponse> {
+  return request<GenerationOrdersListResponse>('/admin/generation-orders', {
+    query: { status: q?.status, page: q?.page, limit: q?.limit },
+  });
 }
 
 export function createGenerationOrder(body: CreateGenerationOrderRequest): Promise<GenerationOrderDto> {
   return request<GenerationOrderDto>('/admin/generation-orders', { method: 'POST', body: JSON.stringify(body) });
 }
 
+export function updateGenerationOrder(
+  id: string,
+  body: UpdateGenerationOrderRequest,
+): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}`, {
+    method: 'PATCH', body: JSON.stringify(body),
+  });
+}
+
 export function queueGenerationOrder(id: string): Promise<GenerationOrderDto> {
   return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/queue`, { method: 'POST' });
 }
 
+/** Re-queues the same seeds; `regenerateGenerationOrder` rolls new ones. */
 export function retryGenerationOrder(id: string): Promise<GenerationOrderDto> {
   return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/retry`, { method: 'POST' });
+}
+
+export function regenerateGenerationOrder(id: string): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/regenerate`, { method: 'POST' });
+}
+
+export function cancelGenerationOrder(id: string): Promise<GenerationOrderDto> {
+  return request<GenerationOrderDto>(`/admin/generation-orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
 }
 
 export function selectGenerationOrderCandidate(

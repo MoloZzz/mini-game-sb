@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
-import type { ForgeGenerationOrderDto, GenerationOrderDto } from '@card-game/shared-types';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import type { ForgeGenerationOrderDto, GenerationOrderDto, GenerationOrdersListResponse } from '@card-game/shared-types';
 import { CurrentPlayer } from '../auth/decorators/current-player.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -7,6 +7,7 @@ import { ServiceTokenGuard } from '../auth/guards/service-token.guard';
 import { ForgeServiceTokenGuard } from '../auth/guards/forge-service-token.guard';
 import type { CurrentPlayerPayload } from '../auth/types';
 import { CompleteGenerationOrderDto, CreateGenerationOrderDto, FailGenerationOrderDto, SelectGenerationOrderCandidateDto, UpdateGenerationOrderDto } from './dto/generation-order.dto';
+import { ListGenerationOrdersQueryDto } from './dto/list-generation-orders.query';
 import { GenerationOrdersService } from './generation-orders.service';
 
 /** Admin-authored work queue; forge claims and completes work with the service token. */
@@ -20,7 +21,9 @@ export class GenerationOrdersController {
     return this.generationOrdersService.create(player.id, body);
   }
   @Get()
-  list(): Promise<GenerationOrderDto[]> { return this.generationOrdersService.list(); }
+  list(@Query() query: ListGenerationOrdersQueryDto): Promise<GenerationOrdersListResponse> {
+    return this.generationOrdersService.list(query);
+  }
   @Get(':id')
   get(@Param('id', ParseUUIDPipe) id: string): Promise<GenerationOrderDto> { return this.generationOrdersService.get(id); }
   @Patch(':id')
@@ -33,6 +36,9 @@ export class GenerationOrdersController {
   cancel(@Param('id', ParseUUIDPipe) id: string): Promise<GenerationOrderDto> { return this.generationOrdersService.cancel(id); }
   @Post(':id/retry')
   retry(@Param('id', ParseUUIDPipe) id: string): Promise<GenerationOrderDto> { return this.generationOrdersService.retry(id); }
+  /** Throws the current candidate crop away and queues a fresh one with new seeds. */
+  @Post(':id/regenerate')
+  regenerate(@Param('id', ParseUUIDPipe) id: string): Promise<GenerationOrderDto> { return this.generationOrdersService.regenerate(id); }
   @Post(':id/select')
   select(@Param('id', ParseUUIDPipe) id: string, @Body() body: SelectGenerationOrderCandidateDto): Promise<GenerationOrderDto> {
     return this.generationOrdersService.select(id, body);

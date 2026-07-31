@@ -46,11 +46,9 @@ function editsFromCard(card: AdminCardDto): ReviewCardRequest {
   };
 }
 
+/** Null for a plain `forge.py batch` ingest; set only on cards an order produced. */
 function generationOrderId(card: AdminCardDto): string | null {
-  const source = card.genMeta.generationOrder;
-  if (typeof source !== 'object' || source === null) return null;
-  const value = (source as Record<string, unknown>).orderId;
-  return typeof value === 'string' ? value : null;
+  return card.genMeta.generationOrder?.orderId ?? null;
 }
 
 function hasSeenCheatSheet(): boolean {
@@ -352,10 +350,11 @@ export function AdminReview() {
       goNext();
 
       try {
+        const provenance = original.genMeta.generationOrder;
         const orderId = status === 'approved' ? generationOrderId(original) : null;
-        if (orderId) {
+        if (orderId && provenance) {
           await selectGenerationOrderCandidate(orderId, {
-            candidateId: (original.genMeta.generationOrder as Record<string, unknown>).candidateId as string,
+            candidateId: provenance.candidateId,
             name: body.name ?? original.name,
             rarity: body.rarity,
             attack: body.attack,

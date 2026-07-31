@@ -6,6 +6,7 @@ import {
   DAILY_BONUS,
   DAILY_BONUS_COOLDOWN_MS,
   ELEMENTS,
+  GENERATION_ORDER_STATUSES,
   PITY_RESET_RARITY,
   PITY_THRESHOLD,
   RARITIES,
@@ -31,9 +32,14 @@ import {
   type CollectionProgressDto,
   type CreateArchiveDossierRequest,
   type CreateArchiveDossierResponse,
+  type CreateGenerationOrderRequest,
   type DropHistoryItemDto,
   type Element,
   type EmptyPoolError,
+  type GenerationOrderCandidateDto,
+  type GenerationOrderDto,
+  type GenerationOrderStatus,
+  type GenerationOrdersListResponse,
   type InsufficientFundsError,
   type InventoryItemDto,
   type LastCopyError,
@@ -46,7 +52,9 @@ import {
   type Rarity,
   type RarityWeights,
   type ReviewCardRequest,
+  type SelectGenerationOrderCandidateRequest,
   type SellCardResponse,
+  type UpdateGenerationOrderRequest,
 } from '@card-game/shared-types';
 
 import { db, type MockAuthUser, type OwnedInstance } from './db';
@@ -698,6 +706,237 @@ const reviewCardHandlers = mirror('/admin/cards/:id', (url) =>
   }),
 );
 
+// --- /admin/generation-orders -------------------------------------------------
+//
+// These mirror the service's state guards rather than accepting every call,
+// because a mock that always succeeds is the reason a screen can pass in mock
+// mode and 409 against the real API.
+
+function parseOrderStatus(value: string | null): GenerationOrderStatus | undefined {
+  return value !== null && (GENERATION_ORDER_STATUSES as readonly string[]).includes(value)
+    ? (value as GenerationOrderStatus)
+    : undefined;
+}
+
+function findOrder(id: string): GenerationOrderDto | undefined {
+  return db.generationOrders.find((order) => order.id === id);
+}
+
+function orderNotFound(id: string) {
+  return HttpResponse.json(apiError('GENERATION_ORDER_NOT_FOUND', `Generation order ${id} not found`), {
+    status: 404,
+  });
+}
+
+function wrongOrderState(order: GenerationOrderDto, accepted: readonly GenerationOrderStatus[]) {
+  return HttpResponse.json(
+    apiError('INVALID_GENERATION_ORDER_STATE', `Order is ${order.status}; expected ${accepted.join(' or ')}`),
+    { status: 409 },
+  );
+}
+
+function mockCandidates(order: GenerationOrderDto, count: number): GenerationOrderCandidateDto[] {
+  const crop = Math.random().toString(16).slice(2, 8);
+  return Array.from({ length: count }, (_, index) => ({
+    id: `${order.id}-${crop}-candidate-${index + 1}`,
+    index: index + 1,
+    slug: `${slugifyTitle(order.title)}-${crop}-${index + 1}`,
+    seed: String(1 + Math.floor(Math.random() * 2_147_483_646)),
+    status: 'planned',
+    cardId: null,
+    thumbUrl: null,
+    cardName: null,
+  }));
+}
+
+function slugifyTitle(title: string): string {
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return slug.length > 0 ? slug.slice(0, 48) : 'order';
+}
+
+/** Mirrors `rejectDraftCards`: only a card still in `draft` may be flipped. */
+function rejectOrderDraftCards(order: GenerationOrderDto, keepCardId?: string | null): void {
+  for (const candidate of order.candidates) {
+    if (!candidate.cardId || candidate.cardId === keepCardId) continue;
+    const card = db.adminCards.find((c) => c.id === candidate.cardId);
+    if (card?.status === 'draft') card.status = 'rejected';
+  }
+}
+
+const getGenerationOrdersHandlers = mirror('/admin/generation-orders', (url) =>
+  http.get(url, ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const status = parseOrderStatus(params.get('status'));
+    const page = parsePositiveInt(params.get('page'), 1);
+    const limit = parsePositiveInt(params.get('limit'), 40);
+
+    let items = db.generationOrders;
+    if (status) items = items.filter((order) => order.status === status);
+
+    const response: GenerationOrdersListResponse = {
+      items: items.slice((page - 1) * limit, page * limit),
+      total: items.length,
+      page,
+      limit,
+    };
+    return HttpResponse.json(response);
+  }),
+);
+
+const createGenerationOrderHandlers = mirror('/admin/generation-orders', (url) =>
+  http.post(url, async ({ request }) => {
+    const body = (await request.json()) as CreateGenerationOrderRequest;
+    const id = crypto.randomUUID();
+    const order: GenerationOrderDto = {
+      id,
+      status: 'draft',
+      title: body.title.trim(),
+      brief: body.brief.trim(),
+      archetype: body.archetype,
+      element: body.element,
+      suggestedRarity: body.suggestedRarity,
+      candidateCount: body.candidateCount ?? 4,
+      setId: body.setId ?? null,
+      recipeProfile: 'card-v1',
+      createdByPlayerId: 'mock-admin-1',
+      createdAt: new Date().toISOString(),
+      readyAt: null,
+      generatedAt: null,
+      completedAt: null,
+      failureCode: null,
+      failureDetail: null,
+      candidates: [],
+    };
+    order.candidates = mockCandidates(order, order.candidateCount);
+    db.generationOrders.unshift(order);
+    return HttpResponse.json(order, { status: 201 });
+  }),
+);
+
+const updateGenerationOrderHandlers = mirror('/admin/generation-orders/:id', (url) =>
+  http.patch(url, async ({ params, request }) => {
+    const id = requirePathParam(params.id, 'id');
+    const order = findOrder(id);
+    if (!order) return orderNotFound(id);
+    if (order.status !== 'draft') return wrongOrderState(order, ['draft']);
+
+    const body = (await request.json()) as UpdateGenerationOrderRequest;
+    if (body.title !== undefined) order.title = body.title.trim();
+    if (body.brief !== undefined) order.brief = body.brief.trim();
+    if (body.archetype !== undefined) order.archetype = body.archetype;
+    if (body.element !== undefined) order.element = body.element;
+    if (body.suggestedRarity !== undefined) order.suggestedRarity = body.suggestedRarity;
+    if (body.setId !== undefined) order.setId = body.setId;
+    const countChanged = body.candidateCount !== undefined && body.candidateCount !== order.candidateCount;
+    if (body.candidateCount !== undefined) order.candidateCount = body.candidateCount;
+    if (body.title !== undefined || countChanged) {
+      order.candidates = mockCandidates(order, order.candidateCount);
+    }
+    return HttpResponse.json(order);
+  }),
+);
+
+const queueGenerationOrderHandlers = mirror('/admin/generation-orders/:id/queue', (url) =>
+  http.post(url, ({ params }) => {
+    const id = requirePathParam(params.id, 'id');
+    const order = findOrder(id);
+    if (!order) return orderNotFound(id);
+    if (order.status !== 'draft') return wrongOrderState(order, ['draft']);
+    order.status = 'ready';
+    order.readyAt = new Date().toISOString();
+    order.failureCode = null;
+    order.failureDetail = null;
+    return HttpResponse.json(order);
+  }),
+);
+
+const retryGenerationOrderHandlers = mirror('/admin/generation-orders/:id/retry', (url) =>
+  http.post(url, ({ params }) => {
+    const id = requirePathParam(params.id, 'id');
+    const order = findOrder(id);
+    if (!order) return orderNotFound(id);
+    if (order.status !== 'failed') return wrongOrderState(order, ['failed']);
+    order.status = 'ready';
+    order.readyAt = new Date().toISOString();
+    order.failureCode = null;
+    order.failureDetail = null;
+    return HttpResponse.json(order);
+  }),
+);
+
+const cancelGenerationOrderHandlers = mirror('/admin/generation-orders/:id/cancel', (url) =>
+  http.post(url, ({ params }) => {
+    const id = requirePathParam(params.id, 'id');
+    const order = findOrder(id);
+    if (!order) return orderNotFound(id);
+    if (!['draft', 'ready', 'review'].includes(order.status)) {
+      return wrongOrderState(order, ['draft', 'ready', 'review']);
+    }
+    if (order.status === 'review') {
+      rejectOrderDraftCards(order);
+      order.candidates = order.candidates.map((candidate) => ({ ...candidate, status: 'discarded' }));
+    }
+    order.status = 'cancelled';
+    return HttpResponse.json(order);
+  }),
+);
+
+const regenerateGenerationOrderHandlers = mirror('/admin/generation-orders/:id/regenerate', (url) =>
+  http.post(url, ({ params }) => {
+    const id = requirePathParam(params.id, 'id');
+    const order = findOrder(id);
+    if (!order) return orderNotFound(id);
+    if (order.status !== 'review' && order.status !== 'failed') {
+      return wrongOrderState(order, ['review', 'failed']);
+    }
+    rejectOrderDraftCards(order);
+    order.candidates = mockCandidates(order, order.candidateCount);
+    order.status = 'ready';
+    order.readyAt = new Date().toISOString();
+    order.generatedAt = null;
+    order.failureCode = null;
+    order.failureDetail = null;
+    return HttpResponse.json(order);
+  }),
+);
+
+const selectGenerationOrderCandidateHandlers = mirror('/admin/generation-orders/:id/select', (url) =>
+  http.post(url, async ({ params, request }) => {
+    const id = requirePathParam(params.id, 'id');
+    const order = findOrder(id);
+    if (!order) return orderNotFound(id);
+    if (order.status !== 'review') return wrongOrderState(order, ['review']);
+
+    const body = (await request.json()) as SelectGenerationOrderCandidateRequest;
+    const selected = order.candidates.find((candidate) => candidate.id === body.candidateId);
+    if (!selected?.cardId) {
+      return HttpResponse.json(
+        apiError('GENERATION_CANDIDATE_MISMATCH', 'Selected candidate is not generated for this order'),
+        { status: 400 },
+      );
+    }
+
+    const card = db.adminCards.find((c) => c.id === selected.cardId);
+    if (card) {
+      card.name = body.name.trim();
+      if (body.rarity !== undefined) card.rarity = body.rarity;
+      if (body.attack !== undefined) card.attack = body.attack;
+      if (body.defense !== undefined) card.defense = body.defense;
+      card.flavorText = body.flavorText ?? null;
+      card.status = 'approved';
+    }
+    rejectOrderDraftCards(order, selected.cardId);
+    order.candidates = order.candidates.map((candidate) => ({
+      ...candidate,
+      status: candidate.id === selected.id ? 'selected' : 'discarded',
+      cardName: candidate.id === selected.id ? body.name.trim() : candidate.cardName,
+    }));
+    order.status = 'completed';
+    order.completedAt = new Date().toISOString();
+    return HttpResponse.json(order);
+  }),
+);
+
 // --- Auth: POST /auth/register, POST /auth/login, GET /auth/me -----------------
 //
 // A self-contained mock JWT: unsigned (no real crypto, no shared secret with
@@ -851,6 +1090,14 @@ export const handlers: HttpHandler[] = [
   ...claimDailyBonusHandlers,
   ...getAdminCardsHandlers,
   ...reviewCardHandlers,
+  ...getGenerationOrdersHandlers,
+  ...createGenerationOrderHandlers,
+  ...updateGenerationOrderHandlers,
+  ...queueGenerationOrderHandlers,
+  ...retryGenerationOrderHandlers,
+  ...cancelGenerationOrderHandlers,
+  ...regenerateGenerationOrderHandlers,
+  ...selectGenerationOrderCandidateHandlers,
   ...registerHandlers,
   ...loginHandlers,
   ...authMeHandlers,

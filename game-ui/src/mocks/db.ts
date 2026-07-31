@@ -11,6 +11,9 @@ import {
   type DropHistoryItemDto,
   type Element,
   type GenMeta,
+  type GenerationOrderCandidateDto,
+  type GenerationOrderDto,
+  type GenerationOrderStatus,
   type PlayerRole,
   type Rarity,
 } from '@card-game/shared-types';
@@ -44,6 +47,7 @@ export interface MockDb {
   casesOpened: number;
   dailyBonusAvailableAt: string | null;
   adminCards: AdminCardDto[];
+  generationOrders: GenerationOrderDto[];
   authUsers: MockAuthUser[];
   documentedCardIds: string[];
   archivePasses: Array<{ id: string; earnedAt: string }>;
@@ -187,6 +191,124 @@ function seedAdminCards(): AdminCardDto[] {
   return cards;
 }
 
+const ADMIN_PLAYER_ID = 'mock-admin-1';
+
+/**
+ * One order per state the queue screen renders differently, so mock mode
+ * exercises every branch — the ready/generating rows, the failure banner, the
+ * candidate strip, and the two terminal states — without waiting on a real
+ * Forge worker that mock mode does not have.
+ *
+ * The `review` order's candidates point at real seeded draft cards and stamp
+ * provenance into their `genMeta`, which is what makes `AdminReview` route
+ * their approval through `selectGenerationOrderCandidate` exactly as it does
+ * against the live API.
+ */
+function seedGenerationOrders(adminCards: AdminCardDto[]): GenerationOrderDto[] {
+  // Taken from the middle of the draft pool, not the front: approving a card
+  // with order provenance routes through `selectGenerationOrderCandidate`
+  // instead of `reviewCard`, and the review screen's own specs drive the
+  // first couple of tiles.
+  const reviewCards = adminCards.slice(10, 14);
+
+  function candidates(
+    slugBase: string,
+    count: number,
+    status: GenerationOrderCandidateDto['status'],
+    cards: AdminCardDto[] = [],
+  ): GenerationOrderCandidateDto[] {
+    return Array.from({ length: count }, (_, index) => {
+      const card = cards[index];
+      return {
+        id: `${slugBase}-candidate-${index + 1}`,
+        index: index + 1,
+        slug: `${slugBase}-${index + 1}`,
+        seed: String(500_000 + index * 137),
+        status,
+        cardId: card?.id ?? null,
+        thumbUrl: card?.thumbUrl ?? null,
+        cardName: card?.name ?? null,
+      };
+    });
+  }
+
+  function order(
+    id: string,
+    status: GenerationOrderStatus,
+    title: string,
+    overrides: Partial<GenerationOrderDto>,
+  ): GenerationOrderDto {
+    return {
+      id,
+      status,
+      title,
+      brief: `${title} — dramatic lighting, painterly fantasy card art, centred subject`,
+      archetype: 'beast',
+      element: 'fire',
+      suggestedRarity: 'rare',
+      candidateCount: 4,
+      setId: null,
+      recipeProfile: 'card-v1',
+      createdByPlayerId: ADMIN_PLAYER_ID,
+      createdAt: isoHoursAgo(40),
+      readyAt: null,
+      generatedAt: null,
+      completedAt: null,
+      failureCode: null,
+      failureDetail: null,
+      candidates: candidates(id, 4, 'planned'),
+      ...overrides,
+    };
+  }
+
+  const orders: GenerationOrderDto[] = [
+    order('mock-order-draft', 'draft', 'Ashen Serpent', { createdAt: isoHoursAgo(2) }),
+    order('mock-order-ready', 'ready', 'Gilded Wyrm', {
+      createdAt: isoHoursAgo(6),
+      readyAt: isoHoursAgo(5),
+    }),
+    order('mock-order-generating', 'generating', 'Hollow Golem', {
+      createdAt: isoHoursAgo(9),
+      readyAt: isoHoursAgo(8),
+    }),
+    order('mock-order-review', 'review', 'Verdant Harpy', {
+      createdAt: isoHoursAgo(14),
+      readyAt: isoHoursAgo(13),
+      generatedAt: isoHoursAgo(11),
+      candidates: candidates('mock-order-review', 4, 'generated', reviewCards),
+    }),
+    order('mock-order-failed', 'failed', 'Obsidian Leviathan', {
+      createdAt: isoHoursAgo(20),
+      readyAt: isoHoursAgo(19),
+      failureCode: 'FORGE_OUT_OF_MEMORY',
+      failureDetail: 'CUDA out of memory at step 21/28; retry with attention slicing enabled.',
+    }),
+    order('mock-order-completed', 'completed', 'Feral Wyrm', {
+      createdAt: isoHoursAgo(30),
+      readyAt: isoHoursAgo(29),
+      generatedAt: isoHoursAgo(27),
+      completedAt: isoHoursAgo(26),
+      candidates: candidates('mock-order-completed', 4, 'discarded').map((candidate, index) =>
+        index === 0 ? { ...candidate, status: 'selected' as const } : candidate,
+      ),
+    }),
+  ];
+
+  const reviewOrder = orders.find((o) => o.id === 'mock-order-review')!;
+  for (const candidate of reviewOrder.candidates) {
+    const card = adminCards.find((c) => c.id === candidate.cardId);
+    if (card) {
+      card.genMeta.generationOrder = {
+        orderId: reviewOrder.id,
+        candidateId: candidate.id,
+        promptTemplateVersion: 'card-v1',
+      };
+    }
+  }
+
+  return orders;
+}
+
 /**
  * Two ready-made accounts so mock mode (`VITE_USE_MOCKS=1`) can be logged
  * into immediately instead of forcing a registration round-trip first —
@@ -202,6 +324,9 @@ function seedAuthUsers(): MockAuthUser[] {
 }
 
 function createSeed(): MockDb {
+  // `seedGenerationOrders` stamps provenance onto the draft cards its review
+  // order owns, so the two seeds have to share one array, not two calls.
+  const adminCards = seedAdminCards();
   return {
     balance: { ...INITIAL_GRANT },
     ownedInstances: seedOwnedInstances(),
@@ -209,7 +334,8 @@ function createSeed(): MockDb {
     pityCounter: 0,
     casesOpened: 0,
     dailyBonusAvailableAt: null,
-    adminCards: seedAdminCards(),
+    adminCards,
+    generationOrders: seedGenerationOrders(adminCards),
     authUsers: seedAuthUsers(),
     documentedCardIds: [],
     archivePasses: [],
