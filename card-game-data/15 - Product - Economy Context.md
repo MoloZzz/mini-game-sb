@@ -3,48 +3,48 @@ tags: [product, economy, agent-context]
 status: active
 ---
 
-# Економічний контекст для продуктових рішень
+# Economy Context for Product Decisions
 
-Назад до [[00 - Card Game MOC]] · Повна математика → [[12 - Game Design - Economy Rebalance]] · Межі → [[13 - Product - Context & Guardrails]]
+Back to [[00 - Card Game MOC]] · Full mathematics → [[12 - Game Design - Economy Rebalance]] · Guardrails → [[13 - Product - Context & Guardrails]]
 
-## Мета економіки
+## Economy goal
 
-Економіка повинна підтримувати колекціонування: на старті давати достатньо відкриттів, у середині винагороджувати ширину колекції, а наприкінці не друкувати нескінченні coins. Це не монетизація за реальні гроші.
+The economy should support collecting: provide enough openings at the start, reward collection breadth in the middle, and not print infinite coins at the end. This is not real-money monetization.
 
-## Чинна модель
+## Current model
 
-| Елемент | Роль | Статус, який не можна втратити |
+| Element | Role | Status that must not be lost |
 |---|---|---|
-| Coins | м'яка валюта для кейсів | кожна зміна пишеться у ledger |
-| Keys | рідкісна валюта для кращих кейсів | так само ledger-backed |
-| Дублікати | змінна віддача з відкриттів | продавати можна лише понад останню копію |
-| Daily bonus | основна ручка темпу на старті | 800 coins + 2 keys / 24h; точне джерело — shared types |
-| Мілстоуни | винагорода за унікальні картки | разові, не відкочуються при рості пулу |
-| Кейси | основна витрата і спосіб отримати картку | їхня цінність не має зникнути через нову систему |
+| Coins | soft currency for cases | every change is written to the ledger |
+| Keys | rare currency for better cases | likewise ledger-backed |
+| Duplicates | variable return from openings | only copies beyond the last one may be sold |
+| Daily bonus | primary pacing control at the start | 800 coins + 2 keys / 24h; exact source — shared types |
+| Milestones | reward for unique cards | one-time, not rolled back when the pool grows |
+| Cases | primary spend and way to obtain a card | their value must not disappear because of a new system |
 
-## Найважливіша формула
+## Most important formula
 
-Продажний EV залежить від уже зібраної частки пулу, а не тільки від шансів:
+Sale EV depends on the already collected share of the pool, not only on the odds:
 
 ```
 EV = Σ w_r × sellValue_r × (owned_r / pool_r)
 ```
 
-Тому підняття `sellValue` майже не допомагає на старті, але може зламати економіку при повній колекції. Повний вимір і обґрунтування → [[12 - Game Design - Economy Rebalance]].
+Therefore, raising `sellValue` helps almost nothing at the start, but can break the economy with a complete collection. Full measurement and rationale → [[12 - Game Design - Economy Rebalance]].
 
-## Обов'язкова перевірка для нової системи
+## Required check for a new system
 
-Перед рекомендацією магазину, NPC-аукціону, крафту або нової нагороди опиши:
+Before recommending a shop, NPC auction, crafting, or a new reward, describe:
 
-1. **Source / sink:** що створює і що витрачає coins, keys, картки або час.
-2. **Три стани гравця:** новий, середина колекції, майже повна колекція.
-3. **Вплив на core loop:** чи кейс лишається головним джерелом азарту й колекції.
-4. **Інваріанти:** ledger, server authority, last copy, монотонні мілстоуни.
-5. **Обмеження:** одна контрольна ручка тюнінгу за прохід; не міняти разом ціни, sell value і бонус без моделі.
+1. **Source / sink:** what creates and what spends coins, keys, cards, or time.
+2. **Three player states:** new, mid-collection, and near-complete collection.
+3. **Impact on the core loop:** whether the case remains the main source of excitement and collection.
+4. **Invariants:** ledger, server authority, last copy, monotonic milestones.
+5. **Constraints:** one tuning control per pass; do not change prices, sell value, and bonus together without a model.
 
-## Підказки за типом ідеї
+## Hints by idea type
 
-- **Магазин:** безпечний MVP — рідкісна цільова покупка за наявну валюту з лімітом/ротацією; небезпечний — постійно дешевший шлях до колекції, який витісняє кейси.
-- **NPC-аукціон:** це окремий currency sink. Потрібні правило появи лота, резервна ціна, частота, межа рідкості й спосіб не перетворити його на кращий кейс.
-- **P2P-ринок:** не економічна «дрібна фіча», а зміна scope з потребою в ліквідності, антифроді, модерації та нових правилах володіння.
-- **Крафт:** споживає екземпляри, тому з першого коміту мусить зберігати останню копію та потребує нового EV-моделювання.
+- **Shop:** a safe MVP is a rare targeted purchase for existing currency with a limit/rotation; the dangerous version is a permanently cheaper path to the collection that displaces cases.
+- **NPC auction:** this is a separate currency sink. It needs a lot-spawn rule, reserve price, frequency, rarity limit, and a way not to turn it into a better case.
+- **P2P market:** not a small economic “feature,” but a scope change requiring liquidity, anti-fraud, moderation, and new ownership rules.
+- **Crafting:** it consumes instances, so from the first commit it must preserve the last copy and requires new EV modeling.

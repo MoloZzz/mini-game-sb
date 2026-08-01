@@ -5,7 +5,7 @@ status: proposal
 
 # Archive Dossiers · solution brief
 
-Назад до [[00 - Card Game MOC]] · Decision → [[10 - Planning - Decisions#ADR-018]] · Evidence → [[21 - Product - Evidence Log]] · Opportunity → [[22 - Product - Opportunity Backlog]]
+Back to [[00 - Card Game MOC]] · Decision → [[10 - Planning - Decisions#ADR-018]] · Evidence → [[21 - Product - Evidence Log]] · Opportunity → [[22 - Product - Opportunity Backlog]]
 
 ## 1. Context retrieval
 

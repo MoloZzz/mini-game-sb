@@ -2,137 +2,137 @@
 tags: [planning]
 ---
 
-# Роадмап
+# Roadmap
 
-Назад до [[00 - Card Game MOC]]
+Back to [[00 - Card Game MOC]]
 
-## Принцип черговості
+## Ordering Principle
 
-**Дійти до працюючої рулетки якомога раніше.** Це і найцікавіша частина,
-і найризикованіша — саме там усе може виявитись не таким гарним, як в уяві.
-Тому рулетка на мок-даних іде в M1, ще до реального API.
+**Reach a working roulette as early as possible.** It is both the most interesting part
+and the riskiest; that is where everything may turn out less appealing than imagined.
+Therefore, the roulette with mock data goes into M1, before the real API.
 
-Антипатерн, у який легко впасти: три вечори на docker-compose, міграції та
-структуру Nest-модулів, і жодного кадру анімації. Мотивація помирає саме там.
+The easy-to-fall-into antipattern is spending three evenings on docker-compose, migrations,
+and Nest module structure without a single animation frame. Motivation dies right there.
 
-## M0 — Скелет · ~1 вечір
+## M0 — Skeleton · ~1 evening
 
-- [ ] Монорепо: `game-ui/`, `game-api/`, `card-forge/`, `storage/`
-- [ ] `docker-compose.yml` — тільки Postgres 16
-- [ ] `game-api`: `nest new`, підключення TypeORM, `/health`
-- [ ] `game-ui`: `npm create vite` React+TS, Framer Motion, порожній екран
+- [ ] Monorepo: `game-ui/`, `game-api/`, `card-forge/`, `storage/`
+- [ ] `docker-compose.yml` — Postgres 16 only
+- [ ] `game-api`: `nest new`, connect TypeORM, `/health`
+- [ ] `game-ui`: `npm create vite` React+TS, Framer Motion, empty screen
 - [ ] `card-forge`: venv, `pip install torch diffusers transformers accelerate pillow`
 - [ ] `.gitignore`: `storage/`, `.venv/`, `node_modules/`, `*.safetensors`
-- [ ] `packages/shared-types` з `CardDto`, `Rarity`
+- [ ] `packages/shared-types` with `CardDto`, `Rarity`
 
-**Готово коли:** три процеси стартують, `/health` віддає 200.
+**Done when:** three processes start and `/health` returns 200.
 
-## M1 — Перші картки + рулетка на моках · ~2 вечори
+## M1 — First Cards + Roulette with Mocks · ~2 evenings
 
-Два треки паралельно.
+Two tracks in parallel.
 
-**Трек A — генерація:**
-- [ ] `forge.py`: завантаження pipeline, автовибір device
-- [ ] Згенерувати 6 карток одним рецептом → перевірити, що працює
-- [ ] `recipes.yaml` на 4 рецепти → ~20 карток
-- [ ] Ручно відібрати 12 найкращих, зберегти в `storage/cards/`
-- [ ] Написати `mock-cards.json` з цими 12
+**Track A — generation:**
+- [ ] `forge.py`: load pipeline, auto-select device
+- [ ] Generate 6 cards with one recipe → verify that it works
+- [ ] `recipes.yaml` with 4 recipes → ~20 cards
+- [ ] Manually select the 12 best and save them in `storage/cards/`
+- [ ] Write `mock-cards.json` with these 12
 
-**Трек B — рулетка:**
-- [ ] Компонент `<Reel />` за спекою [[08 - UI - Roulette Spec]]
-- [ ] Стрічка з 60 плиток з мок-карток
-- [ ] Preload → анімація → посадка на index 55
-- [ ] Кнопка «крутити» з рандомним переможцем локально
+**Track B — roulette:**
+- [ ] `<Reel />` component according to [[08 - UI - Roulette Spec]]
+- [ ] Reel of 60 tiles from mock cards
+- [ ] Preload → animation → land on index 55
+- [ ] “Spin” button with a random local winner
 
-**Готово коли:** тиснеш кнопку, крутиться, зупиняється на потрібній картці,
-і тобі це подобається дивитись двадцять разів поспіль.
+**Done when:** you press the button, it spins, stops on the right card,
+and you enjoy watching it twenty times in a row.
 
-Якщо на цьому етапі не подобається — зупинись і тюнь easing, timing,
-розмір плиток. Далі йти немає сенсу, поки цей момент не «клацнув».
+If it does not feel good at this stage, stop and tune easing, timing,
+and tile size. There is no point moving on until this moment “clicks.”
 
-## M2 — Реальний бекенд · ~2 вечори
+## M2 — Real Backend · ~2 evenings
 
-- [ ] Міграції: `cards`, `players`, `cases`, `player_cards`, `case_openings`, `transactions`
+- [ ] Migrations: `cards`, `players`, `cases`, `player_cards`, `case_openings`, `transactions`
 - [ ] `POST /admin/cards/ingest` + `forge.py ingest`
-- [ ] Сідінг: 3 кейси з вагами [[05 - Game Design - Rarity & Drop Rates]], 1 гравець
+- [ ] Seed: 3 cases with weights [[05 - Game Design - Rarity & Drop Rates]], 1 player
 - [ ] `GET /cards`, `GET /cases`, `GET /me`
-- [ ] Роздача статики з `storage/`
-- [ ] **`POST /cases/:slug/open`** — RNG, транзакція, побудова стрічки
-- [ ] Тест ймовірностей на 200k ролів
-- [ ] Тест атомарності: подвійний паралельний open з балансом на 1 кейс
+- [ ] Serve static assets from `storage/`
+- [ ] **`POST /cases/:slug/open`** — RNG, transaction, reel construction
+- [ ] Probability test with 200k rolls
+- [ ] Atomicity test: two parallel opens with balance for one case
 
-**Готово коли:** curl на `/cases/starter-chest/open` віддає валідну стрічку,
-баланс списується рівно один раз.
+**Done when:** curl to `/cases/starter-chest/open` returns a valid reel,
+and the balance is debited exactly once.
 
-## M3 — З'єднання · ~1 вечір
+## M3 — Integration · ~1 evening
 
-- [ ] Замінити моки в UI на реальний API
-- [ ] Екран лоббі з кейсами й odds
-- [ ] Reveal-екран з повним артом
-- [ ] Хедер з балансом і анімацією зміни числа
-- [ ] Обробка помилок: недостатньо коштів, порожній пул
+- [ ] Replace UI mocks with the real API
+- [ ] Lobby screen with cases and odds
+- [ ] Reveal screen with full art
+- [ ] Header with balance and number-change animation
+- [ ] Error handling: insufficient funds, empty pool
 
-**Готово коли:** повний цикл клік → рулетка → картка в базі, без моків.
-Це перша версія, яку не соромно показати.
+**Done when:** the full cycle click → roulette → card in the database works without mocks.
+This is the first version worth showing.
 
-## M4 — Інвентар та економіка · ~1.5 вечора
+## M4 — Inventory and Economy · ~1.5 evenings
 
-- [ ] `GET /me/inventory` з групуванням і `copies`
-- [ ] Екран інвентаря: сітка, фільтри, прогрес колекції
-- [ ] `POST /me/inventory/:id/sell` + правило «не продавати останню копію»
-- [ ] Щоденний бонус
-- [ ] Pity-лічильник
-- [ ] SQL-інваріант ledger'а в тестах
+- [ ] `GET /me/inventory` with grouping and `copies`
+- [ ] Inventory screen: grid, filters, collection progress
+- [ ] `POST /me/inventory/:id/sell` + “do not sell the last copy” rule
+- [ ] Daily bonus
+- [ ] Pity counter
+- [ ] Ledger SQL invariant in tests
 
-## M5 — Admin review · ~1 вечір
+## M5 — Admin Review · ~1 evening
 
-- [ ] `GET /admin/cards?status=draft` — сітка-контактшит
-- [ ] Approve/reject, редагування імені, рідкості, ATK/DEF, флейвору
-- [ ] Показ промпту й сіда для аналізу рецептів
+- [ ] `GET /admin/cards?status=draft` — contact-sheet grid
+- [ ] Approve/reject, edit name, rarity, ATK/DEF, and flavor
+- [ ] Show prompt and seed for recipe analysis
 
-Робити ПЕРЕД повним батчем — інакше review 280 карток буде через psql.
+Do this BEFORE the full batch; otherwise reviewing 280 cards will happen through psql.
 
-## M6 — Повний пул · ~1 вечір
+## M6 — Full Pool · ~1 evening
 
-На RTX 3050 генерація перестає бути вузьким місцем — вузьким місцем стає
-відбір ([[06 - Generation - SD Pipeline]]).
+On the RTX 3050, generation stops being the bottleneck; selection becomes
+the bottleneck ([[06 - Generation - SD Pipeline]]).
 
-- [ ] Розширити `recipes.yaml` до 34 рецептів
-- [ ] Батч на ~283 картки — **~45 хв**, поки п'єш каву
-- [ ] Review → 110 approved — **це і є основна година вечора**
-- [ ] Перевірити, що всі 6 рідкостей мають непорожній пул
-- [ ] Апскейл — окремим CPU-проходом пізніше, не тут (Q5 в
+- [ ] Expand `recipes.yaml` to 34 recipes
+- [ ] Batch of ~283 cards — **~45 min**, while you drink coffee
+- [ ] Review → 110 approved — **this is the main hour of the evening**
+- [ ] Verify that all 6 rarities have a non-empty pool
+- [ ] Upscale later as a separate CPU pass, not here (Q5 in
       [[11 - Planning - Open Questions]])
 
-## M7 — Полірування · безкінечно
+## M7 — Polish · indefinitely
 
-- [ ] Rarity FX: частинки, спалахи, shake
-- [ ] Звук: тіки, reveal-семпли, mute
+- [ ] Rarity FX: particles, flashes, shake
+- [ ] Sound: ticks, reveal samples, mute
 - [ ] `prefers-reduced-motion`
-- [ ] Стрічка «останні дропи» в лоббі
-- [ ] Майлстоуни колекції
+- [ ] “Recent drops” reel in the lobby
+- [ ] Collection milestones
 - [ ] Provably fair
-- [ ] Replay дропу з `case_openings.reel`
+- [ ] Replay drop from `case_openings.reel`
 
-## Оцінка
+## Estimate
 
-**~9–10 вечорів до повноцінно грабельної версії** (M0–M6).
-**Мінімальна цікава версія — M0+M1, ~3 вечори.**
+**~9–10 evenings to a fully playable version** (M0–M6).
+**Minimum interesting version — M0+M1, ~3 evenings.**
 
-Найбільш недооцінені частини, за досвідом таких проектів:
-1. **Відбір карток.** 283 штуки по 10 секунд на кожну — це ~50 хвилин
-   безперервного кліку. На RTX 3050 сама генерація займе 45 хв, тобто
-   **відбір довший за генерацію.** Тому M5 обов'язковий і має бути раніше.
-2. **Тюнінг промптів.** Перші результати будуть не такими, як в уяві.
-   Закладай на це окремий вечір.
-3. **Easing рулетки.** Різниця між «нормально» і «хочеться ще» — це
-   кілька годин підбору кривої й таймінгу.
+The most underestimated parts, based on experience with projects like this:
+1. **Card selection.** 283 items at 10 seconds each is ~50 minutes
+   of continuous clicking. On an RTX 3050, generation itself takes 45 min, so
+   **selection takes longer than generation.** Therefore M5 is mandatory and must come earlier.
+2. **Prompt tuning.** The first results will not look as imagined.
+   Budget a separate evening for this.
+3. **Roulette easing.** The difference between “fine” and “want more” is
+   several hours of tuning the curve and timing.
 
-Перше налаштування середовища (torch з CUDA-індексу, перевірка
-`torch.cuda.is_available()`, скачування моделі ~2 GB) — закладай зайві
-30–40 хвилин у M0. На Windows це найчастіше місце, де все йде не так.
+For the initial environment setup (torch from the CUDA index, checking
+`torch.cuda.is_available()`, downloading the ~2 GB model), budget an extra
+30–40 minutes in M0. On Windows, this is where things most often go wrong.
 
-## Порядок, якщо часу мало
+## Order If Time Is Short
 
-M0 → M1 → зупинись і подивись, чи це весело. Якщо так — M2, M3.
-Все після M3 — це вже поглиблення, а не необхідність.
+M0 → M1 → stop and see whether it is fun. If so, M2, M3.
+Everything after M3 is refinement, not necessity.

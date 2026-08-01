@@ -144,6 +144,6 @@ Put the 200k test in a separate slow suite. Do **not** shrink N — the vault
 explains it will flake below that, since mythic's standard error grows.
 
 ## Out of scope
-Auth, WebSockets, cursor pagination, rate limiting (vault 03: "чого свідомо
-немає"). Provably-fair is M7 — store `server_seed`/`client_seed`/`nonce`
+Auth, WebSockets, cursor pagination, rate limiting (vault 03: "what is deliberately
+absent"). Provably-fair is M7 — store `server_seed`/`client_seed`/`nonce`
 columns now, leave verification for later.

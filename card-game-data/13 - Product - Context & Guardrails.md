@@ -3,49 +3,49 @@ tags: [product, canon, agent-context]
 status: active
 ---
 
-# Продуктовий контекст і межі
+# Product Context & Guardrails
 
-Назад до [[00 - Card Game MOC]] · Системи → [[14 - Product - System Landscape]] · Економіка → [[15 - Product - Economy Context]]
+Back to [[00 - Card Game MOC]] · Systems → [[14 - Product - System Landscape]] · Economy → [[15 - Product - Economy Context]]
 
-## Як читати цей документ
+## How to read this document
 
-- **Факт** — підтверджений кодом або чинним дизайном.
-- **Рішення** — свідомо обрана межа; не обходь її мовчки.
-- **Відкрито** — даних недостатньо; у пропозиції назви припущення та дай варіанти.
+- **Fact** — confirmed by code or the current design.
+- **Decision** — a deliberately chosen boundary; do not bypass it silently.
+- **Open** — insufficient data; name assumptions and provide options in the proposal.
 
-## Продуктова обіцянка
+## Product promise
 
-**Факт:** це локальна fantasy card-collection гра про короткий, напружений цикл: вибрати кейс → відкрити → пережити reveal → поповнити колекцію → повернутися до наступного відкриття. Від кліку до кліку ціль — приблизно десять секунд. Деталі → [[04 - Game Design - Core Loop]].
+**Fact:** this is a local fantasy card-collection game about a short, tense cycle: choose a case → open it → experience the reveal → expand the collection → return for the next opening. The target from click to click is approximately ten seconds. Details → [[04 - Game Design - Core Loop]].
 
-Головна цінність — не грошовий виграш, а відчуття колекціонування, рідкісного дропу та поступового заповнення набору. Будь-яка нова система має або підсилювати цей цикл, або давати осмислений вибір навколо нього.
+The main value is not monetary winnings, but the feeling of collecting, a rare drop, and gradually filling a set. Any new system must either strengthen this cycle or provide a meaningful choice around it.
 
-## Чинні межі
+## Current boundaries
 
-| Теза | Статус | Наслідок для продуктового рішення |
+| Thesis | Status | Consequence for the product decision |
 |---|---|---|
-| Один локальний продукт, а не live-service | Рішення | Не припускай серверну економіку, модерацію або операційні команди без явного розширення scope. |
-| Реальних грошей немає | Рішення | Магазин, аукціон і ціни можуть працювати лише на внутрішніх валютних правилах. |
-| PvP, бої й геймплей карток відсутні | Рішення | ATK/DEF зараз флейвор; не будуй прогресію на бойовій силі. |
-| Міжгравцевої торгівлі немає | Рішення | «Аукціон» не можна непомітно трактувати як P2P-маркет. Спершу розділи NPC-аукціон і майбутній мультиплеєрний ринок. |
-| Core loop уже реалізований | Факт | Нова фіча не повинна дублювати `open case → reveal → inventory` без іншої цінності. |
-| Економіка має ledger і server authority | Факт | Нове джерело або витрата валюти потребує транзакції, ledger-запису й перевірки інваріантів. |
+| One local product, not a live-service | Decision | Do not assume server-side economy, moderation, or operations teams without an explicit scope expansion. |
+| There is no real money | Decision | The shop, auction, and prices may operate only under internal currency rules. |
+| PvP, combat, and card gameplay are absent | Decision | ATK/DEF are flavor for now; do not build progression on combat power. |
+| There is no player-to-player trading | Decision | “Auction” cannot be quietly interpreted as a P2P market. First separate the NPC auction from a future multiplayer market. |
+| The core loop is already implemented | Fact | A new feature must not duplicate `open case → reveal → inventory` without providing other value. |
+| The economy has a ledger and server authority | Fact | A new currency source or sink requires a transaction, ledger entry, and invariant checks. |
 
-## Незмінні на цей момент правила
+## Rules that are immutable for now
 
-1. Картка потрапляє до гравця лише після серверного рішення; UI не визначає RNG.
-2. Колекція рахує унікальні **неспродані** картки. Останню копію не можна продати.
-3. Цінність дублікатів — шлях до наступних відкриттів, але вони не мають перетворювати кейси на нескінченний генератор валюти.
-4. Новий контент проходить шлях `генерація → draft → ручний review → approved`; draft не є нагородою для гравця.
-5. Якщо ідея змінює спосіб отримання або знищення карток, вона змінює економіку й мілстоуни — читай [[15 - Product - Economy Context]] до рішення.
+1. A card reaches the player only after a server decision; the UI does not determine RNG.
+2. The collection counts unique **unsold** cards. The last copy cannot be sold.
+3. The value of duplicates is a path to subsequent openings, but they must not turn cases into an infinite currency generator.
+4. New content follows `generation → draft → manual review → approved`; draft is not a player reward.
+5. If an idea changes how cards are obtained or destroyed, it changes the economy and milestones — read [[15 - Product - Economy Context]] before deciding.
 
-## Правило для пропозицій
+## Rule for proposals
 
-Перед тим як рекомендувати нову продуктову систему, явно покажи:
+Before recommending a new product system, explicitly show:
 
-- проблему гравця або можливість, яку вона вирішує;
-- як вона повертає у core loop;
-- що є фактом, припущенням і новим рішенням;
-- які чинні межі вона порушує або зберігає;
-- найменший тестований варіант і метрику успіху.
+- the player problem or opportunity it solves;
+- how it returns to the core loop;
+- what is a fact, an assumption, and a new decision;
+- which current boundaries it breaks or preserves;
+- the smallest testable version and success metric.
 
-Якщо потрібного продуктового факту не існує, не вигадуй його як канон: познач `Відкрито` й запропонуй 2–3 контрольовані варіанти.
+If the required product fact does not exist, do not invent it as canon: mark it `Open` and propose 2–3 controlled options.

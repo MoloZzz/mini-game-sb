@@ -2,30 +2,23 @@
 tags: [gamedesign, math, economy]
 ---
 
-# Перебалансування економіки
+# Economy Rebalance
 
-Назад до [[00 - Card Game MOC]] · Базова математика → [[04 - Game Design - Core Loop]] · Рідкості → [[05 - Game Design - Rarity & Drop Rates]]
+Back to [[00 - Card Game MOC]] · Base mathematics → [[04 - Game Design - Core Loop]] · Rarities → [[05 - Game Design - Rarity & Drop Rates]]
 
-## Проблема, яку виміряли
+## The problem we measured
 
-[[04 - Game Design - Core Loop]] обіцяв EV Starter Chest 61 монету зі 100. У реальній грі
-на пулі, що виріс до 432 карток, вимірений EV — **1.70 монети (1.7%)**.
+[[04 - Game Design - Core Loop]] promised an EV of 61 coins from a 100-coin Starter Chest. In the real game, with a pool that grew to 432 cards, the measured EV is **1.70 coins (1.7%)**.
 
-**Причина:** правило `LAST_COPY` забороняє продавати картку, якщо в тебе лише
-одна копія. Продаж платить лише за картку, яку ти **вже маєш**. Формула
-продажної вартості дропу — не проста вага-на-ціну, а вага-на-ціну-на-шанс-що-
-вже-володієш:
+**Reason:** the `LAST_COPY` rule prevents selling a card if you have only one copy. A sale pays only for a card you **already own**. The drop sale-value formula is not simple weight-times-price, but weight-times-price-times-the-chance-that-you-already-own-it:
 
 ```
 EV = Σ w_r × sellValue_r × (owned_r / pool_r)
 ```
 
-`owned_r / pool_r` — частка пулу рідкості `r`, яку гравець уже зібрав. На
-старті вона майже нульова для всього, крім common — тому реальний EV
-провалюється, хоча ваги дропу й ціни продажу лишились такими, якими були
-задумані на пул у 110 карток.
+`owned_r / pool_r` is the share of rarity `r`'s pool that the player has already collected. At the start it is nearly zero for everything except common — so actual EV collapses, even though the drop weights and sale prices remain those designed for a 110-card pool.
 
-### Вимір на Starter Chest, ~19 карток у власності
+### Measurement on Starter Chest, ~19 cards owned
 
 ```
 common     0.600 × 15   × 12/180 = 0.60
@@ -37,24 +30,17 @@ mythic     0.002 × 3000 ×  0/15  = 0
                                     1.70 coins out of 100 (1.7%)
 ```
 
-Пул `180/108/64/35/30/15` (=432) — реальна кількість approved-карток по
-рідкостях (пропорції з `POOL_SEED_RATIOS`, ті самі 40/30/20/12/6/2, що й
-у [[05 - Game Design - Rarity & Drop Rates]], просто на новому масштабі).
+The `180/108/64/35/30/15` pool (=432) is the real number of approved cards by rarity (the proportions from `POOL_SEED_RATIOS`, the same 40/30/20/12/6/2 as in [[05 - Game Design - Rarity & Drop Rates]], simply at a new scale).
 
-**Корінь проблеми:** пул виріс зі 110 до 432 карток, а всі економічні
-константи (щоденний бонус, ціни кейсів, `sellValue`) лишились відкалібровані
-на 110. При старому щоденному бонусі в 500 монет це купувало **5.1 відкриття
-на день** замість запланованих ~13.
+**Root cause:** the pool grew from 110 to 432 cards, while all economic constants (daily bonus, case prices, `sellValue`) remained calibrated for 110. With the old daily bonus of 500 coins, this bought **5.1 openings per day** instead of the planned ~13.
 
-## Виправлення
+## Fix
 
-### 1. Драбина мілстоунів колекції
+### 1. Collection milestone ladder
 
-Другий, незалежний канал винагороди — платить за **широту** колекції
-(скільки різних карток зібрано), а не за дублікати, яких на старті просто
-нема. Джерело: `packages/shared-types/src/milestones.ts`.
+A second, independent reward channel pays for collection **breadth** (how many different cards have been collected), rather than duplicates, which simply do not exist at the start. Source: `packages/shared-types/src/milestones.ts`.
 
-| Тир | Унікальних карток | Монети | Ключі |
+| Tier | Unique cards | Coins | Keys |
 |---|---|---|---|
 | unique_10 | 10 | 200 | 0 |
 | unique_25 | 25 | 300 | 1 |
@@ -69,65 +55,42 @@ mythic     0.002 × 3000 ×  0/15  = 0
 | unique_400 | 400 | 2000 | 5 |
 | unique_432 | 432 | 2000 | 10 |
 
-**Разом: 15 100 монет + 36 ключів за повну колекцію.**
+**Total: 15,100 coins + 36 keys for the full collection.**
 
-**Пороги — це АБСОЛЮТНА кількість унікальних карток, ніколи відсоток від
-пулу.** Відсоток заднім числом «розвидав» би вже здобуті мілстоуни щоразу,
-коли генерується новий батч карток — гравець, що вже закрив тир, побачив би
-його знову незакритим. Тир 12 навмисно **заморожений на 432** — розмір пулу
-на момент написання драбини — з тієї ж причини: подальше зростання пулу —
-свідоме контентне рішення, яке має додавати тир 13 з новим числом, а не
-тихо зсувати ціль тиру 12.
+**Thresholds are an ABSOLUTE number of unique cards, never a percentage of the pool.** A percentage would retroactively “redistribute” already earned milestones whenever a new batch of cards is generated — a player who had already completed a tier would see it become incomplete again. Tier 12 is intentionally **frozen at 432** — the pool size when the ladder was written — for the same reason: future pool growth is a deliberate content decision that should add tier 13 with a new number, not quietly shift tier 12's target.
 
-### 2. Єдина ручка тюнінгу: `DAILY_BONUS`
+### 2. One tuning control: `DAILY_BONUS`
 
-`DAILY_BONUS` (`packages/shared-types/src/player.ts`) піднято **500 → 800
-монет, 1 → 2 ключі**. Це єдина зміна номіналу винагороди в цьому проході,
-крім самої драбини мілстоунів — `sellValue` і ціни кейсів (крім однієї,
-див. нижче) свідомо не чіпались.
+`DAILY_BONUS` (`packages/shared-types/src/player.ts`) was raised **500 → 800 coins, 1 → 2 keys**. This is the only change to reward denominations in this pass, besides the milestone ladder itself — `sellValue` and case prices (except one, see below) were deliberately left untouched.
 
-### 3. Результуюча рампа
+### 3. Resulting ramp
 
-| Стадія | EV продажу | мілстоуни | разом | чиста ціна (кейс 100) | відкриттів/день @ 800 |
+| Stage | Sale EV | milestones | total | net price (100-coin case) | openings/day @ 800 |
 |---|---|---|---|---|---|
-| Старт (19 унік.) | 1.7 | 26 | 27.7 | 72.3 | 11.1 |
-| Середина (~216) | 30.5 | 17 | 47.5 | 52.5 | 15.2 |
-| Повна (432) | 61 | 0 | 61 | 39 | 20.5 |
+| Start (19 unique) | 1.7 | 26 | 27.7 | 72.3 | 11.1 |
+| Middle (~216) | 30.5 | 17 | 47.5 | 52.5 | 15.2 |
+| Full (432) | 61 | 0 | 61 | 39 | 20.5 |
 
-Монотонна рампа **11 → 15 → 20 відкриттів на день**, що стартує одразу
-всередині проєктного діапазону «10–14 на день» з [[04 - Game Design - Core Loop]],
-а не провалюється нижче нього, як було зі старим бонусом.
+A monotonic ramp of **11 → 15 → 20 openings per day** starts immediately within the project range of “10–14 per day” from [[04 - Game Design - Core Loop]], rather than falling below it as it did with the old bonus.
 
-## Чому `sellValue` НЕ підняли
+## Why `sellValue` was NOT increased
 
-`sellValue` множиться на `owned_r / pool_r` — частку, яка йде від майже нуля
-на старті до майже одиниці при повній колекції. Підняти `sellValue` —
-означає підняти обидва кінці одразу:
+`sellValue` is multiplied by `owned_r / pool_r` — the share that goes from nearly zero at the start to nearly one with a complete collection. Increasing `sellValue` means raising both ends at once:
 
-- На старті це майже нічого не змінює (`owned_r / pool_r ≈ 0`).
-- При повній колекції EV Starter Chest уже дорівнює 61 проти ціни 100.
-  Подвоєння `sellValue` дає EV ≈ 122 > 100 — кейс стає **друкарським
-  верстатом монет** саме тоді, коли в гравця найбільше карток на продаж.
+- At the start, it changes almost nothing (`owned_r / pool_r ≈ 0`).
+- With a complete collection, Starter Chest EV already equals 61 against a price of 100. Doubling `sellValue` gives EV ≈ 122 > 100 — the case becomes a **coin-printing machine** exactly when the player has the most cards to sell.
 
-Збиткова маржа продажу при повній колекції — єдине, що взагалі лишає монети
-дефіцитом. Тому єдина ручка тюнінгу — щоденний бонус, а не продажна вартість.
+The loss-making sale margin at full collection is the only thing that keeps coins scarce at all. Therefore, the only tuning control is the daily bonus, not sale value.
 
 ## Stoneheart Coffer: 180 → 120
 
-При ціні 180 цей кейс був **строго домінований**: дорожчий за Starter Chest
-(100 монет) і з гіршими шансами — відношення EV до ціни лише **34%** проти
-**61%** у Starter Chest. Жоден раціональний гравець не мав причини його
-купувати.
+At a price of 180, this case was **strictly dominated**: more expensive than Starter Chest (100 coins) and with worse odds — the EV-to-price ratio was only **34%** versus **61%** for Starter Chest. No rational player had a reason to buy it.
 
-При 120 відношення стає **51%**, а вужча смуга rare-рідкості дає вимірно
-швидший темп збору колекції для гравця, який його обирає.
+At 120, the ratio becomes **51%**, and the narrower rare-rarity band gives a measurably faster collection rate for a player who chooses it.
 
-Це знадобилось у вигляді **справжньої міграції**
-(`UpdateStoneheartCofferPrice`), а не лише правки константи `CASE_SEEDS`:
-`seedCases` пропускає слаги, які вже є в базі, тож зміна лише константи
-ніколи б не дійшла до вже засіяної бази даних.
+This had to be implemented as a **real migration** (`UpdateStoneheartCofferPrice`), not just a `CASE_SEEDS` constant change: `seedCases` skips slugs already present in the database, so changing only the constant would never reach an already-seeded database.
 
-## Пов'язане
+## Related
 
-- Мілстоуни та драбина → ADR-014 не стосується, дивись [[10 - Planning - Decisions]] ADR-015 (звідки береться `pool_r`)
-- Інваріант ledger після масового продажу дублікатів → [[10 - Planning - Decisions]] ADR-016
+- Milestones and ladder → ADR-014 is unrelated; see [[10 - Planning - Decisions]] ADR-015 (where `pool_r` comes from)
+- Ledger invariant after mass duplicate sale → [[10 - Planning - Decisions]] ADR-016

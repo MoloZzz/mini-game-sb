@@ -5,70 +5,70 @@ status: planning
 
 # Mini Card Game — Map of Content
 
-Локальна fantasy card-game з кейсами та горизонтальною рулеткою.
-Картки генеруються локально через Stable Diffusion 1.5.
+Local fantasy card game with cases and a horizontal roulette.
+Cards are generated locally through Stable Diffusion 1.5.
 
-## Одним реченням
+## In One Sentence
 
-Гравець витрачає валюту → відкриває кейс → горизонтальна рулетка прокручується
-і зупиняється на картці → картка падає в інвентар.
+The player spends currency → opens a case → the horizontal roulette spins
+and stops on a card → the card goes into the inventory.
 
-## Три сервіси
+## Three Services
 
-| Сервіс | Стек | Роль |
+| Service | Stack | Role |
 |---|---|---|
-| `game-ui` | React + TS + Vite + Framer Motion | Все, що бачить гравець |
-| `game-api` | NestJS + TypeORM + Postgres | Каталог, інвентар, економіка, RNG, статика |
-| `card-forge` | Python + FastAPI + diffusers | Офлайн-генерація артів SD 1.5 |
+| `game-ui` | React + TS + Vite + Framer Motion | Everything the player sees |
+| `game-api` | NestJS + TypeORM + Postgres | Catalog, inventory, economy, RNG, static assets |
+| `card-forge` | Python + FastAPI + diffusers | Offline SD 1.5 art generation |
 
-Деталі → [[01 - Architecture - Services]]
+Details → [[01 - Architecture - Services]]
 
-## Навігація
+## Navigation
 
-### Архітектура
-- [[01 - Architecture - Services]] — межі сервісів, чому саме 3
-- [[02 - Architecture - Data Model]] — Postgres схема
-- [[03 - Architecture - API Contracts]] — ендпоінти й формати
+### Architecture
+- [[01 - Architecture - Services]] — service boundaries, why exactly 3
+- [[02 - Architecture - Data Model]] — Postgres schema
+- [[03 - Architecture - API Contracts]] — endpoints and formats
 
-### Гейм-дизайн
-- [[04 - Game Design - Core Loop]] — цикл гри, екрани, економіка
-- [[05 - Game Design - Rarity & Drop Rates]] — рідкості, ваги, математика
-- [[12 - Game Design - Economy Rebalance]] — виміряний провал EV, мілстоуни, ремонт рампи
+### Game Design
+- [[04 - Game Design - Core Loop]] — game loop, screens, economy
+- [[05 - Game Design - Rarity & Drop Rates]] — rarities, weights, mathematics
+- [[12 - Game Design - Economy Rebalance]] — measured EV failure, milestones, ramp repair
 
-### Генерація
-- [[06 - Generation - SD Pipeline]] — модель, batch, review
-- [[07 - Generation - Prompt Recipes]] — шаблони промптів
+### Generation
+- [[06 - Generation - SD Pipeline]] — model, batch, review
+- [[07 - Generation - Prompt Recipes]] — prompt templates
 
 ### UI
-- [[08 - UI - Roulette Spec]] — математика й тайминг рулетки
+- [[08 - UI - Roulette Spec]] — roulette mathematics and timing
 
-### Планування
-- [[09 - Planning - Roadmap]] — мілстоуни M0–M6
-- [[10 - Planning - Decisions]] — ADR, зафіксовані рішення
-- [[11 - Planning - Open Questions]] — що ще не вирішено
+### Planning
+- [[09 - Planning - Roadmap]] — M0–M6 milestones
+- [[10 - Planning - Decisions]] — ADRs, recorded decisions
+- [[11 - Planning - Open Questions]] — what remains unresolved
 
-### Продуктовий контекст для рішень
-- [[13 - Product - Context & Guardrails]] — цінність продукту, scope і незмінні обмеження
-- [[14 - Product - System Landscape]] — що реалізовано, заплановано, заблоковано або невідомо
-- [[15 - Product - Economy Context]] — коротка модель економіки та правила для нових джерел/витрат
-- [[16 - Product - Narrative Bible]] — встановлений лор і безпечний спосіб працювати з прогалинами
-- [[17 - Product - Solution Brief Template]] — формат рішення для нової системи
-- [[18 - Product - Strategy]] — продуктова ціль, робочі сегменти й критерій корисної фічі
-- [[19 - Product - Jobs To Be Done]] — гіпотези потреб гравця, які треба перевіряти
-- [[20 - Product - Metric Tree]] — дерево метрик і локальний план подій
-- [[21 - Product - Evidence Log]] — журнал перевірюваних спостережень і playtest
-- [[22 - Product - Opportunity Backlog]] — гіпотези, MVP та правила пріоритизації
-- [[23 - Product - Monetization Policy]] — поточні межі внутрішньої валюти й умови зміни scope
+### Product Context for Decisions
+- [[13 - Product - Context & Guardrails]] — product value, scope, and immutable constraints
+- [[14 - Product - System Landscape]] — what is implemented, planned, blocked, or unknown
+- [[15 - Product - Economy Context]] — a brief economy model and rules for new sources/spending
+- [[16 - Product - Narrative Bible]] — established lore and a safe way to work with gaps
+- [[17 - Product - Solution Brief Template]] — solution format for a new system
+- [[18 - Product - Strategy]] — product goal, working segments, and useful-feature criteria
+- [[19 - Product - Jobs To Be Done]] — hypotheses about player needs to validate
+- [[20 - Product - Metric Tree]] — metric tree and local event plan
+- [[21 - Product - Evidence Log]] — log of verifiable observations and playtests
+- [[22 - Product - Opportunity Backlog]] — hypotheses, MVPs, and prioritization rules
+- [[23 - Product - Monetization Policy]] — current internal-currency boundaries and conditions for changing scope
 
-## Два рішення, які визначили всю архітектуру
+## Two Decisions That Defined the Entire Architecture
 
-**1. Генерація ніколи не відбувається під час гри.**
-SD 1.5 на ноуті — це секунди (GPU) або хвилини (CPU). Рулетка крутиться 5 секунд.
-Тому картки генеруються заздалегідь у пул, а гра просто тягне з пулу.
-Це повністю розв'язує повільний Python від швидкого ігрового циклу — вони
-можуть навіть не бути запущені одночасно.
+**1. Generation never happens during gameplay.**
+SD 1.5 on a laptop takes seconds (GPU) or minutes (CPU). The roulette spins for 5 seconds.
+So cards are generated in advance into a pool, and the game simply draws from that pool.
+This completely decouples slow Python from the fast game loop — they
+do not even need to be running at the same time.
 
-**2. RNG живе на сервері, не в UI.**
-`game-api` вирішує, яка картка випала, ще ДО початку анімації, і віддає UI
-готову стрічку з переможцем на відомій позиції. UI просто прокручує до неї.
-Так само працюють реальні iGaming/CS:GO кейс-сайти.
+**2. RNG lives on the server, not in the UI.**
+`game-api` decides which card dropped BEFORE the animation starts and gives the UI
+a ready reel with the winner at a known position. The UI simply spins to it.
+Real iGaming/CS:GO case sites work the same way.

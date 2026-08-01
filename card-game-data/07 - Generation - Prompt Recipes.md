@@ -2,31 +2,31 @@
 tags: [generation, prompts]
 ---
 
-# Рецепти промптів
+# Prompt Recipes
 
-Назад до [[00 - Card Game MOC]] · Пайплайн → [[06 - Generation - SD Pipeline]]
+Back to [[00 - Card Game MOC]] · Pipeline → [[06 - Generation - SD Pipeline]]
 
-## Анатомія промпту
+## Prompt Anatomy
 
 ```
-[СТИЛЬ] + [СУБ'ЄКТ] + [СТИХІЯ] + [РІДКІСТЬ-МОДИФІКАТОР] + [ЯКІСТЬ]
+[STYLE] + [SUBJECT] + [ELEMENT] + [RARITY-MODIFIER] + [QUALITY]
 ```
 
-Чотири шари комбінуються: 5 архетипів × 6 стихій × 6 рідкостей вже дають
-180 унікальних рецептів. Більше, ніж потрібно.
+Four layers combine: 5 archetypes × 6 elements × 6 rarities already give
+180 unique recipes. More than needed.
 
-## Базові блоки
+## Base Blocks
 
-**STYLE (незмінний, задає впізнаваність усього сету):**
+**STYLE (immutable, defines the identity of the entire set):**
 ```
 fantasy trading card game art, centered character portrait,
 painterly digital illustration, dramatic rim lighting, dark background
 ```
 
-Один STYLE на весь сет — це те, що робить 110 різних картинок схожими на
-одну колекцію, а не на випадкову папку. Не міняй його між рецептами.
+One STYLE for the entire set is what makes 110 different images look like
+one collection rather than a random folder. Do not change it between recipes.
 
-**NEGATIVE (однаковий скрізь):**
+**NEGATIVE (the same everywhere):**
 ```
 text, letters, words, watermark, signature, logo, frame, border, ui,
 blurry, low quality, jpeg artifacts, deformed, disfigured, bad anatomy,
@@ -34,17 +34,17 @@ extra limbs, extra fingers, mutated hands, cropped, out of frame,
 multiple heads, duplicate, photo, 3d render
 ```
 
-`text, letters, words, frame, border` тут не випадково — SD любить
-домальовувати псевдо-текст і рамки. Рамку робить CSS, не модель.
+`text, letters, words, frame, border` are not accidental here — SD likes
+to draw pseudo-text and frames. CSS makes the frame, not the model.
 
-**QUALITY (хвіст):**
+**QUALITY (the tail):**
 ```
 highly detailed, sharp focus, artstation trending, 8k
 ```
 
-## Архетипи
+## Archetypes
 
-| ID | Промпт-фрагмент |
+| ID | Prompt fragment |
 |---|---|
 | `beast` | `a fearsome fantasy beast creature, scales and fur, wild eyes` |
 | `humanoid` | `a fantasy warrior character, ornate armor, determined expression` |
@@ -52,22 +52,22 @@ highly detailed, sharp focus, artstation trending, 8k
 | `construct` | `an animated stone and metal construct, glowing runic core` |
 | `spirit` | `an ethereal spirit entity, translucent flowing form, wisps` |
 
-## Стихії
+## Elements
 
-| ID | Фрагмент | Палітра |
+| ID | Fragment | Palette |
 |---|---|---|
-| `fire` | `wreathed in ember and flame, molten cracks, smoke` | помаранч/червоний |
-| `water` | `flowing water and ice, deep blue glow, mist` | синій/бірюза |
-| `earth` | `stone, moss and crystal growths, earthen tones` | коричневий/зелений |
-| `air` | `swirling wind and storm clouds, crackling lightning` | білий/жовтий |
-| `shadow` | `shrouded in dark purple void mist, sinister glow` | фіолетовий/чорний |
-| `light` | `radiant golden holy light, halo, divine glow` | золотий/білий |
+| `fire` | `wreathed in ember and flame, molten cracks, smoke` | orange/red |
+| `water` | `flowing water and ice, deep blue glow, mist` | blue/turquoise |
+| `earth` | `stone, moss and crystal growths, earthen tones` | brown/green |
+| `air` | `swirling wind and storm clouds, crackling lightning` | white/yellow |
+| `shadow` | `shrouded in dark purple void mist, sinister glow` | purple/black |
+| `light` | `radiant golden holy light, halo, divine glow` | gold/white |
 
-## Модифікатори рідкості
+## Rarity Modifiers
 
-Тут головна ідея: **рідкість має бути видно з мініатюри, без підпису.**
+The main idea here: **rarity should be visible from the thumbnail, without a label.**
 
-| Рідкість | Фрагмент | CFG | Steps |
+| Rarity | Fragment | CFG | Steps |
 |---|---|---|---|
 | Common | `simple, plain, muted colors, humble` | 6.0 | 22 |
 | Uncommon | `modest detail, slight magical aura` | 6.5 | 25 |
@@ -76,10 +76,10 @@ highly detailed, sharp focus, artstation trending, 8k
 | Legendary | `legendary artifact, radiant golden aura, epic scale, awe-inspiring, god rays` | 8.0 | 35 |
 | Mythic | `cosmic mythic entity, reality-bending aura, celestial energy, overwhelming divine presence, galaxy` | 8.5 | 40 |
 
-Нижчий CFG для common — модель менше «старається», виходить простіше й
-буденніше. Це саме те, що треба: common має виглядати як common.
+Lower CFG for common means the model “tries” less, producing something simpler and
+more ordinary. That is exactly what is needed: common should look common.
 
-## Приклад зібраного рецепту
+## Example of a Complete Recipe
 
 **`beast_fire_legendary`:**
 ```
@@ -92,7 +92,7 @@ highly detailed, sharp focus, artstation trending, 8k
 ```
 `cfg_scale: 8.0`, `steps: 35`, `seed: 700000+i`
 
-## Формат конфігу
+## Config Format
 
 ```yaml
 # card-forge/recipes.yaml
@@ -107,20 +107,20 @@ recipes:
     archetype: beast
     element: fire
     rarity: legendary
-    count: 12          # ×2.5 запас на брак → лишиться ~5 з 6 потрібних
+    count: 12          # ×2.5 defect buffer → ~5 of the 6 needed will remain
     base_seed: 700000
     cfg_scale: 8.0
     steps: 35
 ```
 
-**`count` завжди ×2.5 від цільового пулу рідкості**
-([[05 - Game Design - Rarity & Drop Rates]]), бо approve пройде менше половини.
+**`count` is always ×2.5 the target rarity pool**
+([[05 - Game Design - Rarity & Drop Rates]]), because fewer than half will pass approval.
 
-## План покриття пулу
+## Pool Coverage Plan
 
-Ціль 110 карток → генерувати ~280.
+Target 110 cards → generate ~280.
 
-| Рідкість | Ціль | Рецептів | count кожен | Разом генерується |
+| Rarity | Target | Recipes | count each | Total generated |
 |---|---|---|---|---|
 | Common | 40 | 10 | 10 | 100 |
 | Uncommon | 30 | 8 | 9 | 72 |
@@ -130,25 +130,25 @@ recipes:
 | Mythic | 2 | 2 | 5 | 10 |
 | | **110** | **34** | | **283** |
 
-34 рецепти з комбінацій архетип×стихія — обираєш підмножину, не всі 180.
+34 recipes from archetype×element combinations — choose a subset, not all 180.
 
-## Практичні нотатки
+## Practical Notes
 
-**Сіди сусідні дають схожі результати.** Знайшов вдалу картку з seed 428193?
-Спробуй 428190–428198 — отримаєш варіації тієї ж композиції. Корисно, коли
-рецепт майже спрацював.
+**Neighboring seeds produce similar results.** Found a good card with seed 428193?
+Try 428190–428198 — you will get variations of the same composition. Useful when
+the recipe almost worked.
 
-**Порядок токенів має вагу.** Те, що на початку промпту, впливає сильніше.
-Тому STYLE іде першим — він і має домінувати над усім сетом.
+**Token order matters.** What comes at the beginning of the prompt has more influence.
+That is why STYLE comes first; it should dominate the entire set.
 
-**CLIP обрізає на 77 токенах.** Наведені промпти вкладаються (~60–70).
-Якщо додаватимеш — щось доведеться прибрати, інакше хвіст просто
-проігнорується мовчки.
+**CLIP truncates at 77 tokens.** The prompts above fit (~60–70).
+If you add more, something will have to be removed, or the tail will simply
+be silently ignored.
 
-**Ваги промпту** (`(word:1.3)`) працюють у AUTOMATIC1111, але в чистому
-`diffusers` вимагають `compel`. Не тягни його заради першої ітерації —
-перестановка слів дає 80% того ж ефекту.
+**Prompt weights** (`(word:1.3)`) work in AUTOMATIC1111, but require `compel` in plain
+`diffusers`. Do not bring it in for the first iteration; reordering words gives 80%
+of the same effect.
 
-**Веди журнал.** Окрема нотатка з парами «рецепт → що вийшло». Через
-20 батчів ти не згадаєш, чому `shadow_undead_epic` виглядав добре, а
-`shadow_spirit_epic` — ні. Це найцінніший артефакт усього процесу.
+**Keep a log.** A separate note with “recipe → result” pairs. After
+20 batches you will not remember why `shadow_undead_epic` looked good while
+`shadow_spirit_epic` did not. This is the most valuable artifact of the entire process.

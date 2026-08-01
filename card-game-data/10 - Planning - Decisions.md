@@ -2,431 +2,264 @@
 tags: [planning, adr]
 ---
 
-# Зафіксовані рішення (ADR)
+# Recorded Decisions (ADR)
 
-Назад до [[00 - Card Game MOC]]
+Back to [[00 - Card Game MOC]]
 
-Формат: рішення → контекст → альтернативи → чому так → що б це змінило.
-
----
-
-## ADR-001 · Генерація повністю офлайн, не під час гри
-
-**Статус:** прийнято
-
-SD 1.5 на ноуті — від 2с (GPU) до 90с (CPU) на картинку. Рулетка крутиться
-5.5с і не може чекати. Тому картки генеруються заздалегідь у пул, гра тягне
-approved-картки з бази.
-
-**Альтернативи:** генерувати під час анімації (не вкладається навіть на
-хорошому GPU); попередньо генерувати «наступну» картку у фоні (складно,
-ламається при швидких повторних відкриттях і не масштабується на стрічку
-з 60 плиток).
-
-**Наслідок:** `card-forge` повністю розв'язаний з ігровим циклом. Може бути
-вимкнений, може працювати на іншій машині, може бути переписаний — гра
-не помітить.
-
-**Що б змінило рішення:** нічого реалістичного на локальному залізі.
-Хіба що перехід на віддалений inference-API з <1с латентністю, але це
-суперечить меті проекту (спробувати SD локально).
+Format: decision → context → alternatives → why this → what would change it.
 
 ---
 
-## ADR-002 · Три сервіси, не п'ять
+## ADR-001 · Generation fully offline, not during play
 
-**Статус:** прийнято (перегляд початкового плану)
+**Status:** accepted
 
-Початкова ідея — окремі сервіси для генерації картинок, зберігання картинок
-і зберігання метаданих карток.
+SD 1.5 on a laptop takes from 2s (GPU) to 90s (CPU) per image. The roulette spins for 5.5s and cannot wait. Therefore cards are generated in advance into a pool, and the game pulls approved cards from the database.
 
-**Відхилено «сервіс зберігання картинок».** Це папка плюс
-`useStaticAssets()`. Окремий процес дав би зайвий деплой, зайвий хоп і
-зайве джерело помилок за нуль користі.
+**Alternatives:** generate during the animation (does not fit even on a good GPU); pre-generate the “next” card in the background (complex, breaks on fast repeated openings, and does not scale to a strip with 60 tiles).
 
-**Критерій поділу:** різний рантайм + різна швидкість + різний життєвий цикл.
-`card-forge` відповідає всім трьом (Python, хвилини, працює офлайн).
-Файлова папка — жодному.
+**Consequence:** `card-forge` is completely decoupled from the game loop. It can be disabled, run on another machine, or rewritten — the game will not notice.
 
-**Що б змінило рішення:** перехід на S3 — але й тоді це заміна адаптера
-в `game-api`, а не новий сервіс. Або якби генерація виїхала на окрему
-машину з GPU — тоді знадобився б реальний трансфер файлів, і виділення
-storage стало б виправданим.
+**What would change the decision:** nothing realistic on local hardware. Perhaps a move to a remote inference API with <1s latency, but that contradicts the project goal (trying SD locally).
 
 ---
 
-## ADR-003 · Postgres для всього, Mongo не використовуємо
+## ADR-002 · Three services, not five
 
-**Статус:** прийнято
+**Status:** accepted (revision of the initial plan)
 
-**Причини:**
-1. Відкриття кейсу — атомарна транзакція (списати ключ + видати картку)
-2. Дані реляційні: `players → player_cards → cards`
-3. Напівструктуровані метадані генерації лягають у `jsonb`
+The initial idea was separate services for image generation, image storage, and card-metadata storage.
 
-Останній пункт знімає єдиний реальний аргумент за Mongo — гнучкість схеми
-там, де вона потрібна, без втрати транзакцій і JOIN'ів.
+**“Image storage service” rejected.** It is a folder plus `useStaticAssets()`. A separate process would add a deployment, a hop, and another source of errors for zero benefit.
 
-**Що б змінило рішення:** якби картки не мали фіксованих полів і не було
-економіки. Тобто інша гра.
+**Separation criterion:** different runtime + different speed + different lifecycle. `card-forge` satisfies all three (Python, minutes, runs offline). A file folder satisfies none.
+
+**What would change the decision:** a move to S3 — but even then it would be an adapter replacement in `game-api`, not a new service. Or if generation moved to a separate machine with a GPU — then real file transfer would be needed, and separating storage would become justified.
 
 ---
 
-## ADR-004 · RNG на сервері, стрічка приходить готовою
+## ADR-003 · Postgres for everything, Mongo not used
 
-**Статус:** прийнято
+**Status:** accepted
 
-`POST /cases/:slug/open` повертає всю стрічку і `winningIndex`. UI просто
-прокручує до відомої позиції.
+**Reasons:**
+1. Case opening is an atomic transaction (deduct a key + issue a card)
+2. The data is relational: `players → player_cards → cards`
+3. Semi-structured generation metadata fits into `jsonb`
 
-**Альтернатива:** UI кидає RNG сам — ламає серверну істину, робить баланс
-недостовірним і взагалі не так працює жоден продукт жанру.
+The last point removes Mongo’s only real argument — schema flexibility where needed, without losing transactions and JOINs.
 
-**Наслідок:** анімація стає чистою функцією від відповіді API. Тестується
-тривіально, дебажиться тривіально, реплеїться безкоштовно.
-
----
-
-## ADR-005 · SD малює тільки арт; рамка, текст і статистики — це DOM
-
-**Статус:** прийнято
-
-SD 1.5 не вміє малювати читабельний текст — обмеження CLIP-енкодера,
-а не промпту. Тому арт — квадратне вікно всередині CSS-рамки.
-
-**Наслідок:** текст ідеальний; рамку можна змінити без перегенерації;
-рідкість можна перепризначити не чіпаючи файл; локалізація безкоштовна.
-
-Так само влаштовані Hearthstone і MTG.
+**What would change the decision:** if cards did not have fixed fields and there were no economy. In other words, a different game.
 
 ---
 
-## ADR-006 · Генерація 512×512, апскейл окремим кроком
+## ADR-004 · RNG on the server, the strip arrives ready
 
-**Статус:** прийнято
+**Status:** accepted
 
-SD 1.5 навчена на 512×512. Пряма генерація в 768/1024 дає подвоєні голови
-та зайві кінцівки — вихід за межі тренувального розподілу, не лікується
-промптом.
+`POST /cases/:slug/open` returns the entire strip and `winningIndex`. The UI simply scrolls to the known position.
 
-Апскейл (Real-ESRGAN ×2) — окремий опційний крок після відбору. Немає сенсу
-апскейлити те, що буде відхилено.
+**Alternative:** the UI runs RNG itself — this breaks server truth, makes the balance unreliable, and is not how any product in the genre works.
 
-Квадрат, а не портрет 2:3 — бо квадрат ближче до тренувального розподілу,
-а вікно арту в картці все одно квадратне.
+**Consequence:** the animation becomes a pure function of the API response. It is trivial to test, trivial to debug, and free to replay.
 
 ---
 
-## ADR-007 · Файнтюн SD 1.5, а не базова модель
+## ADR-005 · SD draws only the art; frame, text, and stats are DOM
 
-**Статус:** прийнято
+**Status:** accepted
 
-`Lykon/dreamshaper-8` замість `runwayml/stable-diffusion-v1-5`.
-Та сама архітектура, той самий код, той самий VRAM — суттєво кращий
-fantasy-арт. Заміна одного рядка `model_id`.
+SD 1.5 cannot draw readable text — a limitation of the CLIP encoder, not the prompt. Therefore art is a square window inside a CSS frame.
 
-Проект «спробувати SD» від цього не страждає: dreamshaper — це і є SD 1.5,
-просто дотренована.
+**Consequence:** text is perfect; the frame can change without regeneration; rarity can be reassigned without touching the file; localization is free.
 
----
-
-## ADR-008 · Ledger-таблиця замість голого UPDATE балансу
-
-**Статус:** прийнято
-
-Кожна зміна валюти пише рядок у `transactions`. `players.balance_*` —
-денормалізований кеш.
-
-**Ціна:** одна таблиця й один INSERT на операцію.
-**Вигода:** інваріант `SUM(delta) == balance` ловить будь-який баг економіки
-одним SQL-запитом. Плюс безкоштовна історія операцій.
-
-Здається надлишковим для «лайт-проекту» рівно до першого разу, коли монети
-зникнуть без причини.
+Hearthstone and MTG work the same way.
 
 ---
 
-## ADR-009 · Docker тільки для Postgres
+## ADR-006 · Generate at 512×512, upscale as a separate step
 
-**Статус:** прийнято
+**Status:** accepted
 
-`card-forge` у Docker вимагав би прокидання GPU (nvidia-container-toolkit,
-на macOS MPS взагалі неможливо) і образ на ~8GB. Nest і Vite у Docker
-позбавляють нормального hot-reload.
+SD 1.5 was trained at 512×512. Direct generation at 768/1024 produces doubled heads and extra limbs — outside the training distribution, not fixable with a prompt.
 
-Три термінали простіші за докеризацію всього. Postgres у Docker — бо це
-єдине, що незручно ставити локально.
+Upscaling (Real-ESRGAN ×2) is a separate optional step after selection. There is no point upscaling something that will be rejected.
 
----
-
-## ADR-010 · Framer Motion + CSS transform, без canvas-движка
-
-**Статус:** прийнято
-
-Рулетка — це `translateX` на одному контейнері з кастомним easing.
-PixiJS чи Phaser дали б частинки й шейдери, але ціна — canvas-рендер,
-власний лейаут, власна обробка подій і відсутність звичайного DOM.
-
-Ефекти рідкості робляться CSS-градієнтами, `filter`, `box-shadow` і
-невеликою бібліотекою частинок. Різниця у виглядi мінімальна, різниця
-в часі розробки — у рази.
-
-**Що б змінило рішення:** якби була потрібна складна фізика частинок або
-шейдерні переходи на весь екран. Тоді Pixi поверх DOM тільки для FX-шару,
-а не для рулетки.
+Square, not 2:3 portrait — because square is closer to the training distribution, and the art window in the card is square anyway.
 
 ---
 
-## ADR-011 · Шість рівнів рідкості з конвенційними кольорами
+## ADR-007 · Fine-tune SD 1.5, not the base model
 
-**Статус:** прийнято
+**Status:** accepted
 
-Common → Mythic, кольори за конвенцією MMO/CS:GO (сірий, зелений, синій,
-фіолетовий, золотий, рожевий). Шостий рівень дає ефект «майже недосяжного
-топу». Своя колірна схема нічого не додала б, але зламала б миттєве
-впізнавання рідкості з мініатюри.
+`Lykon/dreamshaper-8` instead of `runwayml/stable-diffusion-v1-5`. Same architecture, same code, same VRAM — substantially better fantasy art. Replace one `model_id` line.
 
----
-
-## ADR-012 · Дублікати як окремі рядки, без колонки quantity
-
-**Статус:** прийнято
-
-`player_cards` — один рядок на екземпляр. Не `UNIQUE(player, card)`,
-не `quantity`.
-
-**Чому:** дає історію отримання кожного екземпляра, дозволяє продати
-конкретний, і робить зв'язок з `case_openings` природним. Групування
-з `COUNT(*)` для UI — тривіальний запит.
-
-Ціна — трохи більше рядків. На масштабе однієї людини це неістотно.
-
+The “try SD” project is not undermined by this: dreamshaper is SD 1.5, simply fine-tuned.
 
 ---
 
-## ADR-013 · fp16 + `safety_checker=None` — не оптимізація, а вимога
+## ADR-008 · Ledger table instead of a bare balance UPDATE
 
-**Статус:** прийнято (після визначення заліза)
+**Status:** accepted
 
-Цільова машина — **RTX 3050 Laptop, 4 GB VRAM**. SD 1.5 при 512×512 batch=1
-має пік ~3.1–3.9 GB. Тобто запасу немає, і два прапорці стають обов'язковими:
+Every currency change writes a row to `transactions`. `players.balance_*` is a denormalized cache.
 
-- `torch_dtype=torch.float16` — fp32 не влізе в принципі (~4.2 GB тільки ваги)
-- `safety_checker=None` — чекер тягне власну CLIP-модель на ~1.2 GB.
-  Це найбільша окрема економія і різниця між роботою та OOM.
+**Cost:** one table and one INSERT per operation.
+**Benefit:** the `SUM(delta) == balance` invariant catches any economy bug with one SQL query. Plus a free operation history.
 
-**Свідомо НЕ вмикаємо за замовчуванням:** `enable_attention_slicing()`
-(torch 2.x SDPA вже memory-efficient і швидший; slicing коштує 20–30%
-швидкості) та `enable_model_cpu_offload()` (уповільнення в 3–5 разів).
-Обидва — реакція на OOM, а не профілактика.
-
-**Наслідок для планування:** генерація перестає бути вузьким місцем.
-283 картки ≈ 45 хв. Вузьким місцем стає ручний відбір, тому M5 (admin review)
-підіймається в пріоритеті.
-
-**Наслідок для амбіцій:** SDXL, ControlNet, генерація >512 і тренування
-LoRA на цьому залізі недоступні. Жодне з них у плані не потрібне —
-але межа відома заздалегідь, а не в момент OOM.
-
-Деталі → [[06 - Generation - SD Pipeline]]
+It seems excessive for a “light project” right up until the first time coins disappear for no reason.
 
 ---
 
-## ADR-014 · Справжня автентифікація: JWT + локальний пароль
+## ADR-009 · Docker only for Postgres
 
-**Статус:** прийнято
+**Status:** accepted
 
-Q10 з [[11 - Planning - Open Questions]] закрито. Колонки автентифікації
-(`email`, `password_hash`, `role`, `last_login_at`) додані **на `players`**,
-а не в окрему таблицю `accounts`.
+`card-forge` in Docker would require passing through the GPU (nvidia-container-toolkit, and on macOS MPS it is impossible) and an image of ~8GB. Nest and Vite in Docker remove normal hot-reload.
 
-**Чому не окрема таблиця:** чотири таблиці вже мають
-`player_id ... REFERENCES players(id) ON DELETE CASCADE`
-(`case_openings`, `player_cards`, `transactions`, `player_milestones`).
-Окрема таблиця `accounts` змусила б або джойнити її на кожному запиті,
-або переприв'язувати чужі FK на живих даних. Колонки на `players` — жодного
-з двох.
-
-**Хешування:** `@node-rs/argon2` (Argon2id), не пакети `argon2` чи `bcrypt` —
-обидва вимагають `node-gyp`, а отже Visual Studio Build Tools на Windows.
-`@node-rs/argon2` іде з готовими нативними бінарниками.
-
-**JWT:** лише `@nestjs/jwt`, без `@nestjs/passport` — абстракція стратегій
-Passport була б інстанційована рівно один раз, зайва залежність заради
-нуля користі. Один access-токен на 7 днів, виданий при реєстрації/логіні,
-лежить у `localStorage` і йде як `Authorization: Bearer`.
-
-**Свідомий компроміс транспорту:** httpOnly cookies розглядались і відхилені
-для цього етапу — `game-ui` (5173) і `game-api` (3000) це різні origin,
-тож cookies вимагали б `credentials: true`, CORS allowlist (уже є через
-`corsOrigins`) **і** реальний CSRF-захист — самого `SameSite` не досить,
-щойно задіяно два різні origin. Це виправдана додаткова робота лише якщо
-API вийде за межі localhost; TTL у 7 днів прийнятний рівно тому, що токен
-сьогодні не залишає одну машину і оператор один.
-
-**`JWT_SECRET` без дефолту.** `configuration.ts` кидає помилку і відмовляється
-стартувати, якщо змінна оточення не задана — секрет ніколи не потрапить
-у білд випадково.
-
-**Адмін-акаунти існують ЛИШЕ через офлайн CLI `npm run account:bind`.**
-Свідомо немає HTTP-ендпоінта «claim account»: неавтентифікований claim
-проти бази, де вже є рядок гравця — це примітив захоплення акаунта
-(account takeover). CLI читає пароль зі stdin (не з argv — той лишає слід
-в історії шелу й у виводі `ps`), і відмовляється перезаписати вже
-прив'язаний рядок (`password_hash !== null`).
-
-**Guards:** `JwtAuthGuard` і `RolesGuard` зареєстровані глобально як
-`APP_GUARD` в `AppModule` — кожен маршрут захищений за замовчуванням, доступ
-без токена вимагає явного `@Public()`. Allowlist навмисно короткий:
-health, обидва `/auth`-ендпоінти, `/cards`, `GET /cases`. Усе, що додасться
-пізніше, захищене без додаткових дій.
-
-**Побічний наслідок для ADR-008:** `DROP DEFAULT` на `players.balance_coins`
-і `players.balance_keys`. До цього будь-який `INSERT INTO players`, що
-пропускав баланси, тихо видавав 1000 монет + 5 ключів без жодного рядка
-в `transactions` — ламаючи інваріант ledger. Реєстрація — новий шлях
-`INSERT`, що створює баланс, тож після `DROP DEFAULT` пропущений баланс
-падає на `NOT NULL`, а не тихо псує ledger.
-
-**Наслідки:** новий шлях реєстрації/логіну, guard на кожному маршруті за
-замовчуванням, адмін-права видаються лише офлайн.
+Three terminals are simpler than dockerizing everything. Postgres is in Docker because it is the only thing that is inconvenient to install locally.
 
 ---
 
-## ADR-015 · Ціль колекції рахується з реального пулу
+## ADR-010 · Framer Motion + CSS transform, no canvas engine
 
-**Статус:** прийнято
+**Status:** accepted
 
-Раніше «ціль колекції» була захардкоджена як число. `POOL_TARGET_TOTAL`
-**видалено повністю**, а не переорієнтовано на 432 — 432 знову застаріло б
-при наступному прогоні генерації, і застаріло б **мовчки**, що є тією самою
-поломкою, яку ми лагодимо.
+The roulette is `translateX` on one container with custom easing. PixiJS or Phaser would provide particles and shaders, but the cost is canvas rendering, custom layout, custom event handling, and no ordinary DOM.
 
-Замість константи — `PoolService` (`game-api/src/collection/pool.service.ts`),
-що рахує approved-картки з таблиці `cards` наживо: `COUNT(*) ... WHERE status
-= 'approved' GROUP BY rarity`. Пам'ятає результат 60 секунд у процесі
-(ADR-009: один Node-процес, Redis не потрібен), інвалідується явним
-`invalidate()` з адмінського шляху ingest/review, щойно approved-пул
-реально змінюється.
+Rarity effects use CSS gradients, `filter`, `box-shadow`, and a small particle library. The visual difference is minimal; the difference in development time is many times larger.
 
-`POOL_SEED_RATIOS` лишається в `@card-game/shared-types`, але тільки як
-форма синтетичного пулу для `seed.ts --placeholder-cards`, ніколи як джерело
-істини про прогрес колекції.
-
-**Наслідки:** `GET /me/collection` завжди показує реальне число approved
-карток, навіть одразу після того, як адмін заапрувив ще одну. Ціна —
-один SQL-запит на 60 секунд стейлнесу в гіршому випадку.
+**What would change the decision:** if complex particle physics or full-screen shader transitions were needed. Then Pixi would sit over the DOM only for the FX layer, not for the roulette.
 
 ---
 
-## ADR-017 · Перший тематичний сет — Ashen Wastes
+## ADR-011 · Six rarity levels with conventional colors
 
-**Статус:** прийнято 2026-07-29 за делегованим рішенням власника продукту.
+**Status:** accepted
 
-Перший сет має перетворити загальний прогрес колекції на коротку, зрозумілу
-ціль, не додаючи ще однієї валюти чи винагороди. Його тема — **Ashen Wastes**:
-попелястий прикордонний край навколо згаслого горна, де жарові звірі, старі
-реліквії та вітряні духи борються за останні джерела тепла. Це новий канон
-першого сету, а не опис уже наявного елементного кейсу Ashen Forge.
-
-**Рішення:**
-
-- Сет містить 20 карт: 8 common, 5 uncommon, 3 rare, 2 epic, 1 legendary і
-  1 mythic. Його прогрес — окремий `owned / 20` за неспроданими унікальними
-  картами.
-- Сет має отримати власний цільовий кейс **Cinderbound Cache**, який може
-  випадати лише з карт Ashen Wastes. Поточний Ashen Forge лишається
-  елементним, нецільовим кейсом і не змінює свою поведінку.
-- Завершення сету в MVP не дає валютної нагороди, ключів або нових карт.
-  Цінність — видимий прогрес, повний тематичний набір і наступна ціль у
-  колекції. Мілстоуни загальної колекції лишаються єдиним reward-каналом за
-  ширину пулу.
-- Cinderbound Cache коштує **400 coins**; odds: 35% common, 28% uncommon,
-  18% rare, 10% epic, 6% legendary, 3% mythic. За чинними sell values його
-  повний duplicate EV становить **208.45 coins (52.1% ціни)**. Це свідомо
-  нижче ціни для майже повної колекції; на старті перші копії не можна
-  продати, тож модель не трактує EV як нагороду. Вищі 6%/3% верхніх tier’ів
-  не дають mythic стати очікуванням у сотні відкриттів. Немає прихованого
-  duplicate protection: усі approved карти сету однаково можливі в межах
-  своєї rarity.
-
-**Відхилені альтернативи:** Drowned Court як перший сет (менше контрастує з
-наявним Tidal Vault); використання Ashen Forge як set-only кейсу (ламає
-існуючу обіцянку елементних кейсів); нагорода за completion (додає
-неперевірене джерело валюти).
-
-**Що змінить рішення:** playtest, у якому гравці не розуміють тему, не
-помічають progress 0/20 або не пов'язують сет із наступним відкриттям; тоді
-переглянути тему/навігацію до того, як фіксувати economy case.
+Common → Mythic, with colors following the MMO/CS:GO convention (gray, green, blue, purple, gold, pink). The sixth level creates the effect of an “almost unreachable top.” A custom color scheme would add nothing, but would break instant rarity recognition from a thumbnail.
 
 ---
 
-## ADR-018 · Довга сесія потребує bounded activity loop, а не таймера
+## ADR-012 · Duplicates as separate rows, without a quantity column
 
-**Статус:** прийнято 2026-07-29 за явним підтвердженням власника продукту.
+**Status:** accepted
 
-Поточна модель показала, що coins, keys, мілстоуни та продаж дублікатів
-дають скінченний бюджет відкриттів у межах однієї сесії. Власник обрав
-продуктову форму **довшої добровільної серії відкриттів**, а не лише
-onboarding-буфер і природний ранній фінал сесії.
+`player_cards` has one row per instance. Not `UNIQUE(player, card)`, not `quantity`.
 
-**Рішення:** шукати один повторюваний, нетаймований activity loop, який
-створює **обмежений** доступ до наступного відкриття. Він не може бути
-streak, daily-only claim, paid bypass, hidden RNG, необмеженим coin faucet
-або покаранням за вихід із гри. Точна механіка ще не є каноном; перша
-пропозиція й тест → [[26 - Product - Archive Dossiers Brief]].
+**Why:** it provides an acquisition history for every instance, allows a specific one to be sold, and makes the relationship with `case_openings` natural. Grouping with `COUNT(*)` for the UI is a trivial query.
 
-**Наслідок:** будь-який MVP повинен окремо показати source/sink, верхню межу
-на один унікальний card instance, наслідки для нового/середнього/майже
-повного акаунта та server-authoritative стан. Якщо модель покаже
-довгостроковий позитивний currency drift або playtest покаже відчуття
-обов'язку, пропозицію переглянути, а не тюнити нагороду мовчки.
+The cost is slightly more rows. At one-person scale this is insignificant.
 
 ---
 
-## ADR-016 · Інваріант ledger — задокументоване рішення про constraint-тригер
+## ADR-013 · fp16 + `safety_checker=None` — a requirement, not an optimization
 
-**Статус:** прийнято (реалізовано)
+**Status:** accepted (after determining the hardware)
 
-План: `SUM(delta_coins) == balance_coins` (ADR-008) із простого припущення,
-яке перевіряє лише тест, стає `CONSTRAINT TRIGGER ... AFTER INSERT OR UPDATE
-ON players ... DEFERRABLE INITIALLY DEFERRED FOR EACH ROW`. Реалізовано в
-міграції `game-api/src/migrations/1785200000002-AddLedgerInvariantTrigger.ts`.
+The target machine is **RTX 3050 Laptop, 4 GB VRAM**. SD 1.5 at 512×512 batch=1 peaks at ~3.1–3.9 GB. There is no headroom, so two flags become mandatory:
 
-**Чому на `players`, а не на `transactions`:** кожна мутація балансу в цьому
-коді парує `recordTransaction` з `manager.save(player)` в одній транзакції
-(`drops.service.ts`, `inventory.service.ts` — і `sellCard`, і `sellBulk`,
-`seed.ts`). Тригер на рядку гравця ловить усі їх і спрацьовує **раз на
-гравця за транзакцію**, а не раз на ledger-рядок — важливо саме для
-масового продажу, що пише до 200 ledger-рядків одним багаторядковим
-INSERT. `DEFERRABLE INITIALLY DEFERRED` означає перевірку на COMMIT, тож
-порядок операторів усередині транзакції не має значення.
+- `torch_dtype=torch.float16` — fp32 will not fit in principle (~4.2 GB for weights alone)
+- `safety_checker=None` — the checker brings its own CLIP model at ~1.2 GB. This is the largest single saving and the difference between working and OOM.
 
-**Передперевірка перед встановленням:** міграція перевіряє наявні дані перед
-створенням тригера — якщо в базі вже є порушення інваріанта, міграція
-відмовляється виконуватися і кидає помилку з ID гравців, що порушують.
-Це запобігає встановленню тригера на порушені дані, коли перша операція,
-що торкнеться гравця, упаде з незрозумілою помилкою, замість того щоб дати
-чіткий сигнал про потребу виправити дані заздалегідь.
+**Deliberately NOT enabled by default:** `enable_attention_slicing()` (torch 2.x SDPA is already memory-efficient and faster; slicing costs 20–30% speed) and `enable_model_cpu_offload()` (3–5× slowdown). Both are responses to OOM, not prevention.
 
-**Задокументована прогалина:** вставка в `transactions` без відповідного
-оновлення гравця пройде повз тригер непоміченою. Сьогодні жоден шлях коду
-так не робить — це припущення, на якому тригер будується, а не гарантія,
-яку він перевіряє.
+**Planning consequence:** generation stops being the bottleneck. 283 cards ≈ 45 min. Manual selection becomes the bottleneck, so M5 (admin review) moves up in priority.
 
-**Стеля вартості:** перевірка пересумовує всі транзакції гравця на COMMIT.
-Безкоштовно приблизно до ~343 рядків на гравця; якщо колись накопичиться
-порядку ~10⁵ рядків — замінити на колонку running-total. Не сьогоднішня
-проблема.
+**Ambition consequence:** SDXL, ControlNet, generation >512, and LoRA training are unavailable on this hardware. None is needed in the plan — but the boundary is known in advance, not at the moment of OOM.
 
-**Наслідок для тестів:** helper `resetPlayerState` у `ledger-invariant.e2e-spec.ts`
-примусово обгорнутий в одну `dataSource.transaction()`, оскільки з активним
-тригером окремі неявні транзакції на `DELETE` / `UPDATE` упадуть на моменті
-COMMIT `UPDATE players` — він буде перевірений проти щойно спорожненого ledger
-попередньою окремою транзакцією. Вся операція в одній явній транзакції означає,
-що дефереррований тригер бачить лише фінальний, консистентний стан при COMMIT.
+Details → [[06 - Generation - SD Pipeline]]
 
-**Важливо:** міграція не запускалася на живій базі даних — Docker не був активний
-під час написання. Код-міграція компільована і синтаксично перевірена, але SQL
-не виконаний у реальному Postgres. Це можливо виявить крайні випадки, коли
-міграція буде застосована вперше проти справжніх даних.
+---
+
+## ADR-014 · Real authentication: JWT + local password
+
+**Status:** accepted
+
+Q10 from [[11 - Planning - Open Questions]] is closed. Authentication columns (`email`, `password_hash`, `role`, `last_login_at`) were added **to `players`**, not to a separate `accounts` table.
+
+**Why not a separate table:** four tables already have `player_id ... REFERENCES players(id) ON DELETE CASCADE` (`case_openings`, `player_cards`, `transactions`, `player_milestones`). A separate `accounts` table would force either joining it on every request or reattaching foreign keys belonging to other data on live records. Columns on `players` require neither.
+
+**Hashing:** `@node-rs/argon2` (Argon2id), not the `argon2` or `bcrypt` packages — both require `node-gyp`, and therefore Visual Studio Build Tools on Windows. `@node-rs/argon2` ships with ready-made native binaries.
+
+**JWT:** only `@nestjs/jwt`, without `@nestjs/passport` — the Passport strategy abstraction would be instantiated exactly once, an extra dependency for zero benefit. One access token valid for 7 days, issued at registration/login, stored in `localStorage`, and sent as `Authorization: Bearer`.
+
+**Deliberate transport compromise:** httpOnly cookies were considered and rejected at this stage — `game-ui` (5173) and `game-api` (3000) are different origins, so cookies would require `credentials: true`, a CORS allowlist (already present through `corsOrigins`) **and** real CSRF protection — `SameSite` alone is not enough once two different origins are involved. This additional work is justified only if the API leaves localhost; a 7-day TTL is acceptable precisely because the token currently never leaves one machine and there is one operator.
+
+**`JWT_SECRET` has no default.** `configuration.ts` throws an error and refuses to start if the environment variable is not set — the secret can never accidentally enter a build.
+
+**Admin accounts exist ONLY through the offline CLI `npm run account:bind`.** There is deliberately no HTTP “claim account” endpoint: an unauthenticated claim against a database that already has a player row is primitive account takeover. The CLI reads the password from stdin (not argv — argv leaves a trace in shell history and `ps` output), and refuses to overwrite an already-bound row (`password_hash !== null`).
+
+**Guards:** `JwtAuthGuard` and `RolesGuard` are registered globally as `APP_GUARD` in `AppModule` — every route is protected by default, and tokenless access requires an explicit `@Public()`. The allowlist is deliberately short: health, both `/auth` endpoints, `/cards`, `GET /cases`. Anything added later is protected without extra action.
+
+**Side effect for ADR-008:** `DROP DEFAULT` on `players.balance_coins` and `players.balance_keys`. Previously, any `INSERT INTO players` that omitted balances silently issued 1000 coins + 5 keys without any row in `transactions` — breaking the ledger invariant. Registration is a new `INSERT` path that creates a balance, so after `DROP DEFAULT`, an omitted balance fails at `NOT NULL` instead of silently corrupting the ledger.
+
+**Consequences:** a new registration/login path, a guard on every route by default, and admin rights granted only offline.
+
+---
+
+## ADR-015 · Collection target is calculated from the real pool
+
+**Status:** accepted
+
+Previously, the “collection target” was hardcoded as a number. `POOL_TARGET_TOTAL` was **deleted completely**, rather than redirected to 432 — 432 would become outdated again on the next generation run, and would become outdated **silently**, which is the same failure we are fixing.
+
+Instead of a constant, `PoolService` (`game-api/src/collection/pool.service.ts`) counts approved cards live from the `cards` table: `COUNT(*) ... WHERE status
+= 'approved' GROUP BY rarity`. It caches the result for 60 seconds in the process (ADR-009: one Node process, no Redis needed), and is invalidated through an explicit `invalidate()` from the admin ingest/review path as soon as the approved pool actually changes.
+
+`POOL_SEED_RATIOS` remains in `@card-game/shared-types`, but only as the shape of the synthetic pool for `seed.ts --placeholder-cards`, never as the source of truth for collection progress.
+
+**Consequences:** `GET /me/collection` always shows the real number of approved cards, even immediately after an admin approves another one. The cost is one SQL query per 60 seconds of worst-case staleness.
+
+---
+
+## ADR-017 · First themed set — Ashen Wastes
+
+**Status:** accepted 2026-07-29 by delegated decision of the product owner.
+
+The first set must turn general collection progress into a short, clear goal without adding another currency or reward. Its theme is **Ashen Wastes**: an ashen frontier around a dead forge, where ember beasts, old relics, and wind spirits fight over the last sources of warmth. This is new canon for the first set, not a description of the existing Ashen Forge elemental case.
+
+**Decision:**
+
+- The set contains 20 cards: 8 common, 5 uncommon, 3 rare, 2 epic, 1 legendary, and 1 mythic. Its progress is a separate `owned / 20` based on unsold unique cards.
+- The set receives its own targeted case, **Cinderbound Cache**, which can drop only Ashen Wastes cards. The current Ashen Forge remains an elemental, non-targeted case and does not change its behavior.
+- Completing the set in the MVP grants no currency, keys, or new cards. The value is visible progress, a complete themed set, and the next collection goal. General collection milestones remain the only reward channel for pool breadth.
+- Cinderbound Cache costs **400 coins**; odds: 35% common, 28% uncommon, 18% rare, 10% epic, 6% legendary, 3% mythic. At current sell values, its full-duplicate EV is **208.45 coins (52.1% of price)**. This is deliberately below price for a nearly complete collection; at the start, first copies cannot be sold, so the model does not treat EV as a reward. The higher 6%/3% top-tier odds do not make mythic an expectation after hundreds of openings. There is no hidden duplicate protection: all approved cards in the set are equally possible within their rarity.
+
+**Rejected alternatives:** Drowned Court as the first set (less contrast with the existing Tidal Vault); using Ashen Forge as the set-only case (breaks the existing promise of elemental cases); a completion reward (adds an untested currency source).
+
+**What would change the decision:** a playtest in which players do not understand the theme, do not notice 0/20 progress, or do not connect the set to the next opening; then revisit the theme/navigation before fixing the economy case.
+
+---
+
+## ADR-018 · A long session needs a bounded activity loop, not a timer
+
+**Status:** accepted 2026-07-29 with explicit confirmation from the product owner.
+
+The current model showed that coins, keys, milestones, and duplicate sales provide a finite opening budget within one session. The owner chose the product form of a **longer voluntary series of openings**, rather than only an onboarding buffer and a natural early session ending.
+
+**Decision:** look for one repeatable, untimed activity loop that creates **bounded** access to the next opening. It cannot be a streak, daily-only claim, paid bypass, hidden RNG, unlimited coin faucet, or punishment for leaving the game. The exact mechanic is not canon yet; the first proposal and test → [[26 - Product - Archive Dossiers Brief]].
+
+**Consequence:** any MVP must separately show source/sink, an upper limit per unique card instance, effects on a new/mid/nearly complete account, and server-authoritative state. If the model shows long-term positive currency drift or the playtest shows a feeling of obligation, revise the proposal rather than silently tuning the reward.
+
+---
+
+## ADR-016 · Ledger invariant — documented decision about the constraint trigger
+
+**Status:** accepted (implemented)
+
+Plan: `SUM(delta_coins) == balance_coins` (ADR-008), from a simple assumption checked only by tests, becomes `CONSTRAINT TRIGGER ... AFTER INSERT OR UPDATE
+ON players ... DEFERRABLE INITIALLY DEFERRED FOR EACH ROW`. Implemented in migration `game-api/src/migrations/1785200000002-AddLedgerInvariantTrigger.ts`.
+
+**Why on `players`, not `transactions`:** every balance mutation in this code pairs `recordTransaction` with `manager.save(player)` in one transaction (`drops.service.ts`, `inventory.service.ts` — both `sellCard` and `sellBulk`, `seed.ts`). A trigger on the player row catches all of them and fires **once per player per transaction**, not once per ledger row — important specifically for bulk sales, which write up to 200 ledger rows in one multi-row INSERT. `DEFERRABLE INITIALLY DEFERRED` means the check runs at COMMIT, so statement order inside the transaction does not matter.
+
+**Pre-check before installation:** the migration checks existing data before creating the trigger — if the database already contains an invariant violation, the migration refuses to run and throws an error with the IDs of the violating players. This prevents installing the trigger on invalid data, where the first operation touching a player would fail with an unclear error instead of clearly signaling that the data must be fixed in advance.
+
+**Documented gap:** an insert into `transactions` without a corresponding player update will pass the trigger unnoticed. No code path does this today — it is an assumption on which the trigger is built, not a guarantee it verifies.
+
+**Cost ceiling:** the check re-sums all of a player’s transactions at COMMIT. It is effectively free up to approximately ~343 rows per player; if around ~10⁵ rows ever accumulate, replace it with a running-total column. Not today’s problem.
+
+**Testing consequence:** the `resetPlayerState` helper in `ledger-invariant.e2e-spec.ts` is forcibly wrapped in one `dataSource.transaction()`, because with the trigger active, separate implicit transactions for `DELETE` / `UPDATE` would fail at the `UPDATE players` COMMIT — it would be checked against the ledger just emptied by the previous separate transaction. One explicit transaction for the whole operation means the deferred trigger sees only the final, consistent state at COMMIT.
+
+**Important:** the migration was not run against a live database — Docker was not active while writing. The migration code was compiled and syntax-checked, but the SQL was not executed in real Postgres. This may reveal edge cases when the migration is first applied to real data.

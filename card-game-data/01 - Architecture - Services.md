@@ -2,11 +2,11 @@
 tags: [architecture]
 ---
 
-# Сервіси
+# Services
 
-Назад до [[00 - Card Game MOC]]
+Back to [[00 - Card Game MOC]]
 
-## Фінальний склад: 3 сервіси
+## Final Composition: 3 Services
 
 ```
 ┌──────────────┐   HTTP/JSON    ┌──────────────────┐
@@ -14,7 +14,7 @@ tags: [architecture]
 │ React+Vite   │ ◄───────────── │  NestJS+TypeORM  │
 │   :5173      │   <img src>    │      :3000       │
 └──────────────┘ ─────────────► └────────┬─────────┘
-                    статика              │
+                    static assets        │
                                          │ SQL
                                     ┌────▼─────┐
                                     │ Postgres │
@@ -28,134 +28,134 @@ tags: [architecture]
                                 │ Python+diffusers │
                                 │      :8000       │
                                 └────────┬─────────┘
-                                         │ пише файли
+                                         │ writes files
                                     ┌────▼─────────┐
                                     │ ./storage/   │
-                                    │  cards/*.png │  ◄── спільний volume,
-                                    └──────────────┘      game-api віддає як статику
+                                    │  cards/*.png │  ◄── shared volume,
+                                    └──────────────┘      game-api serves as static assets
 ```
 
-## Чому не 4 і не 5
+## Why Not 4 or 5
 
-Ти пропонував розділити генерацію та зберігання картинок на два сервіси.
-**Не роби цього.** Зберігання зображень — це не сервіс, це папка плюс
-`app.useStaticAssets('./storage')`. Виділення її в окремий процес дає:
-зайвий деплой, зайвий мережевий хоп, зайвий шар помилок — і нуль користі
-на масштабі одного ноутбука.
+You suggested splitting image generation and storage into two services.
+**Do not do this.** Image storage is not a service; it is a folder plus
+`app.useStaticAssets('./storage')`. Making it a separate process adds:
+an extra deployment, an extra network hop, an extra layer of errors — and zero benefit
+at the scale of one laptop.
 
-Правило, за яким варто ділити: **різний рантайм, різна швидкість, різний
-життєвий цикл**. `card-forge` відповідає всім трьом (Python замість Node,
-хвилини замість мілісекунд, працює офлайн і може бути вимкнений під час гри).
-Тому він окремий. Файлова папка — не відповідає жодному.
+The rule for splitting is: **different runtime, different speed, different
+lifecycle**. `card-forge` meets all three (Python instead of Node,
+minutes instead of milliseconds, works offline, and can be turned off during gameplay).
+So it is separate. A file folder meets none of them.
 
-Якщо колись знадобиться S3 — це заміна одного адаптера в `game-api`,
-а не новий сервіс. Дизайн уже це дозволяє.
+If S3 is ever needed, it will be a replacement for one adapter in `game-api`,
+not a new service. The design already allows this.
 
 ## game-ui
 
-**Стек:** React 18 + TypeScript + Vite + Framer Motion + Tailwind (опційно)
+**Stack:** React 18 + TypeScript + Vite + Framer Motion + Tailwind (optional)
 
-**Володіє:**
-- Всі екрани: лоббі кейсів, рулетка, інвентар, деталі картки
-- Анімація рулетки, rarity-ефекти, звук
-- Локальний UI-стейт
+**Owns:**
+- All screens: case lobby, roulette, inventory, card details
+- Roulette animation, rarity effects, sound
+- Local UI state
 
-**НЕ володіє:**
-- Рішенням, яка картка випала (це сервер)
-- Балансом гравця як істиною (сервер — істина, UI лише відображає)
+**Does NOT own:**
+- The decision about which card dropped (the server does this)
+- The player balance as the source of truth (the server is authoritative; the UI only displays it)
 
-**Ключове обмеження:** перед стартом анімації **всі зображення стрічки мають
-бути завантажені**. Інакше половина плиток буде порожня під час прокрутки.
-Деталі → [[08 - UI - Roulette Spec]]
+**Key constraint:** before the animation starts, **all reel images must
+be loaded**. Otherwise half the tiles will be empty while it spins.
+Details → [[08 - UI - Roulette Spec]]
 
 ## game-api
 
-**Стек:** NestJS + TypeORM + Postgres 16
+**Stack:** NestJS + TypeORM + Postgres 16
 
-**Володіє:**
-- Каталог карток (`cards`)
-- Гравець, баланс, інвентар (`players`, `player_cards`, `transactions`)
-- Кейси та їхні ваги рідкостей (`cases`)
-- **RNG дропу** — єдине джерело істини, що випало
-- Роздача статики з `./storage`
-- Ingest-ендпоінт для `card-forge`
+**Owns:**
+- Card catalog (`cards`)
+- Player, balance, inventory (`players`, `player_cards`, `transactions`)
+- Cases and their rarity weights (`cases`)
+- **Drop RNG** — the single source of truth for what dropped
+- Serving static assets from `./storage`
+- Ingest endpoint for `card-forge`
 
-**Модулі Nest:**
+**Nest modules:**
 
 ```
 src/
-  cards/       — каталог, CRUD, пошук, фільтр по рідкості
-  cases/       — конфіг кейсів, ваги
-  drops/       — RNG, генерація стрічки, транзакція відкриття
-  players/     — профіль, баланс
-  inventory/   — колекція гравця, продаж дублікатів
-  ledger/      — transactions, нарахування/списання
-  admin/       — ingest від card-forge, review карток
-  storage/     — статика + шляхи до файлів
+  cards/       — catalog, CRUD, search, rarity filter
+  cases/       — case config, weights
+  drops/       — RNG, reel generation, opening transaction
+  players/     — profile, balance
+  inventory/   — player collection, duplicate sales
+  ledger/      — transactions, credits/debits
+  admin/       — ingest from card-forge, card review
+  storage/     — static assets + file paths
 ```
 
-**Найважливіша транзакція** — відкриття кейсу. Має бути атомарною:
-списати валюту → зробити ролл → створити запис дропу → додати в інвентар.
-Або все, або нічого. Це і є головна причина, чому тут Postgres, а не Mongo
-(див. [[10 - Planning - Decisions]], ADR-003).
+**The most important transaction** is opening a case. It must be atomic:
+debit currency → roll → create a drop record → add to inventory.
+All or nothing. This is the main reason to use Postgres here instead of Mongo
+(see [[10 - Planning - Decisions]], ADR-003).
 
 ## card-forge
 
-**Стек:** Python 3.11 + `diffusers` + `torch` + FastAPI + Pillow
+**Stack:** Python 3.11 + `diffusers` + `torch` + FastAPI + Pillow
 
-**Володіє:**
-- Завантаження й кеш моделі SD 1.5
-- Пакетна генерація за списком промптів
-- Запис PNG у `./storage/cards/` + прев'ю-тумбнейли
-- `manifest.json` з усіма параметрами генерації (seed, steps, cfg, prompt)
-- Виклик `POST /admin/cards/ingest` на game-api
+**Owns:**
+- Loading and caching the SD 1.5 model
+- Batch generation from a list of prompts
+- Writing PNGs to `./storage/cards/` + preview thumbnails
+- `manifest.json` with all generation parameters (seed, steps, cfg, prompt)
+- Calling `POST /admin/cards/ingest` on game-api
 
-**НЕ володіє:**
-- Жодним ігровим станом
-- Рідкостями (рідкість призначається при ingest або вручну на review)
+**Does NOT own:**
+- Any game state
+- Rarities (rarity is assigned during ingest or manually during review)
 
-**Режим роботи:** переважно CLI (`python forge.py batch --config recipes.yaml`).
-FastAPI-обгортка — тонкий шар зверху, потрібна тільки щоб тригерити джоби
-з адмінки й дивитись прогрес. Не починай з FastAPI, почни зі скрипта.
+**Operating mode:** primarily CLI (`python forge.py batch --config recipes.yaml`).
+The FastAPI wrapper is a thin layer on top, needed only to trigger jobs
+from the admin panel and view progress. Do not start with FastAPI; start with the script.
 
-**Може бути вимкнений.** Гра працює без нього — картки вже в базі.
+**It can be turned off.** The game works without it — the cards are already in the database.
 
-## Комунікація
+## Communication
 
-| Від | До | Як | Коли |
+| From | To | How | When |
 |---|---|---|---|
-| game-ui | game-api | REST JSON | постійно |
-| game-ui | game-api | `<img>` GET | завантаження артів |
-| card-forge | game-api | REST POST | після batch-генерації |
-| card-forge | файлова система | запис PNG | під час генерації |
+| game-ui | game-api | REST JSON | continuously |
+| game-ui | game-api | `<img>` GET | art loading |
+| card-forge | game-api | REST POST | after batch generation |
+| card-forge | file system | write PNG | during generation |
 
-**Ніяких черг, брокерів, gRPC.** На цьому масштабі це чистий оверхед.
-Якщо batch триває довго — це просто довгий CLI-процес у терміналі, а не
-привід тягнути RabbitMQ.
+**No queues, brokers, or gRPC.** At this scale, they are pure overhead.
+If a batch takes a long time, it is simply a long-running CLI process in the terminal,
+not a reason to bring in RabbitMQ.
 
-## Локальний запуск
+## Local Run
 
-`docker-compose.yml` піднімає тільки Postgres. Решта — три термінали:
+`docker-compose.yml` starts only Postgres. The rest use three terminals:
 
 ```bash
-docker compose up -d postgres   # база
+docker compose up -d postgres   # database
 cd game-api  && npm run start:dev
 cd game-ui   && npm run dev
-cd card-forge && python forge.py batch   # за потреби
+cd card-forge && python forge.py batch   # if needed
 ```
 
-SD у Docker на ноуті — зайвий біль (проброс GPU, розмір образу ~8GB).
-Запускай `card-forge` у звичайному venv.
+SD in Docker on a laptop is unnecessary pain (GPU passthrough, image size ~8GB).
+Run `card-forge` in a regular venv.
 
-## Структура репо
+## Repository Structure
 
 ```
 mini-game-sb/
-  card-game-data/     ← цей vault
+  card-game-data/     ← this vault
   game-ui/
   game-api/
   card-forge/
-  storage/            ← спільна папка з артами (у .gitignore)
+  storage/            ← shared art folder (in .gitignore)
     cards/
     thumbs/
   docker-compose.yml

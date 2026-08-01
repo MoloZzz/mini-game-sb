@@ -3,111 +3,111 @@ tags: [product, evidence, research, agent-context]
 status: active
 ---
 
-# Журнал доказів
+# Evidence log
 
-Назад до [[00 - Card Game MOC]] · Стратегія → [[18 - Product - Strategy]] · Метрики → [[20 - Product - Metric Tree]] · Ідеї → [[22 - Product - Opportunity Backlog]]
+Back to [[00 - Card Game MOC]] · Strategy → [[18 - Product - Strategy]] · Metrics → [[20 - Product - Metric Tree]] · Ideas → [[22 - Product - Opportunity Backlog]]
 
-## Правило журналу
+## Log rule
 
-Тут зберігаються перевірювані спостереження, а не припущення, красиві ідеї чи неперевірені поради. Наразі в журналі **немає валідованих користувацьких доказів**. Не роби з цього висновок про гравців.
+This is where verifiable observations are stored, not assumptions, attractive ideas, or untested advice. The log currently contains **no validated player evidence**. Do not infer anything about players from that.
 
-Джерело має дозволяти перевірити контекст без збереження зайвих персональних даних. Анонімізуй гравця, не записуй email, токени, паролі, повні логи або чутливий вільний текст без згоди.
+The source must allow the context to be checked without storing unnecessary personal data. Anonymize the player; do not record email, tokens, passwords, full logs, or sensitive free text without consent.
 
 ## Evidence
 
-Додай один запис на спостереження. Не редагуй старий результат так, щоб він зник: зафіксуй новіший запис, який його уточнює або спростовує.
+Add one entry per observation. Do not edit an old result so that it disappears: record a newer entry that clarifies or refutes it.
 
-### E-2026-07-29-01 · Desk research: безперервність колекційної сесії
+### E-2026-07-29-01 · Desk research: collection-session continuity
 
-- **Дата:** 2026-07-29
-- **Статус:** raw
-- **Тип:** зовнішнє дослідження
-- **Джерело й спосіб:** незалежний desk review шести вузьких напрямів з
-  валідацією першоджерел. [Hearthstone](https://news.blizzard.com/en-gb/article/23357896/ashes-of-outland-patch-17-0-march-26)
-  документує duplicate protection у межах сету й рідкості без зміни rarity
+- **Date:** 2026-07-29
+- **Status:** raw
+- **Type:** external research
+- **Source and method:** independent desk review of six narrow areas with
+  validation against primary sources. [Hearthstone](https://news.blizzard.com/en-gb/article/23357896/ashes-of-outland-patch-17-0-march-26)
+  documents duplicate protection within a set and rarity without changing rarity
   distribution; [MTG Arena](https://magic.wizards.com/en/news/mtg-arena/mtg-arena-economy-2022-03-17)
-  описує економіку як усі способи заробітку й витрат ресурсів для різних
-  стадій гравця; [Machinations](https://machinations.io/docs/framework-basics)
-  формалізує source, pool, drain і stochastic flow; [Nielsen Norman Group](https://media.nngroup.com/media/articles/attachments/Heuristic_Summary_Letter_compressed.pdf)
-  підтверджує вимоги до видимості стану та конструктивного recovery UX.
-- **Вибірка:** не дослідження наших гравців; зовнішні продукти з іншими
-  бізнес-моделями та один методологічний/UX-огляд.
-- **Спостереження:** зовнішні приклади використовують protected draws,
-  finite guaranteed progress і прозорі правила як альтернативи очікуванню;
-  вони не є доказом retention або попиту в цій локальній грі.
-- **Інтерпретація:** варто змоделювати й playtest-ити проблему soft lock
-  окремо від бажання мати довшу сесію. Duplicate protection зменшує втрату
-  прогресу, але саме по собі не створює коштів для відкриття з нульовим
-  балансом.
-- **Пов'язані job / метрика:** [[19 - Product - Jobs To Be Done]] —
-  «перетворити зайве на осмислений наступний шанс»; [[20 - Product - Metric
-  Tree]] — net coins/keys за сесію, невдалі спроби відкрити кейс і якісна
-  причина зупинки.
-- **Обмеження:** немає локального зрізу частки гравців нижче ціни кейсу,
-  вибірки playtest або причинного порівняння варіантів.
-- **Наступна дія:** спершу прогнати моделювання балансу за seeded RNG для
-  нового, середнього та майже повного акаунта; потім порівняти малий
-  onboarding runway з condition-based recovery у scripted playtest.
+  describes the economy as all ways of earning and spending resources across
+  player stages; [Machinations](https://machinations.io/docs/framework-basics)
+  formalizes source, pool, drain, and stochastic flow; [Nielsen Norman Group](https://media.nngroup.com/media/articles/attachments/Heuristic_Summary_Letter_compressed.pdf)
+  confirms requirements for state visibility and constructive recovery UX.
+- **Sample:** not a study of our players; external products with different
+  business models and one methodological/UX review.
+- **Observation:** external examples use protected draws, finite guaranteed
+  progress, and transparent rules as alternatives to waiting; they are not
+  evidence of retention or demand in this local game.
+- **Interpretation:** the soft-lock problem should be modelled and playtested
+  separately from the desire for a longer session. Duplicate protection reduces
+  lost progress, but by itself does not create funds for an opening at zero
+  balance.
+- **Related job / metric:** [[19 - Product - Jobs To Be Done]] —
+  “turn excess into a meaningful next chance”; [[20 - Product - Metric
+  Tree]] — net coins/keys per session, failed case-opening attempts, and the
+  qualitative reason for stopping.
+- **Limitations:** there is no local slice of the share of players below case
+  price, no playtest sample, and no causal comparison of variants.
+- **Next action:** first run seeded-RNG balance modelling for new, mid, and
+  near-complete accounts; then compare a small onboarding runway with
+  condition-based recovery in a scripted playtest.
 
 ### E-2026-07-29-02 · Seeded model of current session economy
 
-- **Дата:** 2026-07-29
-- **Статус:** raw
-- **Тип:** локальна подія
-- **Джерело й спосіб:** `npm.cmd run simulate:economy --workspace game-api --
+- **Date:** 2026-07-29
+- **Status:** raw
+- **Type:** local event
+- **Source and method:** `npm.cmd run simulate:economy --workspace game-api --
   --runs=10000 --max-opens=250` against the seeded local database. The model
   read 452 approved cards (`188/113/67/37/31/16` by rarity) and ten active
   cases. It always chose the cheapest affordable coin case, otherwise the
   cheapest key case; daily bonus was already claimed, so no wait-time income
   existed during the session.
-- **Вибірка:** 10,000 deterministic simulated runs each for new, mid and
+- **Sample:** 10,000 deterministic simulated runs each for new, mid and
   near-complete inventories; this is a model of system rules, not players.
-- **Спостереження:** with no duplicate sale, a new post-daily account reached
+- **Observation:** with no duplicate sale, a new post-daily account reached
   a hard lock after 30.8 opens on average (worst run 27); mid and near-complete
   accounts stopped after 10. With immediate sale of every duplicate — an
   optimistic policy absent from the current UI — new accounts averaged 31.9
   opens, mid 18.4 and near-complete 31.6. Almost every run still reached a
   balance below the 100-coin Starter Chest before 250 opens.
-- **Інтерпретація:** the current sources are a finite session budget, not a
+- **Interpretation:** the current sources are a finite session budget, not a
   continuous-session economy. Duplicate sale improves the middle and end but
   cannot be the early-game recovery path.
-- **Пов'язані job / метрика:** [[19 - Product - Jobs To Be Done]] —
-  «перетворити зайве на осмислений наступний шанс»; [[20 - Product - Metric
-  Tree]] — net coins/keys за сесію та невдалі спроби відкрити кейс.
-- **Обмеження:** modelled case choice is not observed behaviour; it does not
+- **Related job / metric:** [[19 - Product - Jobs To Be Done]] —
+  “turn excess into a meaningful next chance”; [[20 - Product - Metric
+  Tree]] — net coins/keys per session and failed case-opening attempts.
+- **Limitations:** modelled case choice is not observed behaviour; it does not
   model UI comprehension, voluntary stopping, targeted Cinderbound Cache
   choice, manual inventory actions or future recovery mechanics.
-- **Наступна дія:** run a scripted playtest of the zero-balance state and
+- **Next action:** run a scripted playtest of the zero-balance state and
   obtain an owner decision on whether the product should support a finite
   opening session or a repeatable non-timed source of further opens.
 
 ```md
-### E-<YYYY-MM-DD>-<XX> · <коротка назва>
+### E-<YYYY-MM-DD>-<XX> · <short title>
 
-- **Дата:** <TBD>
-- **Статус:** raw | reviewed | superseded
-- **Тип:** playtest | локальна подія | інтерв'ю | баг | зовнішнє дослідження
-- **Джерело й спосіб:** <де виникло та як зібрано; для подій — назва зрізу/версії>
-- **Вибірка:** <кількість сесій/учасників; спосіб відбору; невідомі зміщення>
-- **Спостереження:** <лише те, що сталося або було сказано>
-- **Інтерпретація:** <що це може означати; не подавай як факт>
-- **Пов'язані job / метрика:** <посилання на JTBD і Metric Tree>
-- **Обмеження:** <чого цей запис не доводить>
-- **Наступна дія:** <повторити, поставити питання, створити/оновити opportunity або закрити>
+- **Date:** <TBD>
+- **Status:** raw | reviewed | superseded
+- **Type:** playtest | local event | interview | bug | external research
+- **Source and method:** <where it arose and how it was collected; for events — snapshot/version name>
+- **Sample:** <number of sessions/participants; selection method; unknown biases>
+- **Observation:** <only what happened or was said>
+- **Interpretation:** <what it may mean; do not present it as fact>
+- **Related job / metric:** <link to JTBD and Metric Tree>
+- **Limitations:** <what this entry does not prove>
+- **Next action:** <repeat, ask a question, create/update an opportunity, or close>
 ```
 
-## Як зібрати перші докази локально
+## How to collect the first local evidence
 
-1. Провести короткий playtest: дати людині виконати перше відкриття без підказок, потім спитати, що вона хотіла зробити далі й де зупинилась.
-2. Зберегти лише агрегований локальний зріз подій після того, як [[20 - Product - Metric Tree|план подій]] реалізовано й пояснено користувачеві.
-3. Відокремити баг від продуктової проблеми: помилка відкриття — доказ про якість, але не доказ цінності аукціону чи лору.
+1. Run a short playtest: let a person complete the first opening without hints, then ask what they wanted to do next and where they stopped.
+2. Save only an aggregated local event snapshot after the [[20 - Product - Metric Tree|event plan]] has been implemented and explained to the user.
+3. Separate a bug from a product problem: an opening error is evidence about quality, but not evidence of the value of an auction or lore.
 
-## Сила доказу
+## Evidence strength
 
-| Рівень | Приклад | Допустиме використання |
+| Level | Example | Permitted use |
 |---|---|---|
-| Слабкий | одна розмова або один playtest | сформувати гіпотезу й наступне питання |
-| Середній | повторюваний патерн у кількох незалежних сесіях | ранжувати малий MVP |
-| Сильний | повторювані події + якісне пояснення в релевантному сегменті | рекомендувати масштабування або рішення |
+| Weak | one conversation or one playtest | form a hypothesis and the next question |
+| Medium | recurring pattern across several independent sessions | rank a small MVP |
+| Strong | recurring events plus a qualitative explanation in a relevant segment | recommend scaling or a decision |
 
-Число учасників саме по собі не робить доказ сильним: спосіб відбору, контекст і альтернативні пояснення обов'язкові.
+Participant count alone does not make evidence strong: selection method, context, and alternative explanations are required.

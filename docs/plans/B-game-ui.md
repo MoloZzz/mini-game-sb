@@ -6,7 +6,7 @@
 
 ## The governing principle
 
-> "Це найважливіший компонент проекту. Все інше — обгортка навколо цих 5 секунд."
+> "This is the most important component of the project. Everything else is a wrapper around these 5 seconds."
 
 The reel is built **first**, on mocks, before any screen around it. The roadmap
 is explicit that the failure mode here is spending three evenings on scaffolding

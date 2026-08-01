@@ -2,32 +2,32 @@
 tags: [ui, animation]
 ---
 
-# Спека рулетки
+# Roulette Spec
 
-Назад до [[00 - Card Game MOC]] · Контракт → [[03 - Architecture - API Contracts]]
+Back to [[00 - Card Game MOC]] · Contract → [[03 - Architecture - API Contracts]]
 
-Це найважливіший компонент проекту. Все інше — обгортка навколо цих 5 секунд.
+This is the most important component of the project. Everything else is a wrapper around these 5 seconds.
 
-## Принцип
+## Principle
 
-Результат уже відомий до старту анімації. Рулетка нічого не вирішує —
-вона розповідає історію про рішення, яке вже прийняв сервер.
+The result is already known before the animation starts. The roulette decides nothing;
+it tells the story of a decision the server has already made.
 
 ```
      ┌───────────────── viewport ─────────────────┐
-     │                     ▼ маркер               │
+     │                     ▼ marker               │
      │  ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐       │
      │  │ 53│ │ 54│ │ 55│ │ 56│ │ 57│ │ 58│  ...  │
      │  └───┘ └───┘ └───┘ └───┘ └───┘ └───┘       │
-     │                  переможець                │
+     │                   winner                   │
      └────────────────────────────────────────────┘
-        ◄──────── translateX(-X) на всій стрічці
+        ◄──────── translateX(-X) on the entire reel
 ```
 
-Один `transform` на контейнері стрічки. Не анімуй кожну плитку окремо —
-це 60 композитних шарів і гарантований лаг.
+One `transform` on the reel container. Do not animate each tile separately;
+that is 60 composited layers and guaranteed lag.
 
-## Константи
+## Constants
 
 ```ts
 const TILE_W   = 140;   // px
@@ -38,27 +38,27 @@ const WIN_IDX  = 55;
 const DURATION = 5500;  // ms
 ```
 
-`WIN_IDX = 55` з 60: достатньо далеко, щоб набрати швидкість і сповільнитись,
-і лишається 4 плитки праворуч, щоб маркер не впирався в кінець стрічки.
+`WIN_IDX = 55` out of 60: far enough to build speed and slow down,
+with 4 tiles remaining on the right so the marker does not hit the end of the reel.
 
-## Математика зупинки
+## Stopping Math
 
 ```ts
 function targetOffset(containerW: number): number {
-  // центр плитки-переможця відносно початку стрічки
+  // center of the winning tile relative to the start of the reel
   const winCenter = WIN_IDX * PITCH + TILE_W / 2;
-  // зсув, щоб цей центр опинився під маркером
+  // offset so this center lands under the marker
   const base = winCenter - containerW / 2;
-  // джитер: щоб не зупинялось рівно по центру щоразу
+  // jitter: so it does not stop exactly in the center every time
   const jitter = (Math.random() - 0.5) * TILE_W * 0.6;  // ±42px
   return -(base + jitter);
 }
 ```
 
-**Джитер обов'язковий.** Без нього кожна зупинка ідеально центрована,
-і мозок за три відкриття зчитує це як «анімація фейкова». `±0.3 × TILE_W`
-достатньо, щоб виглядало фізично, і замало, щоб маркер вказав на сусіда
-(поріг — `0.5 × TILE_W`).
+**Jitter is mandatory.** Without it, every stop is perfectly centered,
+and the brain reads it as “fake animation” after three openings. `±0.3 × TILE_W`
+is enough to look physical and too little for the marker to point to a neighbor
+(threshold: `0.5 × TILE_W`).
 
 ## Easing
 
@@ -66,12 +66,12 @@ function targetOffset(containerW: number): number {
 cubic-bezier(0.12, 0.85, 0.20, 1.0)
 ```
 
-Профіль: різкий старт (~0.5с), тривала фаза сповільнення (~4с), майже
-непомітне доповзання останні 0.5с.
+Profile: sharp start (~0.5s), long deceleration phase (~4s), almost
+imperceptible crawl over the last 0.5s.
 
-**Чому не `ease-out`.** Дефолтний ease-out сповільнюється надто рано —
-рулетка «здається» ще на середині, і останні дві секунди нудні.
-Тут потрібна крива з довгим хвостом: напруга має рости, а не спадати.
+**Why not `ease-out`.** The default ease-out slows down too early;
+the roulette “seems to stop” halfway through, and the last two seconds are boring.
+This needs a curve with a long tail: tension should rise, not fall.
 
 Framer Motion:
 ```tsx
@@ -83,102 +83,102 @@ Framer Motion:
 />
 ```
 
-## Preload — найважливіший технічний пункт
+## Preload — the Most Important Technical Point
 
-Якщо стартувати анімацію одразу після відповіді API, половина плиток буде
-порожня, а картинки з'являтимуться поштучно під час прокрутки. Це найгірший
-можливий вигляд і найчастіша помилка в такому компоненті.
+If the animation starts immediately after the API response, half the tiles will be
+empty and images will appear one by one during the spin. This is the worst
+possible appearance and the most common mistake in this component.
 
 ```ts
 async function preloadReel(urls: string[]) {
   await Promise.all(urls.map(u => new Promise<void>(res => {
     const img = new Image();
-    img.onload = img.onerror = () => res();   // помилка теж резолвить
+    img.onload = img.onerror = () => res();   // errors also resolve
     img.src = u;
   })));
 }
 ```
 
-Послідовність:
+Sequence:
 ```
-клік → POST /open → відповідь → preloadReel(thumbs) → СТАРТ анімації
+click → POST /open → response → preloadReel(thumbs) → START animation
                                        ↑
-                          спінер тут, зазвичай 100–300мс з локального диска
+                          spinner here, usually 100–300ms from local disk
 ```
 
-`onerror` теж резолвить проміс — інакше одна битa картинка вішає всю гру.
+`onerror` also resolves the promise; otherwise one broken image hangs the entire game.
 
-**Використовуй thumbs (256px WebP) у стрічці, не повні PNG.** 60 плиток по
-1MB — це 60MB на одне відкриття. Повний арт вантажиться тільки для reveal.
+**Use thumbs (256px WebP) in the reel, not full PNGs.** 60 tiles at
+1MB means 60MB per opening. Full art loads only for the reveal.
 
-## Тайм-лайн
+## Timeline
 
-| Час | Подія |
+| Time | Event |
 |---|---|
-| 0мс | клік, кнопка disabled, POST |
-| ~80мс | відповідь API |
-| ~80–300мс | preload, спінер |
-| 300мс | стрічка стартує, звук розгону |
-| 300–3000мс | швидка фаза, тіки зливаються в гул |
-| 3000–5500мс | сповільнення, тіки розрізняються |
-| 5800мс | зупинка + 300мс паузи (тиша — найважливіші 300мс) |
-| 6100мс | плитка-переможець масштабується, спалах за рідкістю |
-| 6400мс | картка розкривається у великому вигляді |
-| 6900мс | кнопки «Ще раз» / «В інвентар» з'являються |
+| 0ms | click, button disabled, POST |
+| ~80ms | API response |
+| ~80–300ms | preload, spinner |
+| 300ms | reel starts, acceleration sound |
+| 300–3000ms | fast phase, ticks blend into a hum |
+| 3000–5500ms | deceleration, ticks become distinct |
+| 5800ms | stop + 300ms pause (silence is the most important 300ms) |
+| 6100ms | winning tile scales up, rarity flash |
+| 6400ms | card reveals at large size |
+| 6900ms | “Again” / “To Inventory” buttons appear |
 
-**Пауза 300мс після зупинки** — не забудь. Без неї reveal накладається на
-зупинку і момент «о, воно стало» губиться.
+**Do not forget the 300ms pause after stopping.** Without it, the reveal overlaps
+the stop and the “oh, it stopped” moment is lost.
 
-## Ефекти за рідкістю
+## Effects by Rarity
 
-| Рідкість | При зупинці |
+| Rarity | On stop |
 |---|---|
-| Common | нічого, тихий клац |
-| Uncommon | м'яке зелене світіння плитки |
-| Rare | синій пульс + промінь вгору |
-| Epic | фіолетовий спалах, ~20 частинок, легкий shake |
-| Legendary | золотий вибух, промені, ~60 частинок, вкручений shake, фанфари |
-| Mythic | заливка екрана, повільне сповільнення часу, конфеті, повна зупинка UI на 1с |
+| Common | nothing, quiet click |
+| Uncommon | soft green tile glow |
+| Rare | blue pulse + beam upward |
+| Epic | purple flash, ~20 particles, light shake |
+| Legendary | gold explosion, beams, ~60 particles, heavy shake, fanfare |
+| Mythic | screen fill, slow time dilation, confetti, full UI freeze for 1s |
 
-Ескалація має бути **нерівномірною**. Різниця common→uncommon майже нульова,
-epic→legendary — величезна. Так рідкий дроп відчувається як подія.
+Escalation should be **nonlinear**. The difference from common→uncommon is nearly zero,
+while epic→legendary is huge. This makes a rare drop feel like an event.
 
-Кольори — з таблиці в [[05 - Game Design - Rarity & Drop Rates]].
+Colors come from the table in [[05 - Game Design - Rarity & Drop Rates]].
 
-## Продуктивність
+## Performance
 
-- Анімуй **тільки `transform`**. `left`, `margin`, `width` викликають layout
-  на кожному кадрі — гарантовані просадки.
-- `will-change: transform` на стрічці, `contain: layout paint` на плитках
-- Плитки — `React.memo`, ключ по `${index}-${cardId}`
-- Не рендери 60 DOM-вузлів із важкими тінями і фільтрами. Плитка = картинка,
-  рамка кольором рідкості, ім'я. Всі красиві ефекти — на reveal-екрані,
-  де анімується один елемент.
-- Перевір на ноуті **на батареї**, не в розетці. Throttling CPU виявляє
-  проблеми, яких на зарядці не видно.
+- Animate **only `transform`**. `left`, `margin`, and `width` trigger layout
+  on every frame — guaranteed drops.
+- `will-change: transform` on the reel, `contain: layout paint` on tiles
+- Tiles use `React.memo`, keyed by `${index}-${cardId}`
+- Do not render 60 DOM nodes with heavy shadows and filters. A tile is an image,
+  a rarity-colored frame, and a name. All beautiful effects belong on the reveal screen,
+  where one element is animated.
+- Test on the laptop **on battery**, not plugged in. CPU throttling exposes
+  problems that are invisible while charging.
 
-## Звук
+## Sound
 
-Опційно, але дає ~40% відчуття за ~2% зусиль.
+Optional, but gives ~40% of the feeling for ~2% of the effort.
 
-- `tick.wav` — на кожному перетині плиткою маркера. Обчислюється з поточного
-  offset, не таймером. Використовуй Web Audio API з пулом буферів —
-  `new Audio()` на кожен тік захлинеться на високій швидкості.
-- `reveal_common.wav` … `reveal_mythic.wav` — за рідкістю
-- Кнопка mute у хедері, стан у localStorage. **Дефолт — вимкнено:**
-  несподіваний звук у браузері дратує, а браузери й так блокують
-  автоплей без взаємодії.
+- `tick.wav` — whenever a tile crosses the marker. Calculate it from the current
+  offset, not a timer. Use the Web Audio API with a buffer pool;
+  `new Audio()` on every tick will choke at high speed.
+- `reveal_common.wav` … `reveal_mythic.wav` — by rarity
+- Mute button in the header, state in localStorage. **Default is off:**
+  unexpected browser sound is annoying, and browsers block
+  autoplay without interaction anyway.
 
-## Крайні випадки
+## Edge Cases
 
-| Випадок | Поведінка |
+| Case | Behavior |
 |---|---|
-| API впав | тост «не вдалось відкрити», кнопка знову активна, гроші не списані (транзакція відкотилась) |
-| Ресайз під час анімації | ігнорувати, перерахунок зламає посадку. Заморозити ширину на старті |
-| Таб пішов у фон | `visibilitychange` → пропустити анімацію, показати результат одразу |
-| Подвійний клік | кнопка disabled на весь цикл + `Idempotency-Key` на сервері |
-| `prefers-reduced-motion` | пропустити прокрутку, одразу reveal з fade |
-| Битий thumb | плейсхолдер-плитка з кольором рідкості, анімація не блокується |
+| API failed | toast “failed to open,” button active again, money not debited (transaction rolled back) |
+| Resize during animation | ignore it; recalculation breaks the landing. Freeze width at start |
+| Tab went into background | `visibilitychange` → skip animation and show the result immediately |
+| Double-click | button disabled for the entire cycle + `Idempotency-Key` on the server |
+| `prefers-reduced-motion` | skip the spin and reveal immediately with fade |
+| Broken thumb | placeholder tile with rarity color; animation is not blocked |
 
-`prefers-reduced-motion` — не формальність. П'ятисекундна швидка горизонтальна
-прокрутка може викликати нудоту або спровокувати мігрень. Це три рядки коду.
+`prefers-reduced-motion` is not a formality. A five-second fast horizontal
+spin can cause nausea or trigger a migraine. It takes three lines of code.

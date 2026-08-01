@@ -3,115 +3,83 @@ tags: [product, strategy, agent-context]
 status: active
 ---
 
-# Продуктова стратегія
+# Product Strategy
 
-Назад до [[00 - Card Game MOC]] · Jobs → [[19 - Product - Jobs To Be Done]] · Метрики → [[20 - Product - Metric Tree]] · Докази → [[21 - Product - Evidence Log]]
+Back to [[00 - Card Game MOC]] · Jobs → [[19 - Product - Jobs To Be Done]] · Metrics → [[20 - Product - Metric Tree]] · Evidence → [[21 - Product - Evidence Log]]
 
-## Статуси знань
+## Knowledge statuses
 
-- **Факт** — підтверджено кодом, чинним дизайном або записом доказу.
-- **Рішення** — чинна межа продукту.
-- **Гіпотеза** — правдоподібне пояснення, яке ще треба перевірити.
-- **Відкрито** — ціль, сегмент або поріг успіху не визначено.
+- **Fact** — confirmed by code, the current design, or an evidence record.
+- **Decision** — a current product boundary.
+- **Hypothesis** — a plausible explanation that still needs testing.
+- **Open** — the goal, segment, or success threshold has not been defined.
 
-## Ціль і межі
+## Goal and boundaries
 
-**Факт:** гра дає короткий цикл `кейс → reveal → колекція`; головна цінність — колекціонування, рідкісний дроп і видимий прогрес. Деталі → [[13 - Product - Context & Guardrails]].
+**Fact:** the game provides a short `case → reveal → collection` cycle; the main value is collecting, rare drops, and visible progress. Details → [[13 - Product - Context & Guardrails]].
 
-**Рішення:** поточний продукт локальний; у scope немає реальних грошей, PvP, P2P-торгівлі або live-service. «Цінність, за яку платять» тут означає час, увагу та внутрішню валюту, а не платіж. Політика → [[23 - Product - Monetization Policy]].
+**Decision:** the current product is local; real money, PvP, P2P trading, and live-service are out of scope. “Value people pay for” here means time, attention, and internal currency, not a payment. Policy → [[23 - Product - Monetization Policy]].
 
-**Відкрито:** для кого гра має бути найкращою, яку поведінку варто посилювати першою та які числові цілі retention/engagement є достатніми. Не встановлюй їх без [[21 - Product - Evidence Log|доказів]].
+**Open:** who the game should be best for, which behavior should be reinforced first, and which numerical retention/engagement goals are sufficient. Do not establish them without [[21 - Product - Evidence Log|evidence]].
 
-## Аудиторія: робочі сегменти
+## Audience: working segments
 
-Це не опис реальних користувачів: жодного сегмента ще не валідовано. Використовуй їх лише для формування й перевірки гіпотез.
+This is not a description of real users: no segment has yet been validated. Use them only to formulate and test hypotheses.
 
-| Сегмент-гiпотеза | Потенційна мотивація | Що перевіряти в розмові або playtest |
+| Segment hypothesis | Potential motivation | What to test in conversation or playtest |
 |---|---|---|
-| Шукає короткий reveal | швидкий емоційний пік без складного навчання | чи зрозумілий перший кейс; чи хочеться відкрити ще один |
-| Колекціонер | бачити неповний набір і наближати його завершення | чи помітні відсутні картки та наступна досяжна ціль |
-| Дослідник світу | збирати картки як фрагменти світу або історії | чи додає контекст картки бажання зібрати сет, а не лише прочитати текст |
+| Looking for a short reveal | quick emotional peak without complex onboarding | whether the first case is clear; whether they want to open another |
+| Collector | see an incomplete set and move it toward completion | whether missing cards and the next achievable goal are noticeable |
+| World explorer | collect cards as fragments of a world or story | whether card context creates a desire to collect a set rather than only read the text |
 
-Не перетворюй сегмент на факт через один відгук: занось спостереження окремими записами в [[21 - Product - Evidence Log]].
+Do not turn a segment into a fact based on one response: record observations as separate entries in [[21 - Product - Evidence Log]].
 
-## Критерій корисної фічі
+## Useful-feature criterion
 
-Фіча має підсилювати один job з [[19 - Product - Jobs To Be Done]], повертати до core loop і мати спосіб перевірки в [[20 - Product - Metric Tree]]. Магазин, NPC-аукціон, крафт, сети й сюжет — можливі рішення для job, а не цілі самі по собі; їхній статус → [[14 - Product - System Landscape]].
+A feature must strengthen one job from [[19 - Product - Jobs To Be Done]], return to the core loop, and have a way to be checked in [[20 - Product - Metric Tree]]. A shop, NPC auction, crafting, sets, and story are possible solutions for a job, not goals in themselves; their status → [[14 - Product - System Landscape]].
 
-## Стратегічний вибір · 2026-07-29
+## Strategic choice · 2026-07-29
 
-**Рішення власника:** гра будується навколо добровільного повернення до
-наступної змістовної колекційної сесії, а не навколо FOMO, таймерів чи
-штучного дефіциту. Перший робочий сегмент-гіпотеза — **колекціонер**, який
-хоче бачити досяжну ціль, наближатися до неї та пам'ятати рідкісні знахідки.
-Це ще не доказ попиту.
+**Owner decision:** the game is built around voluntary return to the next meaningful collection session, not around FOMO, timers, or artificial scarcity. The first working segment hypothesis is the **collector**, who wants to see an achievable goal, move toward it, and remember rare finds. This is not yet evidence of demand.
 
-### Чотири різні причини грати
+### Four different reasons to play
 
-| Система | Питання гравця | Горизонт | Чого вона не робить |
+| System | Player question | Horizon | What it does not do |
 |---|---|---|---|
-| Reveal / кейс | «Що випаде зараз?» | хвилини | не задає довгу ціль |
-| Завдання | «Що цікаво зробити в цій сесії?» | одна сесія | не є сетом або мілстоуном |
-| Колекції | «Що я хочу завершити?» | дні / тижні | не мають нав'язувати частоту входу |
-| Досягнення | «Що я вже опанував?» | назавжди | не є ротаційними завданнями |
+| Reveal / case | “What will drop now?” | minutes | does not set a long-term goal |
+| Tasks | “What is interesting to do in this session?” | one session | is not a set or milestone |
+| Collections | “What do I want to complete?” | days / weeks | must not impose an entry frequency |
+| Achievements | “What have I already mastered?” | forever | are not rotating tasks |
 
-Сюжетний контекст відповідає на «чому ця знахідка важлива?» і повинен
-підсилювати колекції, а не відволікати від loop. Економіка має дати право
-зробити наступну спробу, не перетворюючи дублікати або валюту на прихований
-бар'єр.
+Story context answers “why is this find important?” and should strengthen collections rather than distract from the loop. The economy should give the player the right to make the next attempt without turning duplicates or currency into a hidden barrier.
 
-### Послідовність ставки
+### Bet sequence
 
-1. **Зробити ціль зрозумілою:** окремі Collection і Achievements; Ashen Wastes
-   перевіряє, чи сет пояснює наступний case.
-2. **Перевірити session tasks:** одна добровільна «експедиція» на сесію з
-   вибором між двома напрямами, без streak, таймера чи нової валюти. Її задача
-   — дати привід спробувати інший case або повернутися до колекції.
-3. **Лише після цього** додавати новий сет і сюжетний фрагмент як довгу ціль.
-4. Крафт, shop та NPC-аукціон розглядати тільки тоді, коли playtest покаже, що
-   дублікати або відсутня ціль реально зупиняють loop.
+1. **Make the goal clear:** separate Collection and Achievements; Ashen Wastes tests whether the set explains the next case.
+2. **Test session tasks:** one optional “expedition” per session with a choice between two directions, without a streak, timer, or new currency. Its purpose is to give a reason to try another case or return to the collection.
+3. **Only after that** add a new set and story fragment as a long-term goal.
+4. Consider crafting, shop, and NPC auction only when the playtest shows that duplicates or the missing goal really stop the loop.
 
-**Уточнення рішення · 2026-07-29:** після seeded моделювання currency
-continuity власник підтвердив іншу форму сесії: гра має досліджувати
-довший добровільний case loop через один bounded, нетаймований activity
-source, а не лише через більший стартовий grant. Це не змінює межі проти
-FOMO або нескінченного currency faucet; точний MVP → [[26 - Product -
+**Decision clarification · 2026-07-29:** after seeded currency-continuity modeling, the owner confirmed a different session shape: the game should explore a longer voluntary case loop through one bounded, untimed activity source, not only through a larger starting grant. This does not change the boundaries against FOMO or an infinite currency faucet; the exact MVP → [[26 - Product -
 Archive Dossiers Brief]].
 
-Порівняні варіанти для кроку 2: щоденні задачі (reach 3 × impact 4 × confidence
-2 / effort 3 = **8**) проти session expeditions (4 × 5 × 2 / 4 = **10**).
-Confidence в обох слабкий: evidence відсутній. Обрано експедиції, бо вони
-перевіряють мотивацію без тиску календаря й не створюють «обов'язкового» входу.
+Compared options for step 2: daily tasks (reach 3 × impact 4 × confidence 2 / effort 3 = **8**) versus session expeditions (4 × 5 × 2 / 4 = **10**). Confidence is weak for both: evidence is absent. Expeditions were chosen because they test motivation without calendar pressure and do not create a “mandatory” entry.
 
-### Цінність і майбутня willingness to pay
+### Value and future willingness to pay
 
-**Поточне рішення:** real-money поза scope; `coins` і `keys` — лише ігрові
-ресурси. Продукт спершу має довести добровільну витрату часу, уваги та soft
-currency на сет, експедицію або косметичне самовираження.
+**Current decision:** real money is out of scope; `coins` and `keys` are game resources only. The product must first prove voluntary spending of time, attention, and soft currency on a set, expedition, or cosmetic self-expression.
 
-Якщо scope колись зміниться, перевіряти цінність треба в такому порядку:
+If scope ever changes, value should be tested in this order:
 
-1. cosmetic identity (рамки, case skins, presentation колекції);
-2. авторські тематичні content packs із прозорим складом;
-3. лише після окремого рішення — будь-яка інша пропозиція.
+1. cosmetic identity (frames, case skins, collection presentation);
+2. authored thematic content packs with transparent contents;
+3. only after a separate decision — any other offering.
 
-Ніколи не робити майбутнім paid value: силу карт, кращі drop odds, доступ до
-базових collection goals або зняття навмисно створеного тертя. Будь-яка paid
-механіка лишається поза scope до умов [[23 - Product - Monetization Policy]].
+Never make these future paid value: card power, better drop odds, access to core collection goals, or removal of intentionally created friction. Any paid mechanic remains out of scope until the conditions in [[23 - Product - Monetization Policy]] are met.
 
-**Owner direction · 2026-07-29:** P2P-обміни/аукціони, streak-механіки та
-платні послуги розглядаються як майбутні стратегічні напрями, а не як
-відхилені ідеї. Це ще не scope-рішення на їхню реалізацію: P2P потребує
-мультиюзерної ринкової моделі, а платні сервіси — окремої політики,
-платіжного й правового дослідження. Archive Notes має бути перевірений без
-них, щоб не плутати добровільну цінність loop із календарним чи платіжним
-тиском.
+**Owner direction · 2026-07-29:** P2P exchanges/auctions, streak mechanics, and paid services are considered future strategic directions, not rejected ideas. This is not yet a scope decision to implement them: P2P requires a multi-user market model, while paid services require separate policy, payment, and legal research. Archive Notes must be reviewed without them so voluntary loop value is not confused with calendar or payment pressure.
 
-### Як довести або спростувати стратегію
+### How to prove or disprove the strategy
 
-Перший playtest показує set goal після reveal і питає: «Що ти зробиш далі і
-чому?». У наступному тесті замінити одну сесію на експедицію й порівняти з
-контрольною сесією: primary — `case_opened → reveal_completed →
-collection_viewed`; guardrails — нові unique карти на відкриття, net coins/keys
-за сесію та відповідь про тиск/нерозуміння. Baseline і числові пороги відкриті;
-не заявляти retention lift без достатніх когорт D1/D7.
+The first playtest shows the set goal after the reveal and asks: “What will you do next, and why?” In the next test, replace one session with an expedition and compare it with a control session: primary — `case_opened → reveal_completed →
+collection_viewed`; guardrails — new unique cards per opening, net coins/keys per session, and the response about pressure/confusion. Baseline and numerical thresholds are open; do not claim retention lift without sufficient D1/D7 cohorts.

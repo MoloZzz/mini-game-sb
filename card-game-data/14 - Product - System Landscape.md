@@ -3,31 +3,31 @@ tags: [product, systems, agent-context]
 status: active
 ---
 
-# Карта продуктових систем
+# Product System Landscape
 
-Назад до [[00 - Card Game MOC]] · Межі → [[13 - Product - Context & Guardrails]] · Стратегія → [[18 - Product - Strategy]] · Jobs → [[19 - Product - Jobs To Be Done]] · Формат рішення → [[17 - Product - Solution Brief Template]] · Backlog → [[22 - Product - Opportunity Backlog]]
+Back to [[00 - Card Game MOC]] · Guardrails → [[13 - Product - Context & Guardrails]] · Strategy → [[18 - Product - Strategy]] · Jobs → [[19 - Product - Jobs To Be Done]] · Decision format → [[17 - Product - Solution Brief Template]] · Backlog → [[22 - Product - Opportunity Backlog]]
 
-Статус тут важливіший за назву ідеї. **Реалізовано** — можна спиратися як на факт. **Заплановано** — це напрям, а не обіцянка. **Відкрито** — агенти мусять назвати припущення. **Поза scope** — потребує окремого рішення власника продукту.
+Status matters more here than the idea's name. **Implemented** — it can be relied on as a fact. **Planned** — it is a direction, not a promise. **Open** — agents must name assumptions. **Out of scope** — it requires a separate product-owner decision.
 
-| Система | Статус | Цінність для гравця | Головне обмеження / джерело правди |
+| System | Status | Value for the player | Main constraint / source of truth |
 |---|---|---|---|
-| Відкриття кейсів і reveal | Реалізовано | короткий пік напруги та колекційний дроп | [[04 - Game Design - Core Loop]], [[05 - Game Design - Rarity & Drop Rates]] |
-| Інвентар, фільтри, продаж дублікатів | Реалізовано | бачити колекцію, звільняти дублікати в coins | останню копію не продавати; `player_cards` — окремі екземпляри |
-| Мілстоуни колекції | Реалізовано | компенсувати слабку стартову віддачу дублікатів | разові, монотонні, ledger-backed; [[12 - Game Design - Economy Rebalance]] |
-| Щоденний бонус | Реалізовано | м'який темп повернення без енергії/таймерів | головна ручка темпу економіки |
-| Ручний review артів | Реалізовано | якість і контроль пулу | лише `approved` картки доступні гравцям |
-| Тематичні сети | Реалізовано: Ashen Wastes MVP | коротка ціль колекції та тематичний case loop | 20 карт, `set_id`-scoped Cinderbound Cache і `owned / total`; без completion reward; потрібен локальний playtest перед масштабуванням |
-| Крафт / злиття дублікатів | Заплановано, фаза 2 | альтернативне використання дублікатів | не може споживати останню копію; повний rebalance потрібен; [[11 - Planning - Open Questions]] Q8 |
-| Магазин за внутрішню валюту | Відкрито | контрольований вибір або цільова покупка | спершу визначити новий sink/source і не знецінити кейси |
-| NPC-аукціон | Відкрито | рідкісний контрольований вибір без інших гравців | це не P2P-маркет; потрібні правила появи, ціни й currency sink |
-| P2P-аукціон / торгівля | Поза scope | соціальна економіка | вимагає мультиплеєра, безпеки, модерації й іншої економіки |
-| Лор, сюжет, фракції | Відкрито | емоційна причина збирати картки та сети | канон ще не визначений; [[16 - Product - Narrative Bible]] |
-| Бої / PvP | Поза scope | окрема гра | не використовуй поточні ATK/DEF як фундамент без нового продуктового рішення |
+| Case opening and reveal | Implemented | short tension peak and collectible drop | [[04 - Game Design - Core Loop]], [[05 - Game Design - Rarity & Drop Rates]] |
+| Inventory, filters, duplicate sales | Implemented | see the collection, turn duplicates into coins | do not sell the last copy; `player_cards` are separate instances |
+| Collection milestones | Implemented | compensate for weak duplicate returns at the start | one-time, monotonic, ledger-backed; [[12 - Game Design - Economy Rebalance]] |
+| Daily bonus | Implemented | gentle return cadence without energy/timers | primary economy pacing control |
+| Manual art review | Implemented | quality and pool control | only `approved` cards are available to players |
+| Themed sets | Implemented: Ashen Wastes MVP | short collection goal and themed case loop | 20 cards, `set_id`-scoped Cinderbound Cache and `owned / total`; no completion reward; local playtest required before scaling |
+| Duplicate crafting / merging | Planned, phase 2 | alternative use for duplicates | cannot consume the last copy; full rebalance required; [[11 - Planning - Open Questions]] Q8 |
+| Shop for internal currency | Open | controlled choice or targeted purchase | first define a new sink/source and do not devalue cases |
+| NPC auction | Open | rare controlled choice without other players | this is not a P2P market; spawn rules, prices, and a currency sink are required |
+| P2P auction / trading | Out of scope | social economy | requires multiplayer, security, moderation, and a different economy |
+| Lore, story, factions | Open | emotional reason to collect cards and sets | canon is not yet defined; [[16 - Product - Narrative Bible]] |
+| Combat / PvP | Out of scope | separate game | do not use current ATK/DEF as a foundation without a new product decision |
 
-## Швидка розвилка для частих запитів
+## Quick fork for common requests
 
-- **«Зробімо аукціон»** → спершу запитай, NPC це чи P2P. За замовчуванням дозволений лише NPC-варіант.
-- **«Зробімо магазин»** → назви предмети, валюту, частоту й те, чому кейс лишається бажаним.
-- **«Перебалансуй економіку»** → не змінюй одну цифру без моделі ранньої, середньої й повної колекції.
-- **«Напиши лор»** → не видавай нові фракції чи події за встановлений канон; подай їх як варіанти до затвердження.
-- **«Додай прогресію»** → перевір, чи це підсилює колекціонування, а не приховано перетворює гру на battle/PvP продукт.
+- **“Let’s make an auction”** → first ask whether it is NPC or P2P. By default, only the NPC version is allowed.
+- **“Let’s make a shop”** → name the items, currency, frequency, and why the case remains desirable.
+- **“Rebalance the economy”** → do not change one number without modeling the early, mid, and complete collection.
+- **“Write the lore”** → do not present new factions or events as established canon; offer them as options for approval.
+- **“Add progression”** → check whether it strengthens collecting rather than quietly turning the game into a battle/PvP product.

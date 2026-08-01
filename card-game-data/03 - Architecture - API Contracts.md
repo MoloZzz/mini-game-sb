@@ -2,19 +2,19 @@
 tags: [architecture, api]
 ---
 
-# API контракти
+# API Contracts
 
-Назад до [[00 - Card Game MOC]] · Схема → [[02 - Architecture - Data Model]]
+Back to [[00 - Card Game MOC]] · Schema → [[02 - Architecture - Data Model]]
 
 Base URL: `http://localhost:3000/api`
-Статика: `http://localhost:3000/static/cards/ember-drake-a3f1.png`
+Static assets: `http://localhost:3000/static/cards/ember-drake-a3f1.png`
 
-## Найважливіший ендпоінт
+## Most Important Endpoint
 
 ### `POST /cases/:slug/open`
 
-Це серце гри. Один виклик робить усе: перевіряє баланс, списує ціну,
-кидає RNG, створює дроп, кладе картку в інвентар, будує стрічку.
+This is the heart of the game. One call does everything: checks the balance, debits the price,
+runs the RNG, creates the drop, puts the card in the inventory, and builds the reel.
 
 **Request**
 ```json
@@ -28,7 +28,7 @@ Base URL: `http://localhost:3000/api`
   "reel": [
     { "id": "...", "name": "Bog Rat",    "rarity": "common", "imageUrl": "/static/thumbs/bog-rat.webp" },
     { "id": "...", "name": "Ash Sprite", "rarity": "uncommon", "imageUrl": "..." }
-    // ... рівно 60 елементів
+    // ... exactly 60 elements
   ],
   "winningIndex": 55,
   "wonCard": {
@@ -43,25 +43,25 @@ Base URL: `http://localhost:3000/api`
 }
 ```
 
-**Контракт, який робить усю анімацію тривіальною:**
-переможець ЗАВЖДИ на індексі `winningIndex` (константа 55 з 60).
-UI не думає про ймовірності — він прокручує до відомої позиції.
-Решта 59 плиток — декорація, згенерована так, щоб виглядати правдоподібно
-(не всі common, але й без надлишку легендарок).
+**The contract that makes the entire animation trivial:**
+the winner is ALWAYS at index `winningIndex` (a constant 55 out of 60).
+The UI does not think about probabilities; it spins to a known position.
+The other 59 tiles are decoration generated to look plausible
+(not all common, but without an excess of legendaries).
 
-**Помилки**
+**Errors**
 - `402 INSUFFICIENT_FUNDS` — `{ "code": "INSUFFICIENT_FUNDS", "need": { "keys": 1 }, "have": { "keys": 0 } }`
-- `409 EMPTY_POOL` — немає approved карток потрібної рідкості
+- `409 EMPTY_POOL` — there are no approved cards of the required rarity
 - `404 CASE_NOT_FOUND`
 
-**Транзакційність:** усе в одній Postgres-транзакції з
-`SELECT ... FOR UPDATE` на рядку гравця. Без цього подвійний клік по кейсу
-може відкрити два кейси за один ключ.
+**Transactional integrity:** everything is in one Postgres transaction with
+`SELECT ... FOR UPDATE` on the player row. Without this, a double-click on a case
+can open two cases for one key.
 
-**Ідемпотентність:** опційний заголовок `Idempotency-Key`. Стретч, але
-рятує від дабл-кліків надійніше за throttle на кнопці.
+**Idempotency:** optional `Idempotency-Key` header. Stretch goal, but
+it protects against double-clicks more reliably than button throttling.
 
-## Каталог
+## Catalog
 
 ### `GET /cards`
 Query: `?rarity=epic&element=fire&status=approved&page=1&limit=40`
@@ -71,10 +71,10 @@ Query: `?rarity=epic&element=fire&status=approved&page=1&limit=40`
 ```
 
 ### `GET /cards/:id`
-Повна картка + `genMeta` (тільки в dev-режимі — гравцю сід не потрібен,
-але тобі під час тюнінгу промптів дуже потрібен).
+Full card + `genMeta` (dev mode only — the player does not need the seed,
+but you need it a lot while tuning prompts).
 
-## Кейси
+## Cases
 
 ### `GET /cases`
 ```json
@@ -83,14 +83,14 @@ Query: `?rarity=epic&element=fire&status=approved&page=1&limit=40`
   "priceCoins": 250, "priceKeys": null,
   "imageUrl": "/static/cases/starter.png",
   "odds": { "common": 60, "uncommon": 22, "rare": 12, "epic": 4.5, "legendary": 1.3, "mythic": 0.2 },
-  "previewCards": [ /* 6 найкращих карток для вітрини */ ]
+  "previewCards": [ /* 6 best cards for the showcase */ ]
 }]
 ```
 
-**Показуй `odds` у UI.** По-перше, це те, що роблять легальні iGaming-продукти.
-По-друге, це просто цікаво гравцю. По-третє — безкоштовний елемент довіри.
+**Show `odds` in the UI.** First, this is what legitimate iGaming products do.
+Second, it is simply interesting to the player. Third, it is a free trust-building element.
 
-## Гравець та інвентар
+## Player and Inventory
 
 ### `GET /me`
 ```json
@@ -104,25 +104,25 @@ Query: `?rarity=&sort=rarity_desc&page=1`
 { "items": [{ "instanceId": "...", "card": { /* CardDto */ },
               "acquiredAt": "...", "copies": 3 }], "total": 28 }
 ```
-Групування по картці з лічильником `copies` — читабельніше, ніж 61 плитка,
-де три однакові.
+Grouping by card with a `copies` counter is more readable than 61 tiles,
+three of which are identical.
 
 ### `POST /me/inventory/:instanceId/sell`
-Продає один екземпляр. Ціна = `sellValue` рідкості
-(див. [[04 - Game Design - Core Loop]]).
+Sells one instance. Price = the rarity’s `sellValue`
+(see [[04 - Game Design - Core Loop]]).
 ```json
 { "gained": { "coins": 40 }, "balance": { "coins": 790, "keys": 4 } }
 ```
-Захист: заборонити продаж останнього екземпляра картки — щоб гравець
-випадково не втратив колекцію. Правило: `copies > 1` для продажу.
+Protection: prohibit selling the last instance of a card so the player
+does not accidentally lose the collection. Rule: `copies > 1` for a sale.
 
 ### `GET /me/drops?limit=20`
-Історія відкриттів. Дає безкоштовну фічу «recent drops» стрічкою у лоббі.
+Opening history. This provides a free “recent drops” feature as a reel in the lobby.
 
-## Admin (для card-forge та ручного review)
+## Admin (for card-forge and manual review)
 
 ### `POST /admin/cards/ingest`
-`card-forge` дзвонить сюди після batch. Bulk-вставка як `status: draft`.
+`card-forge` calls this after a batch. Bulk insertion with `status: draft`.
 ```json
 { "cards": [{
     "slug": "ember-drake-a3f1",
@@ -130,20 +130,20 @@ Query: `?rarity=&sort=rarity_desc&page=1`
     "thumbPath": "thumbs/ember-drake-a3f1.webp",
     "suggestedRarity": "epic",
     "archetype": "beast", "element": "fire",
-    "genMeta": { /* див. Data Model */ }
+    "genMeta": { /* see Data Model */ }
 }]}
 ```
 Response: `{ "inserted": 24, "skipped": 2, "skippedSlugs": ["..."] }`
-Idempotent по `slug` — повторний запуск не дублює.
+Idempotent by `slug`; rerunning does not create duplicates.
 
 ### `PATCH /admin/cards/:id`
-Ручний review: `{ "status": "approved", "name": "Ember Drake", "rarity": "epic",
+Manual review: `{ "status": "approved", "name": "Ember Drake", "rarity": "epic",
 "attack": 12, "defense": 7, "flavorText": "..." }`
 
 ### `GET /admin/cards?status=draft`
-Черга на review. Під це буде проста сітка-контактшит в UI.
+Review queue. The UI will have a simple contact-sheet grid for this.
 
-## Спільні DTO
+## Shared DTOs
 
 ```ts
 type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
@@ -157,22 +157,22 @@ interface CardDto {
   attack: number;
   defense: number;
   flavorText: string | null;
-  imageUrl: string;   // вже з базовим URL, UI нічого не склеює
+  imageUrl: string;   // already includes the base URL; the UI concatenates nothing
   thumbUrl: string;
 }
 ```
 
-**Тримай ці типи в одному місці.** Варіанти: `packages/shared-types` як
-npm workspace, або просто симлінк одного `.d.ts`. На трьох сервісах
-монорепо з workspaces окупається одразу — не буде розсинхрону DTO.
+**Keep these types in one place.** Options: `packages/shared-types` as an
+npm workspace, or simply symlink one `.d.ts`. With three services,
+a monorepo with workspaces pays off immediately; DTOs will not drift out of sync.
 
-Python-сервіс типи не ділить — там достатньо pydantic-моделі
-для одного ingest-запиту.
+The Python service does not share types; a pydantic model
+for the single ingest request is sufficient there.
 
-## Чого свідомо немає
+## What Is Deliberately Absent
 
-- **Auth** — один локальний гравець, `playerId` з env або першого рядка таблиці.
-  Додати JWT потім — це один guard, не переробка.
-- **WebSocket** — нема нічого реалтаймового. Рулетка це request → animate.
-- **Пагінація курсором** — offset достатньо для сотень карток.
-- **Rate limiting** — гравець один, і це ти.
+- **Auth** — one local player, `playerId` from env or the first row in the table.
+  Adding JWT later is one guard, not a rewrite.
+- **WebSocket** — nothing is real-time. The roulette is request → animate.
+- **Cursor pagination** — offset is sufficient for hundreds of cards.
+- **Rate limiting** — there is one player, and it is you.

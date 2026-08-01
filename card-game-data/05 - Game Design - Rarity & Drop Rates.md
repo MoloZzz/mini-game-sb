@@ -2,38 +2,38 @@
 tags: [gamedesign, math]
 ---
 
-# Рідкості та шанси
+# Rarities and Odds
 
-Назад до [[00 - Card Game MOC]] · Економіка → [[04 - Game Design - Core Loop]]
+Back to [[00 - Card Game MOC]] · Economy → [[04 - Game Design - Core Loop]]
 
-## Шість рівнів
+## Six Tiers
 
-| Рідкість | Колір | Hex | Ціль пулу | Продаж | ATK/DEF |
+| Rarity | Color | Hex | Pool target | Sale | ATK/DEF |
 |---|---|---|---|---|---|
-| Common | сірий | `#9CA3AF` | 40 карток | 15 | 1–4 |
-| Uncommon | зелений | `#22C55E` | 30 | 40 | 3–7 |
-| Rare | синій | `#3B82F6` | 20 | 100 | 6–10 |
-| Epic | фіолетовий | `#A855F7` | 12 | 300 | 9–14 |
-| Legendary | золотий | `#F59E0B` | 6 | 900 | 13–18 |
-| Mythic | червоно-рожевий | `#EC4899` | 2 | 3000 | 17–22 |
+| Common | gray | `#9CA3AF` | 40 cards | 15 | 1–4 |
+| Uncommon | green | `#22C55E` | 30 | 40 | 3–7 |
+| Rare | blue | `#3B82F6` | 20 | 100 | 6–10 |
+| Epic | purple | `#A855F7` | 12 | 300 | 9–14 |
+| Legendary | gold | `#F59E0B` | 6 | 900 | 13–18 |
+| Mythic | red-pink | `#EC4899` | 2 | 3000 | 17–22 |
 
-**Разом цільовий пул: 110 карток.** Це реалістичний обсяг для локальної
-генерації — і це вже відчувається як колекція.
+**Total target pool: 110 cards.** This is a realistic size for local
+generation — and it already feels like a collection.
 
-Шість рівнів — свідомий вибір. П'ять — стандарт, але шостий (Mythic)
-дає той самий ефект, що й «червоний» у CS:GO: майже недосяжний топ,
-про який усі знають. Сім і більше — рівні перестають відрізнятись.
+Six tiers is a deliberate choice. Five is the standard, but the sixth (Mythic)
+gives the same effect as “red” in CS:GO: an almost unattainable top tier
+that everyone knows about. At seven or more, the tiers stop being distinguishable.
 
-Колірна схема свідомо збігається з конвенцією MMO/CS:GO. Не винаходь свою —
-гравець читає рідкість за кольором ще до того, як прочитає слово.
+The color scheme deliberately matches the MMO/CS:GO convention. Do not invent your own;
+the player reads rarity from the color before reading the word.
 
-## Ваги кейсів
+## Case Weights
 
-Сума кожного рядка = 100.
+The sum of each row = 100.
 
 ### Starter Chest — 100 coins
 
-| Рідкість | % | 1 з |
+| Rarity | % | 1 in |
 |---|---|---|
 | Common | 60.0 | 1.7 |
 | Uncommon | 22.0 | 4.5 |
@@ -44,7 +44,7 @@ tags: [gamedesign, math]
 
 ### Ember Vault — 350 coins
 
-| Рідкість | % | 1 з |
+| Rarity | % | 1 in |
 |---|---|---|
 | Common | 0.0 | — |
 | Uncommon | 45.0 | 2.2 |
@@ -55,7 +55,7 @@ tags: [gamedesign, math]
 
 ### Arcane Reliquary — 1 key
 
-| Рідкість | % | 1 з |
+| Rarity | % | 1 in |
 |---|---|---|
 | Common | 0.0 | — |
 | Uncommon | 20.0 | 5.0 |
@@ -64,59 +64,59 @@ tags: [gamedesign, math]
 | Legendary | 12.0 | 8.3 |
 | Mythic | 3.0 | 33 |
 
-**Колонка «1 з» обов'язкова в UI.** «0.2%» — це абстракція. «1 з 500» —
-це відчуття. Друге чесніше й водночас цікавіше.
+**The “1 in” column is mandatory in the UI.** “0.2%” is abstract. “1 in 500”
+is a feeling. The latter is more honest and more interesting at the same time.
 
-## Алгоритм ролу
-
-```
-1. Взяти ваги кейсу (jsonb з таблиці cases)
-2. Якщо pity_counter >= 30 → відкинути common/uncommon/rare,
-   перенормувати ваги epic/legendary/mythic до 100
-3. Викинути рідкості з порожнім approved-пулом, перенормувати
-4. r = random() * 100, накопичувальна сума → обрати рідкість
-5. Обрати випадкову approved-картку цієї рідкості (uniform)
-6. Оновити pity_counter: +1, або 0 якщо випало epic+
-```
-
-**Крок 3 критичний.** Якщо ти ще не згенерував жодної mythic, а RNG
-викинув mythic — буде або краш, або тихий фолбек, який зламає статистику.
-Перевіряй пул ПЕРЕД роллом, не після.
-
-**RNG:** `crypto.randomInt` з Node, не `Math.random()`. Не тому що хтось
-буде читити, а тому що це один рядок різниці, і воно одразу правильно.
-
-## Provably fair (стретч, не для M1)
-
-Класична схема з iGaming:
+## Roll Algorithm
 
 ```
-серверний сід генерується заздалегідь
-гравцю показується SHA256(server_seed)   ← до відкриття
-результат = HMAC-SHA256(server_seed, `${client_seed}:${nonce}`)
-                → перші 8 hex → число → % 10000 → рідкість
-після відкриття server_seed розкривається
-гравець може перевірити хеш і перерахувати результат
+1. Take the case weights (jsonb from the `cases` table)
+2. If `pity_counter >= 30` → discard common/uncommon/rare,
+   renormalize the epic/legendary/mythic weights to 100
+3. Remove rarities with an empty approved pool and renormalize
+4. `r = random() * 100`, cumulative sum → choose a rarity
+5. Choose a random approved card of that rarity (uniform)
+6. Update `pity_counter`: +1, or 0 if epic+ dropped
 ```
 
-Гравець тут ти сам, тож практичної потреби нуль. Але це найцікавіша
-технічна деталь жанру, і реалізується за годину. Занотовано в
-[[11 - Planning - Open Questions]] як бажане.
+**Step 3 is critical.** If you have not generated a single mythic yet but the RNG
+selects mythic, there will either be a crash or a silent fallback that breaks the statistics.
+Check the pool BEFORE the roll, not after.
 
-## Побудова стрічки (60 плиток)
+**RNG:** `crypto.randomInt` from Node, not `Math.random()`. Not because anyone
+will cheat, but because it is one line of difference and is correct immediately.
 
-Це чисто косметика, але від неї залежить, чи виглядає рулетка живою.
+## Provably Fair (stretch, not for M1)
+
+Classic iGaming scheme:
 
 ```
-Індекси 0–54, 56–59: наповнювачі
-Індекс 55:           картка-переможець
+server seed is generated in advance
+SHA256(server_seed) is shown to the player   ← before opening
+result = HMAC-SHA256(server_seed, `${client_seed}:${nonce}`)
+                → first 8 hex → number → % 10000 → rarity
+server_seed is revealed after opening
+the player can verify the hash and recalculate the result
 ```
 
-**Розподіл наповнювачів — НЕ той самий, що ваги дропу.** Якщо взяти реальні
-ваги, у стрічці буде 36 сірих плиток підряд і жодного золота — виглядає
-дешево і нецікаво.
+You are the player here, so there is no practical need. But this is the most interesting
+technical detail of the genre and can be implemented in an hour. Noted in
+[[11 - Planning - Open Questions]] as desirable.
 
-Рецепт наповнювачів:
+## Reel Construction (60 Tiles)
+
+This is purely cosmetic, but it determines whether the roulette looks alive.
+
+```
+Indices 0–54, 56–59: fillers
+Index 55:            winning card
+```
+
+**The filler distribution is NOT the same as the drop weights.** If you use the real
+weights, the reel will have 36 gray tiles in a row and no gold — it looks
+cheap and uninteresting.
+
+Filler recipe:
 ```
 common     35%
 uncommon   28%
@@ -126,23 +126,22 @@ legendary   3.5%
 mythic      0.5%
 ```
 
-Правила:
-- Гарантувати **мінімум 2 legendary+** у стрічці, розкидані по позиціях 10–50
-- **Ніякої legendary/mythic на індексах 53, 54, 56, 57** — інакше сусід
-  переможця перетягне увагу в момент зупинки
-- Не ставити дві однакові картки поруч
-- Якщо виграш rare або нижче — все одно тримати золото в стрічці.
-  Проїхати повз легендарку і не зупинитись — це і є той самий near-miss,
-  на якому тримається весь жанр
+Rules:
+- Guarantee **at least 2 legendary+** in the reel, spread across positions 10–50
+- **No legendary/mythic at indices 53, 54, 56, 57** — otherwise the winner’s neighbor
+  will steal attention at the moment of stopping
+- Do not place two identical cards next to each other
+- If the win is rare or lower, still keep gold in the reel.
+  Passing a legendary without stopping is the same near-miss
+  on which the entire genre is built
 
-**Чесність зауваження:** near-miss — це маніпулятивна механіка, і в реальних
-gambling-продуктах вона регулюється саме тому. Тут гравець один, ставки
-несправжні, і ти сам знаєш, як воно влаштоване. Але варто розуміти, що
-саме ти будуєш.
+**Fairness note:** near-miss is a manipulative mechanic, and that is why it is regulated
+in real gambling products. Here there is one player, the stakes are not real,
+and you know how it works. But it is worth understanding what you are building.
 
-## Перевірка ймовірностей
+## Probability Verification
 
-Обов'язковий тест перед тим, як довіряти числам:
+Required test before trusting the numbers:
 
 ```ts
 it('drop rates match configured weights within tolerance', () => {
@@ -154,9 +153,9 @@ it('drop rates match configured weights within tolerance', () => {
 });
 ```
 
-При N=200k стандартна похибка для mythic (p=0.002) ≈ 0.0001, тож
-`toBeCloseTo(_, 3)` пройде стабільно. Для менших N цей тест буде флакати —
-не зменшуй N, краще винеси в окремий повільний набір.
+At N=200k, the standard error for mythic (p=0.002) is ≈ 0.0001, so
+`toBeCloseTo(_, 3)` will pass reliably. For smaller N this test will be flaky;
+do not reduce N; put it in a separate slow suite instead.
 
-Окремо: тест, що сума ваг кожного кейсу == 100, і що pity спрацьовує
-рівно на 30-му сухому відкритті.
+Separately, test that the sum of each case’s weights == 100 and that pity triggers
+exactly on the 30th dry opening.

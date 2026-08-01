@@ -43,7 +43,7 @@ and it is what makes parallel execution safe:
 
 - **B does not wait for A.** `shared-types` fixes every DTO, so the UI develops
   against MSW handlers that return contract-shaped fixtures. Roadmap M1 already
-  demands exactly this ("рулетка на мок-даних іде в M1, ще до реального API").
+  demands exactly this ("the reel on mock data goes into M1, before the real API").
 - **C does not wait for A.** The forge writes PNGs and a `manifest.json` to
   disk. `forge.py ingest` is a separate command run later, against whatever
   `/admin/cards/ingest` exists by then.

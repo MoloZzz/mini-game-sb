@@ -3,47 +3,47 @@ tags: [product, lore, narrative, agent-context]
 status: discovery
 ---
 
-# Narrative Bible: встановлений канон і прогалини
+# Narrative Bible: Established Canon and Gaps
 
-Назад до [[00 - Card Game MOC]] · Системи → [[14 - Product - System Landscape]] · Формат рішення → [[17 - Product - Solution Brief Template]]
+Back to [[00 - Card Game MOC]] · Systems → [[14 - Product - System Landscape]] · Decision format → [[17 - Product - Solution Brief Template]]
 
-## Статус
+## Status
 
-**Важливо:** повного лорного канону ще немає. Цей документ не дозволяє вигадку як факт; він відділяє вже наявні опори від місць, де власник продукту має обрати напрям.
+**Important:** there is not yet a complete lore canon. This document does not permit invention to be treated as fact; it separates existing foundations from places where the product owner must choose a direction.
 
-## Встановлені опори
+## Established foundations
 
-| Рівень | Канонічний факт | Джерело |
+| Level | Canonical fact | Source |
 |---|---|---|
-| Жанр | Fantasy card-collection гра | [[00 - Card Game MOC]] |
-| Предмет колекції | картки мають арт, ім'я, флейвор, рідкість, стихію й архетип | `packages/shared-types/src/card.ts` |
-| Тон | магічні скрині, реліквії, стихії, істоти й темне fantasy-мистецтво | назви кейсів, recipe/prompt система |
-| Майбутня структура | можливі тематичні сети, зокрема «Ashen Wastes» і «Drowned Court» | [[11 - Planning - Open Questions]] Q9 |
-| Наративна подача | картка може нести флейвор; механічні ATK/DEF нині не визначають сюжет або бій | [[11 - Planning - Open Questions]] Q3–Q4 |
+| Genre | Fantasy card-collection game | [[00 - Card Game MOC]] |
+| Collection subject | cards have art, name, flavor, rarity, element, and archetype | `packages/shared-types/src/card.ts` |
+| Tone | magical chests, relics, elements, creatures, and dark fantasy art | case names, recipe/prompt system |
+| Future structure | themed sets may be possible, including “Ashen Wastes” and “Drowned Court” | [[11 - Planning - Open Questions]] Q9 |
+| Narrative presentation | a card may carry flavor; mechanical ATK/DEF do not currently determine story or combat | [[11 - Planning - Open Questions]] Q3–Q4 |
 
-## Свідомо не встановлено
+## Deliberately not established
 
-Немає затверджених протагоніста, карти світу, фракцій, хронології, головного конфлікту, назви світу або причини існування кейсів. Агент не має подавати такі деталі як «вже наявні в грі».
+There is no approved protagonist, world map, factions, chronology, central conflict, world name, or reason for the cases to exist. An agent must not present such details as “already present in the game.”
 
-## Як пропонувати лор без галюцинацій
+## How to propose lore without hallucinations
 
-1. Почни з наявної опори: сет, стихія, архетип або назва кейсу.
-2. Познач новий матеріал як **Варіант A/B/C**, а не канон.
-3. Дай короткий продуктовый наслідок: як цей лор робить наступний сет, кейс або колекційну ціль зрозумілішими.
-4. Попроси затвердити один напрям перед тим, як генерувати десятки назв, флейворів чи квестів.
-5. Після затвердження перенеси вибір до розділу «Затверджений канон» нижче й додай ADR, якщо він впливає на декілька систем.
+1. Start from an existing foundation: set, element, archetype, or case name.
+2. Mark new material as **Option A/B/C**, not canon.
+3. Give a short product consequence: how this lore makes the next set, case, or collection goal clearer.
+4. Ask for approval of one direction before generating dozens of names, flavors, or quests.
+5. After approval, move the choice to the “Approved canon” section below and add an ADR if it affects multiple systems.
 
-## Затверджений канон
+## Approved canon
 
-Поки що порожньо. Додавати сюди лише рішення користувача, а не пропозицію агента.
+Currently empty. Add only user decisions here, not agent proposals.
 
-## Карта рішень для першого лорного проходу
+## Decision map for the first lore pass
 
-| Питання | Приклад контрольованого вибору |
+| Question | Example of a controlled choice |
 |---|---|
-| Що об'єднує сети? | один світ / незалежні легенди / архів реліквій |
-| Хто відкриває кейси? | колекціонер / архіваріус / неназваний гравець |
-| Який тон? | героїчний / похмурий / казковий dark fantasy |
-| Що робить сет особливим? | локація / фракція / катастрофа / стихійний конфлікт |
+| What unites the sets? | one world / independent legends / relic archive |
+| Who opens the cases? | collector / archivist / unnamed player |
+| What is the tone? | heroic / grim / fairytale dark fantasy |
+| What makes the set special? | location / faction / catastrophe / elemental conflict |
 
-Не обирай за користувача: покажи 2–3 варіанти, їхній вплив на арт, назви та наступні сети.
+Do not choose for the user: show 2–3 options and their impact on art, names, and subsequent sets.

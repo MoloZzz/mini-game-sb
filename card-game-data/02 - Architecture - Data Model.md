@@ -2,61 +2,60 @@
 tags: [architecture, database]
 ---
 
-# Модель даних
+# Data Model
 
-Назад до [[00 - Card Game MOC]]
+Back to [[00 - Card Game MOC]]
 
-## Postgres для всього. Mongo не потрібна.
+## Postgres for Everything. Mongo Is Not Needed.
 
-Ти питав «postgres чи mongo, що доцільніше». Відповідь однозначна — Postgres,
-і ось конкретні причини:
+You asked “postgres or mongo, which is more appropriate.” The answer is unequivocal — Postgres,
+and here are the specific reasons:
 
-1. **Відкриття кейсу — це транзакція.** Списати ключ і видати картку треба
-   атомарно. У Mongo це або single-document trick, або multi-doc транзакції,
-   які там є, але це боротьба з інструментом.
-2. **Дані реляційні.** `player → player_cards → cards` — це два JOIN'и.
-   У Mongo це або дублювання даних картки в кожен інвентар (і біль при
-   оновленні), або ручний `$lookup`, який і є JOIN, тільки гірший.
-3. **Напівструктуровані метадані генерації** (seed, sampler, scheduler,
-   lora-и) чудово лягають у `jsonb`-колонку. Ти отримуєш гнучкість Mongo
-   там, де вона реально потрібна, не втрачаючи решти.
+1. **Opening a case is a transaction.** Debiting a key and issuing a card must be
+   atomic. In Mongo this is either a single-document trick or multi-document transactions,
+   which it supports, but that means fighting the tool.
+2. **The data is relational.** `player → player_cards → cards` is two JOINs.
+   In Mongo this is either duplicating card data in every inventory (and suffering when
+   updating it), or using a manual `$lookup`, which is a JOIN, only worse.
+3. **Semi-structured generation metadata** (seed, sampler, scheduler,
+   LoRAs) fit perfectly in a `jsonb` column. You get Mongo’s flexibility
+   where it is actually needed without giving up the rest.
 
-Єдиний сценарій, де Mongo виграла б — якби схема картки постійно змінювалась
-і не було транзакцій. Тут не той випадок.
+The only scenario where Mongo would win is if the card schema changed constantly
+and there were no transactions. This is not that case.
 
-## Схема
+## Schema
 
-### `cards` — каталог згенерованих карток
+### `cards` — generated card catalog
 
-| Колонка | Тип | Нотатка |
+| Column | Type | Note |
 |---|---|---|
 | `id` | uuid PK | |
 | `slug` | text UNIQUE | `ember-drake-a3f1` |
-| `name` | text | «Ember Drake» — пишеться людиною або LLM, не SD |
-| `flavor_text` | text NULL | курсивний рядок унизу картки |
-| `rarity` | enum | див. [[05 - Game Design - Rarity & Drop Rates]] |
+| `name` | text | “Ember Drake” — written by a person or LLM, not SD |
+| `flavor_text` | text NULL | italic line at the bottom of the card |
+| `rarity` | enum | see [[05 - Game Design - Rarity & Drop Rates]] |
 | `element` | enum NULL | fire/water/earth/air/shadow/light |
 | `archetype` | enum | beast / humanoid / undead / construct / spirit |
 | `attack` | int | |
 | `defense` | int | |
-| `image_path` | text | `cards/ember-drake-a3f1.png` — відносний! |
+| `image_path` | text | `cards/ember-drake-a3f1.png` — relative! |
 | `thumb_path` | text | `thumbs/ember-drake-a3f1.webp` |
 | `status` | enum | `draft` / `approved` / `rejected` |
-| `set_id` | uuid NULL | тематичний сет, поки не використовується — див. Q9 в [[11 - Planning - Open Questions]] |
-| `gen_meta` | jsonb | усе про генерацію, див. нижче |
+| `set_id` | uuid NULL | themed set, not used yet — see Q9 in [[11 - Planning - Open Questions]] |
+| `gen_meta` | jsonb | everything about generation, see below |
 | `created_at` | timestamptz | |
 
-`set_id` додається одразу в першій міграції, хоч і лишається NULL. Додати
-nullable-колонку зараз — безкоштовно; мігрувати таблицю з 300 картками
-пізніше — ні.
+`set_id` is added in the first migration even though it remains NULL. Adding
+a nullable column now is free; migrating a table with 300 cards later is not.
 
-**`image_path` відносний, не абсолютний і не повний URL.** Базовий URL
-підставляє API з конфігу. Це і є той самий адаптер, який колись стане S3.
+**`image_path` is relative, not absolute and not a full URL.** The API
+inserts the base URL from config. This is the same adapter that can later become S3.
 
-**Тільки `status = 'approved'` потрапляє в рулетку.** SD 1.5 видає ~40–60%
-придатних артів — крок ручного review обов'язковий, не пропускай його.
+**Only `status = 'approved'` enters the roulette.** SD 1.5 produces ~40–60%
+usable art; the manual review step is mandatory, so do not skip it.
 
-`gen_meta` приклад:
+`gen_meta` example:
 ```json
 {
   "model": "Lykon/dreamshaper-8",
@@ -73,11 +72,11 @@ nullable-колонку зараз — безкоштовно; мігруват�
 }
 ```
 
-Індекси: `(status, rarity)` — основний запит для стрічки рулетки.
+Indexes: `(status, rarity)` — the primary query for the roulette reel.
 
 ### `players`
 
-| Колонка | Тип |
+| Column | Type |
 |---|---|
 | `id` | uuid PK |
 | `display_name` | text |
@@ -85,29 +84,28 @@ nullable-колонку зараз — безкоштовно; мігруват�
 | `balance_keys` | int DEFAULT 5 |
 | `created_at` | timestamptz |
 
-Один локальний гравець на старті. Таблиця все одно потрібна — щоб не
-розмазувати баланс по конфігах, і щоб мультиюзер потім був не переписуванням,
-а просто новим рядком.
+One local player at first. The table is still needed so the balance is not
+spread across configs, and so multi-user support later is a new row rather than a rewrite.
 
 ### `cases`
 
-| Колонка | Тип | Нотатка |
+| Column | Type | Note |
 |---|---|---|
 | `id` | uuid PK |
 | `slug` | text UNIQUE | `starter-chest` |
 | `name` | text |
 | `price_coins` | bigint NULL |
-| `price_keys` | int NULL | кейс коштує АБО монети, АБО ключ |
+| `price_keys` | int NULL | the case costs EITHER coins OR keys |
 | `image_path` | text |
 | `rarity_weights` | jsonb | `{"common": 60, "rare": 12, ...}` |
 | `is_active` | bool |
 
-Ваги в jsonb, а не окремою таблицею — це конфіг, який змінюється рідко
-і завжди читається цілком.
+Weights are in jsonb rather than a separate table; this is config that changes rarely
+and is always read in full.
 
-### `player_cards` — інвентар
+### `player_cards` — inventory
 
-| Колонка | Тип |
+| Column | Type |
 |---|---|
 | `id` | uuid PK |
 | `player_id` | uuid FK → players |
@@ -116,35 +114,35 @@ nullable-колонку зараз — безкоштовно; мігруват�
 | `acquired_at` | timestamptz |
 | `sold_at` | timestamptz NULL |
 
-**Один рядок = один екземпляр картки.** Дублікати дозволені й це фіча —
-вони є паливом економіки (продаються за монети). Не роби UNIQUE(player, card)
-і не роби колонку `quantity` — окремі рядки дають історію і легкий продаж
-конкретного екземпляра.
+**One row = one card instance.** Duplicates are allowed and are a feature —
+they fuel the economy (they are sold for coins). Do not make UNIQUE(player, card)
+and do not add a `quantity` column; separate rows provide history and make selling
+a specific instance easy.
 
-Індекс: `(player_id, sold_at)` — запит інвентаря.
+Index: `(player_id, sold_at)` — inventory query.
 
-### `case_openings` — історія дропів
+### `case_openings` — drop history
 
-| Колонка | Тип | Нотатка |
+| Column | Type | Note |
 |---|---|---|
 | `id` | uuid PK |
 | `player_id` | uuid FK |
 | `case_id` | uuid FK |
 | `won_card_id` | uuid FK → cards |
-| `reel` | jsonb | масив id карток стрічки |
-| `winning_index` | int | позиція переможця у стрічці |
-| `server_seed` | text | для provably-fair, стретч |
+| `reel` | jsonb | array of card IDs in the reel |
+| `winning_index` | int | winner’s position in the reel |
+| `server_seed` | text | for provably fair, stretch |
 | `client_seed` | text NULL |
 | `nonce` | bigint |
 | `created_at` | timestamptz |
 
-Зберігати всю стрічку може здатись надлишковим — але це дає можливість
-**переграти анімацію** (наприклад, кнопка «replay» в історії) і робить
-дебаг RNG тривіальним.
+Storing the entire reel may seem excessive, but it makes it possible to
+**replay the animation** (for example, a “replay” button in history) and makes
+RNG debugging trivial.
 
 ### `transactions` — ledger
 
-| Колонка | Тип |
+| Column | Type |
 |---|---|
 | `id` | uuid PK |
 | `player_id` | uuid FK |
@@ -155,15 +153,15 @@ nullable-колонку зараз — безкоштовно; мігруват�
 | `ref_id` | uuid NULL |
 | `created_at` | timestamptz |
 
-**Чому ledger, а не просто UPDATE балансу.** Баланс стає перевірюваним:
-`SUM(delta_coins) == players.balance_coins` — це інваріант, який ловить
-будь-який баг економіки одним запитом. Коштує одну таблицю, економить дні
-дебагу «а куди поділись монети». Це стандартна практика і в реальному
-iGaming, і в фінтесі.
+**Why a ledger instead of simply UPDATEing the balance.** The balance becomes verifiable:
+`SUM(delta_coins) == players.balance_coins` — this invariant catches
+any economy bug with one query. It costs one table and saves days of
+debugging “where did the coins go?” This is standard practice both in real
+iGaming and in fintech.
 
-`players.balance_*` лишається як денормалізований кеш для швидкого читання.
+`players.balance_*` remains as a denormalized cache for fast reads.
 
-## ER-діаграма
+## ER Diagram
 
 ```mermaid
 erDiagram
@@ -176,14 +174,14 @@ erDiagram
     case_openings ||--o| player_cards : produced
 ```
 
-## Міграції
+## Migrations
 
-TypeORM migrations, `synchronize: false` навіть локально. Так, це «зайвий
-крок для лайт-проекту» — але коли через тиждень захочеш додати колонку до
-таблиці з 300 згенерованими картками, дропати базу буде боляче.
+TypeORM migrations, `synchronize: false` even locally. Yes, this is an “extra
+step for a lightweight project,” but when you want to add a column to a table
+with 300 generated cards a week later, dropping the database will hurt.
 
-## Що НЕ треба зберігати в базі
+## What NOT to Store in the Database
 
-- Самі PNG (bytea) — файли лежать на диску, у базі тільки шлях
-- Стрічку рулетки як окремі рядки — jsonb достатньо
-- Ваги дропу per-card — рідкість картки і ваги кейсу дають усе потрібне
+- The PNGs themselves (bytea) — files live on disk; only the path is in the database
+- The roulette reel as separate rows — jsonb is sufficient
+- Per-card drop weights — card rarity and case weights provide everything needed

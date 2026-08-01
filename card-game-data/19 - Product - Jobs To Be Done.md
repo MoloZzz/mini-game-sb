@@ -5,17 +5,17 @@ status: active
 
 # Jobs to Be Done
 
-Назад до [[00 - Card Game MOC]] · Стратегія → [[18 - Product - Strategy]] · Метрики → [[20 - Product - Metric Tree]] · Докази → [[21 - Product - Evidence Log]]
+Back to [[00 - Card Game MOC]] · Strategy → [[18 - Product - Strategy]] · Metrics → [[20 - Product - Metric Tree]] · Evidence → [[21 - Product - Evidence Log]]
 
-Усі jobs нижче — **гіпотези**, не опис перевірених потреб. Вони потрібні, щоб перевіряти продуктову цінність, а не підганяти докази під фічу.
+All jobs below are **hypotheses**, not descriptions of validated needs. They exist to test product value, not to fit evidence to a feature.
 
-| Коли… | Я хочу… | Щоб… | Сегмент-гiпотеза | Мінімальний доказ |
+| When… | I want to… | So that… | Segment hypothesis | Minimum evidence |
 |---|---|---|---|---|
-| маю кілька вільних хвилин | відкрити кейс без зайвих кроків | відчути короткий reveal і побачити результат | шукає короткий reveal | playtest першої сесії; шлях до reveal |
-| після кількох відкриттів бачу дублікати | перетворити зайве на осмислений наступний шанс | прогрес не зупинявся, але кейс лишався цінним | колекціонер | розмова + економічні guardrails |
-| колекція неповна | розуміти, що саме варто збирати далі | мати досяжну коротку ціль | колекціонер | тест навігації/сетів після їх появи |
-| отримую рідкісну або тематичну картку | побачити її контекст | запам'ятати знахідку та захотіти наступний фрагмент | дослідник світу | якісний тест лору/картки |
+| I have a few free minutes | open a case without extra steps | feel a short reveal and see the result | looking for a short reveal | first-session playtest; path to reveal |
+| after several openings I see duplicates | turn the excess into a meaningful next chance | progress does not stop while the case remains valuable | collector | conversation + economic guardrails |
+| the collection is incomplete | understand what is worth collecting next | have an achievable short-term goal | collector | navigation/set test after they appear |
+| I receive a rare or themed card | see its context | remember the find and want the next fragment | world explorer | qualitative lore/card test |
 
-## Правило для пропозиції
+## Rule for a proposal
 
-Перед створенням [[17 - Product - Solution Brief Template|solution brief]] обери один головний job і сегмент як гіпотезу. Прив'яжи MVP до метрики з [[20 - Product - Metric Tree]]. Якщо доказів немає — сплануй їх збір, а не називай фічу потрібною.
+Before creating a [[17 - Product - Solution Brief Template|solution brief]], choose one primary job and segment as a hypothesis. Tie the MVP to a metric from [[20 - Product - Metric Tree]]. If there is no evidence, plan how to collect it instead of calling the feature necessary.

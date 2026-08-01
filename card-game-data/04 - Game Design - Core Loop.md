@@ -2,93 +2,93 @@
 tags: [gamedesign]
 ---
 
-# Ігровий цикл та економіка
+# Game Loop and Economy
 
-Назад до [[00 - Card Game MOC]] · Числа рідкостей → [[05 - Game Design - Rarity & Drop Rates]]
+Back to [[00 - Card Game MOC]] · Rarity numbers → [[05 - Game Design - Rarity & Drop Rates]]
 
-## Цикл
+## Loop
 
 ```
      ┌──────────────────────────────────────────┐
      │                                          │
      ▼                                          │
- [Лоббі кейсів]                                 │
-     │ клік по кейсу                            │
+ [Case Lobby]                                   │
+     │ click on case                            │
      ▼                                          │
- [Підтвердження ціни] ──── не вистачає ──► [Продати дублікати]
-     │ відкрити                                 ▲
+ [Price Confirmation] ──── insufficient ──► [Sell Duplicates]
+     │ open                                     ▲
      ▼                                          │
- [РУЛЕТКА ~5.5с]                                │
+ [ROULETTE ~5.5s]                                │
      │                                          │
      ▼                                          │
- [Reveal картки + FX по рідкості]               │
+ [Card Reveal + Rarity FX]                      │
      │                                          │
-     ├──► «Ще раз» ────────────────────┐        │
+     ├──► “Again” ─────────────────────┐        │
      │                                 │        │
      ▼                                 │        │
- [Інвентар] ──────────────────────────►┴────────┘
+ [Inventory] ─────────────────────────►┴────────┘
 ```
 
-Весь цикл від кліку до кліку — під 10 секунд. Це і є суть жанру:
-короткий, щільний, з чітким піком напруги посередині.
+The entire cycle from click to click is under 10 seconds. That is the essence of the genre:
+short, dense, with a clear peak of tension in the middle.
 
-## Екрани
+## Screens
 
-### 1. Лоббі
-- Сітка кейсів (2–4 штуки достатньо)
-- Баланс монет і ключів у хедері, з анімацією зміни числа
-- Стрічка «останні дропи» знизу — з `GET /me/drops`
-- Клік по кейсу → показати odds і кнопку відкрити
+### 1. Lobby
+- Case grid (2–4 are enough)
+- Coin and key balance in the header, with number-change animation
+- “Recent drops” reel at the bottom — from `GET /me/drops`
+- Click a case → show odds and an open button
 
-### 2. Рулетка
-Повний фокус. Затемнення фону, лоббі йде на blur.
-Деталі анімації → [[08 - UI - Roulette Spec]]
+### 2. Roulette
+Full focus. Dim the background; the lobby goes blurry.
+Animation details → [[08 - UI - Roulette Spec]]
 
 ### 3. Reveal
-- Картка вилітає з центру стрічки, масштабується
-- Ефект за рідкістю: від нічого (common) до частинок і тряски екрана (mythic)
-- Бейдж «NEW» якщо перший екземпляр, «×3» якщо дублікат
-- Дві кнопки: «Ще раз» (той самий кейс, одразу) і «В інвентар»
+- The card flies out from the center of the reel and scales up
+- Rarity effect: from nothing (common) to particles and screen shake (mythic)
+- “NEW” badge for the first instance, “×3” for a duplicate
+- Two buttons: “Again” (the same case, immediately) and “To Inventory”
 
-**«Ще раз» має бути головною кнопкою.** Найбільша, по центру, автофокус.
-Це те, заради чого весь жанр існує.
+**“Again” should be the primary button.** The largest, centered, autofocus.
+This is what the entire genre exists for.
 
-### 4. Інвентар
-- Сітка, згруповано по картці, лічильник копій
-- Фільтр по рідкості й стихії, сортування
-- Прогрес колекції: «28 / 110 карток» + розбивка по рідкостях
-- Клік по картці → деталі, кнопка продати (якщо копій > 1)
+### 4. Inventory
+- Grid grouped by card, copy counter
+- Filter by rarity and element, sorting
+- Collection progress: “28 / 110 cards” + breakdown by rarity
+- Click a card → details, sell button (if copies > 1)
 
-### 5. Admin / Card Review (для тебе, не для гравця)
-- Сітка draft-карток з `card-forge`
-- По кожній: approve / reject, поле імені, рідкість, статистики
-- Показує промпт і сід — щоб бачити, які рецепти працюють
+### 5. Admin / Card Review (for you, not the player)
+- Grid of draft cards from `card-forge`
+- For each: approve / reject, name field, rarity, stats
+- Shows the prompt and seed so you can see which recipes work
 
-Цей екран не факультативний. Без нього ти будеш редагувати картки SQL-ем.
+This screen is not optional. Without it, you will edit cards with SQL.
 
-## Валюти
+## Currencies
 
-**Coins** — м'яка. Основна. Дається щедро.
-**Keys** — тверда. Рідкісна. Відкриває кращі кейси.
+**Coins** — soft currency. The main one. Given generously.
+**Keys** — hard currency. Rare. Opens better cases.
 
-Дві валюти, не одна: це дає два різні відчуття від відкриття.
-Три і більше — вже бухгалтерія, не гра.
+Two currencies, not one: this gives two different feelings when opening.
+Three or more is accounting, not a game.
 
-### Джерела доходу
+### Income Sources
 
-| Джерело | Дає | Частота |
+| Source | Gives | Frequency |
 |---|---|---|
-| Стартовий грант | 1000 coins, 5 keys | один раз |
-| Щоденний бонус | 500 coins, 1 key | раз на 24 год |
-| Продаж дубліката | за рідкістю, див. нижче | будь-коли |
-| Майлстоуни колекції | 200–2000 coins | за прогрес |
+| Starting grant | 1000 coins, 5 keys | once |
+| Daily bonus | 500 coins, 1 key | every 24 hours |
+| Duplicate sale | by rarity, see below | anytime |
+| Collection milestones | 200–2000 coins | by progress |
 
-Щоденний бонус — просто перевірка `last_claim_at` при `GET /me`.
-Ніякого крону не треба.
+The daily bonus is simply a check of `last_claim_at` on `GET /me`.
+No cron is needed.
 
-### Ціни та вартість продажу
+### Prices and Sale Values
 
-| Рідкість | Продаж (coins) |
+| Rarity | Sale (coins) |
 |---|---|
 | Common | 15 |
 | Uncommon | 40 |
@@ -97,16 +97,16 @@ tags: [gamedesign]
 | Legendary | 900 |
 | Mythic | 3000 |
 
-| Кейс | Ціна | Профіль |
+| Case | Price | Profile |
 |---|---|---|
-| Starter Chest | 100 coins | базові шанси |
-| Ember Vault | 350 coins | нема common, зміщено вгору |
-| Arcane Reliquary | 1 key | найкращі шанси, mythic ×5 |
+| Starter Chest | 100 coins | baseline odds |
+| Ember Vault | 350 coins | no common, shifted upward |
+| Arcane Reliquary | 1 key | best odds, mythic ×5 |
 
-### Математика балансу
+### Balance Mathematics
 
-Очікувана вартість продажу Starter Chest
-(ваги з [[05 - Game Design - Rarity & Drop Rates]]):
+Expected sale value of a Starter Chest
+(weights from [[05 - Game Design - Rarity & Drop Rates]]):
 
 ```
 EV = 0.600×15 + 0.220×40 + 0.120×100 + 0.045×300 + 0.013×900 + 0.002×3000
@@ -114,40 +114,40 @@ EV = 0.600×15 + 0.220×40 + 0.120×100 + 0.045×300 + 0.013×900 + 0.002×3000
    = 61 coins
 ```
 
-Ціна 100 → повернення **61%**. Це навмисне «збиткова» ставка, і це правильно:
-справжня нагорода — картка в колекції, а не монети. Якби EV дорівнював ціні,
-гроші перестали б бути обмеженням і зникла б будь-яка вага рішення.
+Price 100 → **61%** return. This is deliberately a “loss-making” bet, and that is correct:
+the real reward is the card in the collection, not the coins. If EV equaled the price,
+money would stop being a constraint and every decision would lose its weight.
 
-Щоденні 500 coins + продаж дублікатів ≈ **10–14 кейсів на день** стабільно.
-Достатньо, щоб було чим зайнятись, замало, щоб зібрати все за вечір.
+Daily 500 coins + duplicate sales means ≈ **10–14 cases per day** consistently.
+Enough to stay busy, not enough to collect everything in one evening.
 
-**Інваріант для перевірки економіки:**
+**Invariant for checking the economy:**
 ```sql
 SELECT p.id, p.balance_coins, SUM(t.delta_coins) AS ledger_sum
 FROM players p JOIN transactions t ON t.player_id = p.id
 GROUP BY p.id, p.balance_coins
 HAVING p.balance_coins <> SUM(t.delta_coins);
 ```
-Порожній результат = економіка ціла. Запусти це в тестах.
+An empty result means the economy is intact. Run this in tests.
 
-## Захист від нудьги
+## Protection Against Boredom
 
-**Pity-система.** Якщо 30 відкриттів поспіль без epic+ — наступне
-гарантовано epic або вище. Лічильник у `players.pity_counter`,
-скидається на epic+ дропі.
+**Pity system.** If 30 openings in a row have no epic+, the next one
+is guaranteed to be epic or higher. Counter in `players.pity_counter`,
+reset on an epic+ drop.
 
-Це не «чіт для гравця» — це стандарт індустрії (gacha, CS:GO, Hearthstone).
-Без нього довгий сухий стрік вбиває сесію. З ним найгірший можливий
-досвід обмежений зверху.
+This is not a “cheat for the player” — it is an industry standard (gacha, CS:GO, Hearthstone).
+Without it, a long dry streak kills the session. With it, the worst possible
+experience is bounded.
 
-**Дублікати мають цінність.** Кожен дублікат — це монети на наступний кейс.
-Тому «знову той самий щур» дратує, але не є повною втратою.
+**Duplicates have value.** Each duplicate is coins toward the next case.
+So “the same rat again” is annoying, but not a total loss.
 
-## Що НЕ робити на цьому етапі
+## What NOT to Do at This Stage
 
-- **Бої / PvP** — це окрема гра, вдвічі більша за цю. `attack`/`defense`
-  зараз існують тільки як флейвор на картці.
-- **Крафт / злиття карток** — спокуслива фіча, але вимагає перебалансу всієї
-  економіки. Занотовано в [[11 - Planning - Open Questions]].
-- **Реальні гроші** — навіть як мок. Це не той проект.
-- **Ліміти часу / енергія** — щоденний бонус уже виконує цю роль м'якше.
+- **Battles / PvP** — this is a separate game, twice as large as this one. `attack`/`defense`
+  currently exist only as flavor on the card.
+- **Crafting / card fusion** — a tempting feature, but it requires rebalancing the entire
+  economy. Noted in [[11 - Planning - Open Questions]].
+- **Real money** — even as a mock. This is not that project.
+- **Time limits / energy** — the daily bonus already fills this role more gently.

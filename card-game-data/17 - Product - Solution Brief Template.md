@@ -3,48 +3,48 @@ tags: [product, template, agent-context]
 status: active
 ---
 
-# Шаблон продуктового рішення
+# Product Solution Template
 
-Назад до [[00 - Card Game MOC]] · Контекст → [[13 - Product - Context & Guardrails]] · Системи → [[14 - Product - System Landscape]]
+Back to [[00 - Card Game MOC]] · Context → [[13 - Product - Context & Guardrails]] · Systems → [[14 - Product - System Landscape]]
 
-Використовуй цей формат для нового магазину, NPC-аукціону, економічної зміни, сету, лору, сюжету або іншої продуктової системи. Він змушує відокремити наявне знання від нової ідеї.
+Use this format for a new shop, NPC auction, economic change, set, lore, story, or other product system. It forces existing knowledge to be separated from a new idea.
 
-## 1. Контекст retrieval
+## 1. Retrieval context
 
-- **Запит:**
-- **Прочитані документи:**
-- **Факти, що обмежують рішення:**
-- **Відкриті припущення:**
+- **Request:**
+- **Documents read:**
+- **Facts constraining the decision:**
+- **Open assumptions:**
 
-## 2. Проблема та результат для гравця
+## 2. Problem and player outcome
 
-- Яку ситуацію або мотивацію гравця змінюємо?
-- Яке спостережуване відчуття чи поведінка має з'явитися?
-- Як рішення повертає гравця в core loop?
+- What player situation or motivation are we changing?
+- What observable feeling or behavior should appear?
+- How does the decision return the player to the core loop?
 
-## 3. Варіанти
+## 3. Options
 
-Для кожного варіанту: короткий flow, виграш, ризик, вартість реалізації, конфлікт із чинними межами. Не пропонуй один «очевидний» варіант там, де канону або цілей ще немає.
+For each option: short flow, benefit, risk, implementation cost, conflict with current boundaries. Do not propose one “obvious” option where canon or goals do not yet exist.
 
-## 4. Рекомендований MVP
+## 4. Recommended MVP
 
-- **Scope:** найменший варіант, який перевіряє гіпотезу.
-- **Player flow:** вхід → вибір → результат → повернення в core loop.
-- **Правила стану:** валюта, картки, cooldown, ліміти, серверна істина.
-- **Економічний вплив:** sources/sinks і три стани колекції, якщо система торкається ресурсів.
-- **Наративний вплив:** що є новим каноном, а що лишається варіантом.
+- **Scope:** the smallest version that tests the hypothesis.
+- **Player flow:** entry → choice → result → return to the core loop.
+- **State rules:** currency, cards, cooldown, limits, server truth.
+- **Economic impact:** sources/sinks and the three collection states if the system touches resources.
+- **Narrative impact:** what is new canon and what remains an option.
 
-## 5. Ризики та перевірка
+## 5. Risks and verification
 
-- Який інваріант або продуктова межа може бути зламана?
-- Яка метрика/тест доводить, що MVP не погіршує core loop?
-- Яке рішення користувача потрібне до реалізації?
+- Which invariant or product boundary could be broken?
+- Which metric/test proves that the MVP does not worsen the core loop?
+- What user decision is needed before implementation?
 
-## 6. Пам'ять після рішення
+## 6. Memory after the decision
 
-- Затверджене довгострокове правило → [[10 - Planning - Decisions]].
-- Невирішене питання → [[11 - Planning - Open Questions]].
-- Зміна системного статусу → [[14 - Product - System Landscape]].
-- Затверджений лор → [[16 - Product - Narrative Bible]].
+- Approved long-term rule → [[10 - Planning - Decisions]].
+- Unresolved question → [[11 - Planning - Open Questions]].
+- System-status change → [[14 - Product - System Landscape]].
+- Approved lore → [[16 - Product - Narrative Bible]].
 
-Не записуй до vault кожну ідею. Фіксуй лише рішення, що агент має пам'ятати в наступних задачах.
+Do not write every idea to the vault. Record only decisions that the agent must remember in future tasks.

@@ -3,26 +3,26 @@ tags: [product, monetization, policy, agent-context]
 status: active
 ---
 
-# Політика монетизації
+# Monetization policy
 
-Назад до [[00 - Card Game MOC]] · Стратегія → [[18 - Product - Strategy]] · Межі → [[13 - Product - Context & Guardrails]] · Економіка → [[15 - Product - Economy Context]]
+Back to [[00 - Card Game MOC]] · Strategy → [[18 - Product - Strategy]] · Guardrails → [[13 - Product - Context & Guardrails]] · Economy → [[15 - Product - Economy Context]]
 
-## Чинне рішення
+## Current decision
 
-**Рішення:** реальні гроші, платежі та платні випадкові дропи — поза scope цього локального продукту. Поточні `coins` і `keys` є лише внутрішніми ігровими ресурсами; не називай витрату їх монетизацією.
+**Decision:** real money, payments, and paid random drops are out of scope for this local product. Current `coins` and `keys` are only in-game resources; do not call spending them monetization.
 
-## Що можна оцінювати зараз
+## What can be evaluated now
 
-Агенти можуть пропонувати фічі, за які гравець добровільно витрачає **час, увагу або внутрішню валюту**, якщо вони підтримують [[19 - Product - Jobs To Be Done|job]] і не ламають [[15 - Product - Economy Context|економіку]]. Перевага не є доказом того, що за фічу платитимуть реальними грошима.
+Agents may propose features for which a player voluntarily spends **time, attention, or in-game currency**, if they support a [[19 - Product - Jobs To Be Done|job]] and do not break the [[15 - Product - Economy Context|economy]]. Preference is not evidence that players would pay real money for the feature.
 
-## Якщо scope колись зміниться
+## If the scope ever changes
 
-Жодна платна механіка не переходить з ідеї до реалізації без окремого рішення власника продукту. Перед ним потрібні:
+No paid mechanic moves from idea to implementation without a separate product-owner decision. Before that, the following are required:
 
-1. Оновлена продуктова ціль, аудиторія та підтверджені докази цінності в [[21 - Product - Evidence Log]].
-2. Явна модель того, що купується, яка цінність лишається безкоштовною та як уникнути pay-to-win/експлуатації випадковості.
-3. Перевірка правових, вікових, платформних, платіжних і privacy-вимог для конкретного ринку — їх тут **не досліджено**.
-4. Перерахунок sources/sinks і захистів економіки, включно з last copy та ledger.
-5. Оновлений solution brief, ADR і явне рішення користувача до будь-якої інтеграції платежів.
+1. An updated product goal, audience, and validated evidence of value in [[21 - Product - Evidence Log]].
+2. An explicit model of what is purchased, what value remains free, and how to avoid pay-to-win or exploitation of randomness.
+3. A review of legal, age, platform, payment, and privacy requirements for the specific market — they are **not researched here**.
+4. Recalculation of sources/sinks and economic protections, including last copy and ledger.
+5. An updated solution brief, ADR, and explicit user decision before any payment integration.
 
-До такого рішення агент має позначати будь-яку платну пропозицію як **поза scope**, а не як backlog-фічу.
+Until that decision, the agent must mark any paid proposal as **out of scope**, not as a backlog feature.

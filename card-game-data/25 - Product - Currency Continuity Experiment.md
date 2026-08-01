@@ -5,7 +5,7 @@ status: discovery
 
 # Currency continuity experiment
 
-Назад до [[00 - Card Game MOC]] · Evidence → [[21 - Product - Evidence Log]] · Opportunity → [[22 - Product - Opportunity Backlog]]
+Back to [[00 - Card Game MOC]] · Evidence → [[21 - Product - Evidence Log]] · Opportunity → [[22 - Product - Opportunity Backlog]]
 
 ## What we know
 

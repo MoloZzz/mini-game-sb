@@ -94,7 +94,7 @@ archetypes:
   # itself needed no rework, it already read as an object once "concept art"
   # was gone from the style. `extra` (per-recipe) varies the blade form
   # (scimitar/rapier/broadsword/katana) across recipes so the sword pool isn't
-  # ten near-identical longswords - "прикольні мечі" was the ask.
+  # ten near-identical longswords - "cool swords" was the ask.
   sword: "a masterfully forged fantasy sword, gleaming blade, ornate hilt"
   # OBJECT archetype - pairs with object_style.
   potion: "a magical potion bottle, glowing liquid, ornate cork and glass"
